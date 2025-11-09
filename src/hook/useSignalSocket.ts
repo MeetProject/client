@@ -3,7 +3,7 @@
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useRef } from 'react';
-import { JoinResponseType, ParticipantsSignalType, RegisterResponseType } from '@/type/signalType';
+import { JoinResponseType, OfferPayloadType, ParticipantsSignalType, RegisterResponseType } from '@/type/signalType';
 
 const useSignalSocket = () => {
   const client = useRef<Client | null>(null);
@@ -42,19 +42,23 @@ const useSignalSocket = () => {
           participants.current = parseMessage<JoinResponseType>(msg).participants;
           console.log(participants.current);
         });
+
+        connectedClient.subscribe('/user/queue/signal/offer', (msg: IMessage) => {
+          parseMessage(msg);
+        });
       },
     });
     connectedClient.activate();
   };
 
-  const sendJoin = async (roomId: string) => {
+  const sendJoin = (roomId: string) => {
     if (!client.current || !id.current) {
-      return null;
+      return;
     }
 
     participants.current = null;
 
-    client.current!.publish({
+    client.current.publish({
       destination: '/app/signal/join',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -64,9 +68,28 @@ const useSignalSocket = () => {
     });
   };
 
+  const offerSDP = (targetId: string, sdp: string) => {
+    if (!client.current || !id.current || !targetId) {
+      return;
+    }
+
+    const payload: OfferPayloadType = {
+      fromUserId: id.current,
+      toUserId: id.current /* 상대 id로 변경 예정 */,
+      fromUserSDP: sdp,
+    };
+
+    client.current.publish({
+      destination: '/app/signal/offer',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  };
+
   return {
     connect,
     sendJoin,
+    offerSDP,
   };
 };
 

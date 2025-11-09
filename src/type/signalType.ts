@@ -21,3 +21,9 @@ export interface JoinResponseType {
   roomId: string;
   participants: ParticipantsSignalType[];
 }
+
+export interface OfferPayloadType {
+  fromUserId: string;
+  toUserId: string;
+  fromUserSDP: string;
+}

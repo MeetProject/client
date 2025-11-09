@@ -3,7 +3,7 @@
 import useSignalSocket from '@/hook/useSignalSocket';
 
 export default function TestPage() {
-  const { connect, sendJoin } = useSignalSocket();
+  const { connect, sendJoin, offerSDP } = useSignalSocket();
   const handleConnectButton = () => {
     connect();
   };
@@ -18,6 +18,9 @@ export default function TestPage() {
       </button>
       <button type='button' onClick={handleJoinButton}>
         join 보내기
+      </button>
+      <button type='button' onClick={() => offerSDP('test', 'test')}>
+        offer 보내기
       </button>
     </div>
   );
