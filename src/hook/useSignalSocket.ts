@@ -12,7 +12,9 @@ const useSignalSocket = () => {
   const participants = useRef<ParticipantsSignalType[] | null>(null);
 
   const parseMessage = <T>(msg: IMessage) => {
-    return JSON.parse(msg.body) as T;
+    const data = JSON.parse(msg.body) as T;
+    console.log(data);
+    return data;
   };
 
   const getUserId = async (targetClient: Client): Promise<string> => {
@@ -37,7 +39,7 @@ const useSignalSocket = () => {
         client.current = connectedClient;
 
         connectedClient.subscribe('/user/queue/signal/join', (msg: IMessage) => {
-          participants.current = parseMessage<JoinResponseType>(msg);
+          participants.current = parseMessage<JoinResponseType>(msg).participants;
           console.log(participants.current);
         });
       },

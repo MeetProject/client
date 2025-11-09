@@ -1,4 +1,7 @@
+type ResponseType = 'REGISTER' | 'JOIN' | 'ANSWER' | 'OFFER' | 'ICE' | 'LEAVE';
+
 export interface RegisterResponseType {
+  type: ResponseType;
   userId: string;
 }
 
@@ -13,4 +16,8 @@ export interface ParticipantsSignalType {
   profieColor: string;
 }
 
-export type JoinResponseType = ParticipantsSignalType[] | null;
+export interface JoinResponseType {
+  type: ResponseType;
+  roomId: string;
+  participants: ParticipantsSignalType[];
+}
