@@ -1,6 +1,6 @@
 'use client';
 
-import { Client, IMessage } from '@stomp/stompjs';
+import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useRef } from 'react';
 import {
@@ -22,6 +22,7 @@ interface UseSignalSocketProps {
 
 const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSignalSocketProps) => {
   const client = useRef<Client | null>(null);
+  const subscriptions = useRef<Map<string, StompSubscription>>(new Map());
 
   const { name, color, id, setId } = useUserInfoStore(
     useShallow((state) => ({
@@ -97,7 +98,7 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
       targetId: string,
       onIceCandidate: (targetId: string, candidate: RTCIceCandidate) => void,
     ) => void,
-    getSdp: (targetId: string) => Promise<RTCSessionDescriptionInit>,
+    createOfferSdp: (targetId: string) => Promise<RTCSessionDescriptionInit>,
     registerRemoteSdp: (targetId: string, targetSdp: RTCSessionDescription) => Promise<void>,
     registerRemoteIce: (targetId: string, targetIce: RTCLocalIceCandidateInit) => Promise<void>,
   ) => {
@@ -110,34 +111,38 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
         setId(await getUserId(connectedClient));
         client.current = connectedClient;
 
-        connectedClient.subscribe('/user/queue/signal/join', (msg: IMessage) => {
+        const joinSub = connectedClient.subscribe('/user/queue/signal/join', (msg: IMessage) => {
           const { participants } = parseMessage<JoinResponseType>(msg);
 
           participants.forEach(async (participant) => {
             onAddParticipantData(participant.userId, participant);
             createPeerConnection(participant.userId, offerIceCandidate);
-            const sdp = await getSdp(participant.userId);
+            const sdp = await createOfferSdp(participant.userId);
             sendSdp('/app/signal/offer', participant.userId, sdp);
           });
         });
+        subscriptions.current.set('join', joinSub);
 
-        connectedClient.subscribe('/user/queue/signal/offer', async (msg: IMessage) => {
+        const offerSub = connectedClient.subscribe('/user/queue/signal/offer', async (msg: IMessage) => {
           const { fromUserId, fromUserSdp } = parseMessage<SdpResponseType>(msg);
           createPeerConnection(fromUserId, offerIceCandidate);
           await registerRemoteSdp(fromUserId, fromUserSdp);
-          const sdp = await getSdp(fromUserId);
+          const sdp = await createOfferSdp(fromUserId);
           sendSdp('/app/signal/answer', fromUserId, sdp);
         });
+        subscriptions.current.set('offer', offerSub);
 
-        connectedClient.subscribe('/user/queue/signal/answer', async (msg: IMessage) => {
+        const answerSub = connectedClient.subscribe('/user/queue/signal/answer', async (msg: IMessage) => {
           const { fromUserId, fromUserSdp } = parseMessage<SdpResponseType>(msg);
           await registerRemoteSdp(fromUserId, fromUserSdp);
         });
+        subscriptions.current.set('answer', answerSub);
 
-        connectedClient.subscribe('/user/queue/signal/ice', async (msg: IMessage) => {
+        const iceSub = connectedClient.subscribe('/user/queue/signal/ice', async (msg: IMessage) => {
           const { fromUserId, fromCandidate } = parseMessage<IcePayloadType>(msg);
           await registerRemoteIce(fromUserId, fromCandidate);
         });
+        subscriptions.current.set('ice', iceSub);
       },
     });
     connectedClient.activate();
@@ -157,10 +162,11 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
       }),
     });
 
-    client.current.subscribe(`/topic/room/${roomId}/leave`, (msg: IMessage) => {
+    const leaveSub = client.current.subscribe(`/topic/room/${roomId}/leave`, (msg: IMessage) => {
       const { fromUserId } = parseMessage<LeaveResponseType>(msg);
       onDeleteParticipant(fromUserId);
     });
+    subscriptions.current.set(`leave-${roomId}`, leaveSub);
   };
 
   const sendLeave = (roomId: string) => {
@@ -176,12 +182,25 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
         roomId,
       }),
     });
+    subscriptions.current.get(`leave-${roomId}`)?.unsubscribe();
+    subscriptions.current.delete(`leave-${roomId}`);
+  };
+
+  const disconnectSocket = () => {
+    if (!client.current) {
+      return;
+    }
+    subscriptions.current.forEach((subscription) => subscription.unsubscribe());
+    subscriptions.current.clear();
+    client.current.deactivate();
+    client.current = null;
   };
 
   return {
     connectSocket,
     sendJoin,
     sendLeave,
+    disconnectSocket,
   };
 };
 

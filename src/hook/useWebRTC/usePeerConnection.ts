@@ -5,7 +5,11 @@ import { useDeviceStore } from '@/store/DeviceStore';
 import { useShallow } from 'zustand/react/shallow';
 import useDevice from '../useDevice';
 
-const usePeerConnection = () => {
+interface UsePeerConnectionProps {
+  onTrack: (targetId: string, stream: MediaStream) => void;
+}
+
+const usePeerConnection = ({ onTrack }: UsePeerConnectionProps) => {
   const peerConnections = useRef<Map<string, RTCPeerConnection>>(new Map());
 
   const { stream } = useDevice();
@@ -18,7 +22,6 @@ const usePeerConnection = () => {
   const createPeerConnection = (
     targetId: string,
     onIceCandidate: (targetId: string, candidate: RTCIceCandidate) => void,
-    onTrack: (targetId: string, stream: MediaStream) => void,
   ) => {
     if (peerConnections.current.has(targetId)) {
       return;
@@ -46,7 +49,7 @@ const usePeerConnection = () => {
     peerConnections.current.set(targetId, peerConnection);
   };
 
-  const getSdp = async (targetId: string): Promise<RTCSessionDescriptionInit> => {
+  const createOfferSdp = async (targetId: string): Promise<RTCSessionDescriptionInit> => {
     const peerConnection = peerConnections.current.get(targetId);
 
     if (!peerConnection) {
@@ -78,21 +81,20 @@ const usePeerConnection = () => {
     await peerConnection.addIceCandidate(new RTCIceCandidate(targetIce));
   };
 
-  const disconnectPeerConection = (targetId?: string) => {
-    if (!targetId) {
-      peerConnections.current.forEach((peerConnection) => {
-        peerConnection.getSenders().forEach((sender) => sender.track?.stop());
-        peerConnection.close();
-      });
-      peerConnections.current.clear();
-      return;
-    }
-
+  const disconnectPeerConection = (targetId: string) => {
     const peerConnection = peerConnections.current.get(targetId);
     peerConnection?.getSenders().forEach((sender) => sender.track?.stop());
     peerConnection?.close();
 
     peerConnections.current.delete(targetId);
+  };
+
+  const disconnectAllPeerConnection = () => {
+    peerConnections.current.forEach((peerConnection) => {
+      peerConnection.getSenders().forEach((sender) => sender.track?.stop());
+      peerConnection.close();
+    });
+    peerConnections.current.clear();
   };
 
   useEffect(() => {
@@ -135,11 +137,12 @@ const usePeerConnection = () => {
 
   return {
     createPeerConnection,
-    getSdp,
+    createOfferSdp,
     registerRemoteSdp,
     registerRemoteIce,
     peerConnections,
     disconnectPeerConection,
+    disconnectAllPeerConnection,
   };
 };
 
