@@ -1,18 +1,29 @@
 'use client';
 
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import { useDeviceStore } from '@/store/DeviceStore';
+import { useShallow } from 'zustand/react/shallow';
 import useDevice from '../useDevice';
 
 const usePeerConnection = () => {
   const peerConnections = useRef<Map<string, RTCPeerConnection>>(new Map());
 
   const { stream } = useDevice();
+  const { deviceEnable } = useDeviceStore(
+    useShallow((state) => ({
+      deviceEnable: state.deviceEnable,
+    })),
+  );
 
   const createPeerConnection = (
     targetId: string,
     onIceCandidate: (targetId: string, candidate: RTCIceCandidate) => void,
     onTrack: (targetId: string, stream: MediaStream) => void,
   ) => {
+    if (peerConnections.current.has(targetId)) {
+      return;
+    }
+
     const peerConnection = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
     });
@@ -67,7 +78,45 @@ const usePeerConnection = () => {
     await peerConnection.addIceCandidate(new RTCIceCandidate(targetIce));
   };
 
-  return { createPeerConnection, getSdp, registerRemoteSdp, registerRemoteIce };
+  useEffect(() => {
+    if (!stream || peerConnections.current.size === 0) {
+      return;
+    }
+
+    peerConnections.current.forEach((peerConnection) => {
+      peerConnection.getSenders().forEach((sender) => {
+        if (sender.track?.kind === 'video') {
+          const newTrack = stream.getVideoTracks()[0];
+          if (newTrack) {
+            sender.replaceTrack(newTrack);
+          }
+        } else if (sender.track?.kind === 'audio') {
+          const newTrack = stream.getAudioTracks()[0];
+          if (newTrack) {
+            sender.replaceTrack(newTrack);
+          }
+        }
+      });
+    });
+  }, [stream]);
+
+  useEffect(() => {
+    if (peerConnections.current.size === 0) {
+      return;
+    }
+
+    peerConnections.current.forEach((pc) => {
+      pc.getSenders().forEach((sender) => {
+        if (sender.track?.kind === 'video') {
+          sender.track.enabled = deviceEnable.video;
+        } else if (sender.track?.kind === 'audio') {
+          sender.track.enabled = deviceEnable.audio;
+        }
+      });
+    });
+  }, [deviceEnable]);
+
+  return { createPeerConnection, getSdp, registerRemoteSdp, registerRemoteIce, peerConnections };
 };
 
 export default usePeerConnection;

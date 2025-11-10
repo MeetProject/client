@@ -5,7 +5,7 @@ import usePeerConnection from './usePeerConnection';
 import useSignalSocket from './useSignalSocket';
 
 const useWebRTC = () => {
-  const { createPeerConnection, getSdp, registerRemoteSdp } = usePeerConnection();
+  const { createPeerConnection, getSdp, registerRemoteSdp, registerRemoteIce } = usePeerConnection();
   const { connectSocket, sendJoin } = useSignalSocket();
 
   const participantsMediaStream = useRef<Map<string, MediaStream>>(new Map());
@@ -20,6 +20,7 @@ const useWebRTC = () => {
         createPeerConnection(targetId, onIceCandidate, onTrack),
       getSdp,
       registerRemoteSdp,
+      registerRemoteIce,
     );
     sendJoin(roomId);
   };

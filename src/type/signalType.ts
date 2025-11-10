@@ -39,3 +39,9 @@ export interface IcePayloadType {
   toUserId: string;
   fromCandidate: RTCIceCandidate;
 }
+
+export interface IceResponseType {
+  type: ResponseType;
+  fromUserId: string;
+  fromUserIce: RTCLocalIceCandidateInit;
+}

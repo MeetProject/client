@@ -78,6 +78,7 @@ const useSignalSocket = () => {
     ) => void,
     getSdp: (targetId: string) => Promise<RTCSessionDescriptionInit>,
     registerRemoteSdp: (targetId: string, targetSdp: RTCSessionDescription) => Promise<void>,
+    registerRemoteIce: (targetId: string, targetIce: RTCLocalIceCandidateInit) => Promise<void>,
   ) => {
     const connectedClient = new Client({
       brokerURL: undefined,
@@ -113,7 +114,8 @@ const useSignalSocket = () => {
         });
 
         connectedClient.subscribe('/user/queue/signal/ice', async (msg: IMessage) => {
-          /* 받은 ice 등록 */
+          const { fromUserId, fromCandidate } = parseMessage<IcePayloadType>(msg);
+          await registerRemoteIce(fromUserId, fromCandidate);
         });
       },
     });
@@ -138,7 +140,6 @@ const useSignalSocket = () => {
   return {
     connectSocket,
     sendJoin,
-    offerSDP,
   };
 };
 
