@@ -1,7 +1,10 @@
 type ResponseType = 'REGISTER' | 'JOIN' | 'ANSWER' | 'OFFER' | 'ICE' | 'LEAVE';
 
-export interface RegisterResponseType {
+interface SignalResponseType {
   type: ResponseType;
+}
+
+export interface RegisterResponseType extends SignalResponseType {
   userId: string;
 }
 
@@ -10,16 +13,15 @@ export interface JoinType {
   roomId: string;
 }
 
-export interface ParticipantsSignalType {
+export interface ParticipantDataType {
   userId: string;
   userName: string;
   profieColor: string;
 }
 
-export interface JoinResponseType {
-  type: ResponseType;
+export interface JoinResponseType extends SignalResponseType {
   roomId: string;
-  participants: ParticipantsSignalType[];
+  participants: ParticipantDataType[];
 }
 
 export interface SdpPayloadType {
@@ -28,8 +30,7 @@ export interface SdpPayloadType {
   fromUserSdp: RTCSessionDescriptionInit;
 }
 
-export interface SdpResponseType {
-  type: ResponseType;
+export interface SdpResponseType extends SignalResponseType {
   fromUserId: string;
   fromUserSdp: RTCSessionDescription;
 }
@@ -40,8 +41,11 @@ export interface IcePayloadType {
   fromCandidate: RTCIceCandidate;
 }
 
-export interface IceResponseType {
-  type: ResponseType;
+export interface IceResponseType extends SignalResponseType {
   fromUserId: string;
   fromUserIce: RTCLocalIceCandidateInit;
+}
+
+export interface LeaveResponseType extends SignalResponseType {
+  fromUserId: string;
 }

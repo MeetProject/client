@@ -78,6 +78,23 @@ const usePeerConnection = () => {
     await peerConnection.addIceCandidate(new RTCIceCandidate(targetIce));
   };
 
+  const disconnectPeerConection = (targetId: string | null) => {
+    if (!targetId) {
+      peerConnections.current.forEach((peerConnection) => {
+        peerConnection.getSenders().forEach((sender) => sender.track?.stop());
+        peerConnection.close();
+      });
+      peerConnections.current.clear();
+      return;
+    }
+
+    const peerConnection = peerConnections.current.get(targetId);
+    peerConnection?.getSenders().forEach((sender) => sender.track?.stop());
+    peerConnection?.close();
+
+    peerConnections.current.delete(targetId);
+  };
+
   useEffect(() => {
     if (!stream || peerConnections.current.size === 0) {
       return;
@@ -116,7 +133,14 @@ const usePeerConnection = () => {
     });
   }, [deviceEnable]);
 
-  return { createPeerConnection, getSdp, registerRemoteSdp, registerRemoteIce, peerConnections };
+  return {
+    createPeerConnection,
+    getSdp,
+    registerRemoteSdp,
+    registerRemoteIce,
+    peerConnections,
+    disconnectPeerConection,
+  };
 };
 
 export default usePeerConnection;

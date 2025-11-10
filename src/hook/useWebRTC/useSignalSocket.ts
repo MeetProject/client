@@ -8,17 +8,21 @@ import {
   JoinResponseType,
   SdpPayloadType,
   RegisterResponseType,
-  ParticipantsSignalType,
   SdpResponseType,
+  LeaveResponseType,
+  ParticipantDataType,
 } from '@/type/signalType';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useShallow } from 'zustand/react/shallow';
 
-const useSignalSocket = () => {
-  const client = useRef<Client | null>(null);
-  const currentRoomId = useRef<string | null>(null);
+interface UseSignalSocketProps {
+  onAddParticipantData: (userId: string, user: ParticipantDataType) => void;
+  onDeleteParticipant: (targetId: string | null) => void;
+}
 
-  const participantsData = useRef<Map<string, ParticipantsSignalType>>(new Map());
+const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSignalSocketProps) => {
+  const client = useRef<Client | null>(null);
+  const roomId = useRef<string | null>(null);
 
   const { name, color, id, setId } = useUserInfoStore(
     useShallow((state) => ({
@@ -111,7 +115,7 @@ const useSignalSocket = () => {
           const { participants } = parseMessage<JoinResponseType>(msg);
 
           participants.forEach(async (participant) => {
-            participantsData.current.set(participant.userId, participant);
+            onAddParticipantData(participant.userId, participant);
             createPeerConnection(participant.userId, offerIceCandidate);
             const sdp = await getSdp(participant.userId);
             sendSdp('/app/signal/offer', participant.userId, sdp);
@@ -140,7 +144,7 @@ const useSignalSocket = () => {
     connectedClient.activate();
   };
 
-  const sendJoin = (roomId: string) => {
+  const sendJoin = (joinRoomId: string) => {
     if (!client.current || !id) {
       return;
     }
@@ -150,15 +154,39 @@ const useSignalSocket = () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         userId: id,
-        roomId,
+        roomId: roomId.current,
       }),
     });
-    currentRoomId.current = roomId;
+
+    client.current.subscribe(`/topic/room/${joinRoomId}/leave`, (msg: IMessage) => {
+      const { fromUserId } = parseMessage<LeaveResponseType>(msg);
+      onDeleteParticipant(fromUserId);
+    });
+
+    roomId.current = joinRoomId;
+  };
+
+  const sendLeave = () => {
+    if (!client.current || !id || !roomId.current) {
+      return;
+    }
+
+    client.current.publish({
+      destination: '/app/signal/leave',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        userId: id,
+        roomId: roomId.current,
+      }),
+    });
+
+    onDeleteParticipant(null);
   };
 
   return {
     connectSocket,
     sendJoin,
+    sendLeave,
   };
 };
 
