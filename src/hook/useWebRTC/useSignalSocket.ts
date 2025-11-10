@@ -11,12 +11,23 @@ import {
   ParticipantsSignalType,
   SdpResponseType,
 } from '@/type/signalType';
+import { useUserInfoStore } from '@/store/UserInfoStore';
+import { useShallow } from 'zustand/react/shallow';
 
 const useSignalSocket = () => {
   const client = useRef<Client | null>(null);
-  const id = useRef<string | null>(null);
+  const currentRoomId = useRef<string | null>(null);
 
   const participantsData = useRef<Map<string, ParticipantsSignalType>>(new Map());
+
+  const { name, color, id, setId } = useUserInfoStore(
+    useShallow((state) => ({
+      name: state.name,
+      color: state.color,
+      id: state.id,
+      setId: state.setId,
+    })),
+  );
 
   const parseMessage = <T>(msg: IMessage) => {
     const data = JSON.parse(msg.body) as T;
@@ -31,17 +42,24 @@ const useSignalSocket = () => {
         subscribe.unsubscribe();
       });
 
-      targetClient.publish({ destination: '/app/register' });
+      targetClient.publish({
+        destination: '/app/register',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          userName: name,
+          userColor: color,
+        }),
+      });
     });
   };
 
   const sendSdp = (destination: string, targetId: string, sdp: RTCSessionDescriptionInit) => {
-    if (!client.current || !id.current) {
+    if (!client.current || !id) {
       return;
     }
 
     const payload: SdpPayloadType = {
-      fromUserId: id.current,
+      fromUserId: id,
       toUserId: targetId,
       fromUserSdp: sdp,
     };
@@ -54,12 +72,12 @@ const useSignalSocket = () => {
   };
 
   const offerIceCandidate = (targetId: string, candidate: RTCIceCandidate) => {
-    if (!client.current || !id.current) {
+    if (!client.current || !id) {
       return;
     }
 
     const payload: IcePayloadType = {
-      fromUserId: id.current,
+      fromUserId: id,
       toUserId: targetId,
       fromCandidate: candidate,
     };
@@ -86,7 +104,7 @@ const useSignalSocket = () => {
       connectHeaders: {},
       debug: (msg) => console.log(msg),
       onConnect: async () => {
-        id.current = await getUserId(connectedClient);
+        setId(await getUserId(connectedClient));
         client.current = connectedClient;
 
         connectedClient.subscribe('/user/queue/signal/join', (msg: IMessage) => {
@@ -123,7 +141,7 @@ const useSignalSocket = () => {
   };
 
   const sendJoin = (roomId: string) => {
-    if (!client.current || !id.current) {
+    if (!client.current || !id) {
       return;
     }
 
@@ -131,10 +149,11 @@ const useSignalSocket = () => {
       destination: '/app/signal/join',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        userId: id.current,
+        userId: id,
         roomId,
       }),
     });
+    currentRoomId.current = roomId;
   };
 
   return {
