@@ -60,6 +60,20 @@ const useWebRTC = () => {
     roomId.current = null;
   };
 
+  const createRoom = async () => {
+    const response = await fetch('http://localhost:8080/api/room/create', {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      throw new Error('api error');
+    }
+
+    const { roomId: id } = (await response.json()) as { roomId: string };
+
+    joinRoom(id);
+  };
+
   const leaveRoom = () => {
     if (!roomId.current) {
       return;
@@ -76,7 +90,7 @@ const useWebRTC = () => {
     disconnectSocket();
   };
 
-  return { joinSession, joinRoom, leaveRoom, leaveSession };
+  return { joinSession, joinRoom, leaveRoom, createRoom, leaveSession };
 };
 
 export default useWebRTC;
