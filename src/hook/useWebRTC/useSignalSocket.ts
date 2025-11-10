@@ -6,9 +6,10 @@ import { useRef } from 'react';
 import {
   IcePayloadType,
   JoinResponseType,
-  OfferPayloadType,
+  SdpPayloadType,
   RegisterResponseType,
   ParticipantsSignalType,
+  SdpResponseType,
 } from '@/type/signalType';
 
 const useSignalSocket = () => {
@@ -34,19 +35,19 @@ const useSignalSocket = () => {
     });
   };
 
-  const offerSDP = (targetId: string, sdp: RTCSessionDescriptionInit) => {
+  const sendSdp = (destination: string, targetId: string, sdp: RTCSessionDescriptionInit) => {
     if (!client.current || !id.current) {
       return;
     }
 
-    const payload: OfferPayloadType = {
+    const payload: SdpPayloadType = {
       fromUserId: id.current,
       toUserId: targetId,
-      fromUserSDP: sdp,
+      fromUserSdp: sdp,
     };
 
     client.current.publish({
-      destination: '/app/signal/offer',
+      destination,
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(payload),
     });
@@ -94,24 +95,24 @@ const useSignalSocket = () => {
             participantsData.current.set(participant.userId, participant);
             createPeerConnection(participant.userId, offerIceCandidate);
             const sdp = await getSdp(participant.userId);
-            offerSDP(participant.userId, sdp);
+            sendSdp('/app/signal/offer', participant.userId, sdp);
           });
         });
 
         connectedClient.subscribe('/user/queue/signal/offer', async (msg: IMessage) => {
-          // createPeerConnection(userId, offerIceCandidate);
-          // const sdp = await getSdp(userId);
-          // await registerRemoteSdp()
-          /* createPc, sdp 가져오고, register sdp */
-          /* 가져온 sdp answer 전송 */
+          const { fromUserId, fromUserSdp } = parseMessage<SdpResponseType>(msg);
+          createPeerConnection(fromUserId, offerIceCandidate);
+          await registerRemoteSdp(fromUserId, fromUserSdp);
+          const sdp = await getSdp(fromUserId);
+          sendSdp('/app/signal/answer', fromUserId, sdp);
         });
 
-        connectedClient.subscribe('/user/queue/signal/answer', async(msg: Imessage) => {
-          /* 받은 sdp register */
-          /* ice 생성, ice 전송 => onIcecandiate로 */
+        connectedClient.subscribe('/user/queue/signal/answer', async (msg: IMessage) => {
+          const { fromUserId, fromUserSdp } = parseMessage<SdpResponseType>(msg);
+          await registerRemoteSdp(fromUserId, fromUserSdp);
         });
 
-        connectedClient.subscribe('/user/queue/signal/ice', async(msg: Imessage) => {
+        connectedClient.subscribe('/user/queue/signal/ice', async (msg: IMessage) => {
           /* 받은 ice 등록 */
         });
       },

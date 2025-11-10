@@ -22,10 +22,16 @@ export interface JoinResponseType {
   participants: ParticipantsSignalType[];
 }
 
-export interface OfferPayloadType {
+export interface SdpPayloadType {
   fromUserId: string;
   toUserId: string;
-  fromUserSDP: RTCSessionDescriptionInit;
+  fromUserSdp: RTCSessionDescriptionInit;
+}
+
+export interface SdpResponseType {
+  type: ResponseType;
+  fromUserId: string;
+  fromUserSdp: RTCSessionDescription;
 }
 
 export interface IcePayloadType {
