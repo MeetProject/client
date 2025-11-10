@@ -1,6 +1,6 @@
 'use client';
 
-import useSignalSocket from '@/hook/useSignalSocket';
+import useSignalSocket from '@/hook/useWebRTC/useSignalSocket';
 
 export default function TestPage() {
   const { connect, sendJoin, offerSDP } = useSignalSocket();

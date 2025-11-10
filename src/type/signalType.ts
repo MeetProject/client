@@ -25,5 +25,5 @@ export interface JoinResponseType {
 export interface OfferPayloadType {
   fromUserId: string;
   toUserId: string;
-  fromUserSDP: string;
+  fromUserSDP: RTCSessionDescription;
 }

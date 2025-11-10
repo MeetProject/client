@@ -5,7 +5,11 @@ import SockJS from 'sockjs-client';
 import { useRef } from 'react';
 import { JoinResponseType, OfferPayloadType, ParticipantsSignalType, RegisterResponseType } from '@/type/signalType';
 
-const useSignalSocket = () => {
+interface UseSignalProps {
+  getSdp: (targetId: string) => Promise<RTCSessionDescriptionInit>;
+}
+
+const useSignalSocket = ({ getSdp }: UseSignalProps) => {
   const client = useRef<Client | null>(null);
   const id = useRef<string | null>(null);
 
@@ -43,8 +47,9 @@ const useSignalSocket = () => {
           console.log(participants.current);
         });
 
-        connectedClient.subscribe('/user/queue/signal/offer', (msg: IMessage) => {
-          parseMessage(msg);
+        connectedClient.subscribe('/user/queue/signal/offer', async (msg: IMessage) => {
+          /* answer에 대한 publish 추가 */
+          /* get sdp */
         });
       },
     });
