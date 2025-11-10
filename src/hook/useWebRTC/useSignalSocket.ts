@@ -17,12 +17,11 @@ import { useShallow } from 'zustand/react/shallow';
 
 interface UseSignalSocketProps {
   onAddParticipantData: (userId: string, user: ParticipantDataType) => void;
-  onDeleteParticipant: (targetId: string | null) => void;
+  onDeleteParticipant: (targetId: string) => void;
 }
 
 const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSignalSocketProps) => {
   const client = useRef<Client | null>(null);
-  const roomId = useRef<string | null>(null);
 
   const { name, color, id, setId } = useUserInfoStore(
     useShallow((state) => ({
@@ -144,7 +143,7 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
     connectedClient.activate();
   };
 
-  const sendJoin = (joinRoomId: string) => {
+  const sendJoin = (roomId: string) => {
     if (!client.current || !id) {
       return;
     }
@@ -154,20 +153,18 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         userId: id,
-        roomId: roomId.current,
+        roomId,
       }),
     });
 
-    client.current.subscribe(`/topic/room/${joinRoomId}/leave`, (msg: IMessage) => {
+    client.current.subscribe(`/topic/room/${roomId}/leave`, (msg: IMessage) => {
       const { fromUserId } = parseMessage<LeaveResponseType>(msg);
       onDeleteParticipant(fromUserId);
     });
-
-    roomId.current = joinRoomId;
   };
 
-  const sendLeave = () => {
-    if (!client.current || !id || !roomId.current) {
+  const sendLeave = (roomId: string) => {
+    if (!client.current || !id) {
       return;
     }
 
@@ -176,11 +173,9 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         userId: id,
-        roomId: roomId.current,
+        roomId,
       }),
     });
-
-    onDeleteParticipant(null);
   };
 
   return {

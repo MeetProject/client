@@ -8,6 +8,7 @@ import useSignalSocket from './useSignalSocket';
 const useWebRTC = () => {
   const participantsMediaStream = useRef<Map<string, MediaStream>>(new Map());
   const participantsUserData = useRef<Map<string, ParticipantDataType>>(new Map());
+  const roomId = useRef<string | null>(null);
 
   const { createPeerConnection, getSdp, registerRemoteSdp, registerRemoteIce, disconnectPeerConection } =
     usePeerConnection();
@@ -16,13 +17,8 @@ const useWebRTC = () => {
     participantsUserData.current.set(userId, user);
   };
 
-  const deleteParticipant = (targetId: string | null) => {
+  const deleteParticipant = (targetId: string) => {
     disconnectPeerConection(targetId);
-    if (!targetId) {
-      participantsUserData.current.clear();
-      participantsMediaStream.current.clear();
-      return;
-    }
     participantsUserData.current.delete(targetId);
     participantsMediaStream.current.delete(targetId);
   };
@@ -46,7 +42,25 @@ const useWebRTC = () => {
     );
   };
 
-  return { joinSession, sendJoin, sendLeave };
+  const joinRoom = (targetRoomId: string) => {
+    roomId.current = targetRoomId;
+    sendJoin(targetRoomId);
+  };
+
+  const leaveRoom = () => {
+    if (!roomId.current) {
+      return;
+    }
+
+    sendLeave(roomId.current);
+    disconnectPeerConection();
+
+    participantsUserData.current.clear();
+    participantsMediaStream.current.clear();
+    roomId.current = null;
+  };
+
+  return { joinSession, joinRoom, leaveRoom };
 };
 
 export default useWebRTC;

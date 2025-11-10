@@ -78,7 +78,7 @@ const usePeerConnection = () => {
     await peerConnection.addIceCandidate(new RTCIceCandidate(targetIce));
   };
 
-  const disconnectPeerConection = (targetId: string | null) => {
+  const disconnectPeerConection = (targetId?: string) => {
     if (!targetId) {
       peerConnections.current.forEach((peerConnection) => {
         peerConnection.getSenders().forEach((sender) => sender.track?.stop());
