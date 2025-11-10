@@ -3,17 +3,19 @@
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useRef } from 'react';
-import { JoinResponseType, OfferPayloadType, ParticipantsSignalType, RegisterResponseType } from '@/type/signalType';
+import {
+  IcePayloadType,
+  JoinResponseType,
+  OfferPayloadType,
+  RegisterResponseType,
+  ParticipantsSignalType,
+} from '@/type/signalType';
 
-interface UseSignalProps {
-  getSdp: (targetId: string) => Promise<RTCSessionDescriptionInit>;
-}
-
-const useSignalSocket = ({ getSdp }: UseSignalProps) => {
+const useSignalSocket = () => {
   const client = useRef<Client | null>(null);
   const id = useRef<string | null>(null);
 
-  const participants = useRef<ParticipantsSignalType[] | null>(null);
+  const participantsData = useRef<Map<string, ParticipantsSignalType>>(new Map());
 
   const parseMessage = <T>(msg: IMessage) => {
     const data = JSON.parse(msg.body) as T;
@@ -32,7 +34,50 @@ const useSignalSocket = ({ getSdp }: UseSignalProps) => {
     });
   };
 
-  const connect = () => {
+  const offerSDP = (targetId: string, sdp: RTCSessionDescriptionInit) => {
+    if (!client.current || !id.current) {
+      return;
+    }
+
+    const payload: OfferPayloadType = {
+      fromUserId: id.current,
+      toUserId: targetId,
+      fromUserSDP: sdp,
+    };
+
+    client.current.publish({
+      destination: '/app/signal/offer',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  };
+
+  const offerIceCandidate = (targetId: string, candidate: RTCIceCandidate) => {
+    if (!client.current || !id.current) {
+      return;
+    }
+
+    const payload: IcePayloadType = {
+      fromUserId: id.current,
+      toUserId: targetId,
+      fromCandidate: candidate,
+    };
+
+    client.current.publish({
+      destination: '/app/signal/ice',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  };
+
+  const connectSocket = (
+    createPeerConnection: (
+      targetId: string,
+      onIceCandidate: (targetId: string, candidate: RTCIceCandidate) => void,
+    ) => void,
+    getSdp: (targetId: string) => Promise<RTCSessionDescriptionInit>,
+    registerRemoteSdp: (targetId: string, targetSdp: RTCSessionDescription) => Promise<void>,
+  ) => {
     const connectedClient = new Client({
       brokerURL: undefined,
       webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
@@ -43,13 +88,31 @@ const useSignalSocket = ({ getSdp }: UseSignalProps) => {
         client.current = connectedClient;
 
         connectedClient.subscribe('/user/queue/signal/join', (msg: IMessage) => {
-          participants.current = parseMessage<JoinResponseType>(msg).participants;
-          console.log(participants.current);
+          const { participants } = parseMessage<JoinResponseType>(msg);
+
+          participants.forEach(async (participant) => {
+            participantsData.current.set(participant.userId, participant);
+            createPeerConnection(participant.userId, offerIceCandidate);
+            const sdp = await getSdp(participant.userId);
+            offerSDP(participant.userId, sdp);
+          });
         });
 
         connectedClient.subscribe('/user/queue/signal/offer', async (msg: IMessage) => {
-          /* answer에 대한 publish 추가 */
-          /* get sdp */
+          // createPeerConnection(userId, offerIceCandidate);
+          // const sdp = await getSdp(userId);
+          // await registerRemoteSdp()
+          /* createPc, sdp 가져오고, register sdp */
+          /* 가져온 sdp answer 전송 */
+        });
+
+        connectedClient.subscribe('/user/queue/signal/answer', async(msg: Imessage) => {
+          /* 받은 sdp register */
+          /* ice 생성, ice 전송 => onIcecandiate로 */
+        });
+
+        connectedClient.subscribe('/user/queue/signal/ice', async(msg: Imessage) => {
+          /* 받은 ice 등록 */
         });
       },
     });
@@ -61,8 +124,6 @@ const useSignalSocket = ({ getSdp }: UseSignalProps) => {
       return;
     }
 
-    participants.current = null;
-
     client.current.publish({
       destination: '/app/signal/join',
       headers: { 'content-type': 'application/json' },
@@ -73,26 +134,8 @@ const useSignalSocket = ({ getSdp }: UseSignalProps) => {
     });
   };
 
-  const offerSDP = (targetId: string, sdp: string) => {
-    if (!client.current || !id.current || !targetId) {
-      return;
-    }
-
-    const payload: OfferPayloadType = {
-      fromUserId: id.current,
-      toUserId: id.current /* 상대 id로 변경 예정 */,
-      fromUserSDP: sdp,
-    };
-
-    client.current.publish({
-      destination: '/app/signal/offer',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-  };
-
   return {
-    connect,
+    connectSocket,
     sendJoin,
     offerSDP,
   };
