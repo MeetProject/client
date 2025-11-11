@@ -27,18 +27,18 @@ export interface JoinResponseType extends SignalResponseType {
 export interface SdpPayloadType {
   fromUserId: string;
   toUserId: string;
-  fromUserSdp: RTCSessionDescriptionInit;
+  fromUserSDP: string;
 }
 
 export interface SdpResponseType extends SignalResponseType {
   fromUserId: string;
-  fromUserSdp: RTCSessionDescription;
+  fromUserSDP: string;
 }
 
 export interface IcePayloadType {
   fromUserId: string;
   toUserId: string;
-  fromCandidate: RTCIceCandidate;
+  fromCandidate: string;
 }
 
 export interface IceResponseType extends SignalResponseType {

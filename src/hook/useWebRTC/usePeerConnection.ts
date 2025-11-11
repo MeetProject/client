@@ -9,8 +9,14 @@ interface UsePeerConnectionProps {
   onTrack: (targetId: string, stream: MediaStream) => void;
 }
 
+interface PeerConnectionData {
+  pc: RTCPeerConnection;
+  iceQueue: RTCIceCandidateInit[];
+  remoteSet: boolean;
+}
+
 const usePeerConnection = ({ onTrack }: UsePeerConnectionProps) => {
-  const peerConnections = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const peerConnections = useRef<Map<string, PeerConnectionData>>(new Map());
 
   const { stream } = useDevice();
   const { deviceEnable } = useDeviceStore(
@@ -27,105 +33,131 @@ const usePeerConnection = ({ onTrack }: UsePeerConnectionProps) => {
       return;
     }
 
-    const peerConnection = new RTCPeerConnection({
+    const pc = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
     });
 
-    peerConnection.onicecandidate = (event) => {
+    const data = {
+      pc,
+      iceQueue: [],
+      remoteSet: false,
+    };
+
+    pc.onicecandidate = (event) => {
       if (event.candidate) {
         onIceCandidate(targetId, event.candidate);
       }
     };
 
-    peerConnection.ontrack = (event) => {
+    pc.ontrack = (event) => {
+      console.log('연결 완료');
       const remoteStream = event.streams[0];
+      const audilEl = document.createElement('audio');
+      audilEl.srcObject = remoteStream;
+      audilEl.autoplay = true;
+      document.body.appendChild(audilEl);
+      console.log(remoteStream);
       onTrack(targetId, remoteStream);
     };
 
     if (stream) {
-      stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
     }
 
-    peerConnections.current.set(targetId, peerConnection);
+    peerConnections.current.set(targetId, data);
   };
 
   const createOfferSdp = async (targetId: string): Promise<RTCSessionDescriptionInit> => {
     const peerConnection = peerConnections.current.get(targetId);
 
     if (!peerConnection) {
-      throw new Error('해당 id의 peerConnection이 없음');
+      return;
     }
 
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-
+    const offer = await peerConnection.pc.createOffer();
     return offer;
   };
 
-  const registerRemoteSdp = async (targetId: string, targetSdp: RTCSessionDescription) => {
+  const createAnswerSdp = async (targetId: string): Promise<RTCSessionDescriptionInit> => {
     const peerConnection = peerConnections.current.get(targetId);
+
     if (!peerConnection) {
-      throw new Error('해당 id의 peerConnection이 없음');
+      return;
     }
 
-    await peerConnection.setRemoteDescription(targetSdp);
+    const answer = await peerConnection.pc.createAnswer();
+    return answer;
   };
 
-  const registerRemoteIce = async (targetId: string, targetIce: RTCLocalIceCandidateInit) => {
-    const peerConnection = peerConnections.current.get(targetId);
+  const registerOfferSdp = async (targetId: string, sdp: RTCSessionDescriptionInit) => {
+    const data = peerConnections.current.get(targetId);
+    if (!data) throw new Error('해당 id의 peerConnection이 없음');
 
-    if (!peerConnection) {
-      throw new Error('해당 id의 peerConnection이 없음');
+    await data.pc.setLocalDescription(sdp);
+  };
+
+  const registerAnswerSdp = async (targetId: string, targetSdp: RTCSessionDescriptionInit) => {
+    const data = peerConnections.current.get(targetId);
+    if (!data) throw new Error('해당 id의 peerConnection이 없음');
+
+    await data.pc.setRemoteDescription(targetSdp);
+    data.remoteSet = true;
+
+    data.iceQueue.forEach(async (ice) => {
+      await data.pc.addIceCandidate(new RTCIceCandidate(ice));
+    });
+    data.iceQueue = [];
+  };
+
+  const registerRemoteIce = async (targetId: string, targetIce: RTCIceCandidateInit) => {
+    const data = peerConnections.current.get(targetId);
+    if (!data) return;
+
+    if (!data.remoteSet) {
+      data.iceQueue.push(targetIce);
+    } else {
+      await data.pc.addIceCandidate(new RTCIceCandidate(targetIce));
     }
-
-    await peerConnection.addIceCandidate(new RTCIceCandidate(targetIce));
   };
 
   const disconnectPeerConection = (targetId: string) => {
-    const peerConnection = peerConnections.current.get(targetId);
-    peerConnection?.getSenders().forEach((sender) => sender.track?.stop());
-    peerConnection?.close();
+    const data = peerConnections.current.get(targetId);
+    if (!data) return;
 
+    data.pc.getSenders().forEach((sender) => sender.track?.stop());
+    data.pc.close();
     peerConnections.current.delete(targetId);
   };
 
   const disconnectAllPeerConnection = () => {
-    peerConnections.current.forEach((peerConnection) => {
-      peerConnection.getSenders().forEach((sender) => sender.track?.stop());
-      peerConnection.close();
+    peerConnections.current.forEach((data) => {
+      data.pc.getSenders().forEach((sender) => sender.track?.stop());
+      data.pc.close();
     });
     peerConnections.current.clear();
   };
 
   useEffect(() => {
-    if (!stream || peerConnections.current.size === 0) {
-      return;
-    }
+    if (!stream || peerConnections.current.size === 0) return;
 
-    peerConnections.current.forEach((peerConnection) => {
-      peerConnection.getSenders().forEach((sender) => {
+    peerConnections.current.forEach((data) => {
+      data.pc.getSenders().forEach((sender) => {
         if (sender.track?.kind === 'video') {
           const newTrack = stream.getVideoTracks()[0];
-          if (newTrack) {
-            sender.replaceTrack(newTrack);
-          }
+          if (newTrack) sender.replaceTrack(newTrack);
         } else if (sender.track?.kind === 'audio') {
           const newTrack = stream.getAudioTracks()[0];
-          if (newTrack) {
-            sender.replaceTrack(newTrack);
-          }
+          if (newTrack) sender.replaceTrack(newTrack);
         }
       });
     });
   }, [stream]);
 
   useEffect(() => {
-    if (peerConnections.current.size === 0) {
-      return;
-    }
+    if (peerConnections.current.size === 0) return;
 
-    peerConnections.current.forEach((pc) => {
-      pc.getSenders().forEach((sender) => {
+    peerConnections.current.forEach((data) => {
+      data.pc.getSenders().forEach((sender) => {
         if (sender.track?.kind === 'video') {
           sender.track.enabled = deviceEnable.video;
         } else if (sender.track?.kind === 'audio') {
@@ -138,7 +170,9 @@ const usePeerConnection = ({ onTrack }: UsePeerConnectionProps) => {
   return {
     createPeerConnection,
     createOfferSdp,
-    registerRemoteSdp,
+    createAnswerSdp,
+    registerOfferSdp,
+    registerAnswerSdp,
     registerRemoteIce,
     peerConnections,
     disconnectPeerConection,

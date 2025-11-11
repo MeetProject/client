@@ -24,7 +24,7 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
   const client = useRef<Client | null>(null);
   const subscriptions = useRef<Map<string, StompSubscription>>(new Map());
 
-  const { name, color, id, setId } = useUserInfoStore(
+  const { name, color, setId } = useUserInfoStore(
     useShallow((state) => ({
       name: state.name,
       color: state.color,
@@ -58,14 +58,16 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
   };
 
   const sendSdp = (destination: string, targetId: string, sdp: RTCSessionDescriptionInit) => {
-    if (!client.current || !id) {
+    if (!client.current || !useUserInfoStore.getState().id) {
       return;
     }
 
+    console.log('sending sdp');
+
     const payload: SdpPayloadType = {
-      fromUserId: id,
+      fromUserId: useUserInfoStore.getState().id,
       toUserId: targetId,
-      fromUserSdp: sdp,
+      fromUserSDP: JSON.stringify(sdp),
     };
 
     client.current.publish({
@@ -76,14 +78,16 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
   };
 
   const offerIceCandidate = (targetId: string, candidate: RTCIceCandidate) => {
-    if (!client.current || !id) {
+    if (!client.current || !useUserInfoStore.getState().id) {
       return;
     }
 
+    console.log('sending ice');
+
     const payload: IcePayloadType = {
-      fromUserId: id,
+      fromUserId: useUserInfoStore.getState().id,
       toUserId: targetId,
-      fromCandidate: candidate,
+      fromCandidate: JSON.stringify(candidate),
     };
 
     client.current.publish({
@@ -99,7 +103,9 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
       onIceCandidate: (targetId: string, candidate: RTCIceCandidate) => void,
     ) => void,
     createOfferSdp: (targetId: string) => Promise<RTCSessionDescriptionInit>,
-    registerRemoteSdp: (targetId: string, targetSdp: RTCSessionDescription) => Promise<void>,
+    createAnswerSdp: (targetId: string) => Promise<RTCSessionDescriptionInit>,
+    registerAnswerSdp: (targetId: string, targetSdp: RTCSessionDescriptionInit) => Promise<void>,
+    registerOfferSdp: (targetId: string, targetSdp: RTCSessionDescriptionInit) => Promise<void>,
     registerRemoteIce: (targetId: string, targetIce: RTCLocalIceCandidateInit) => Promise<void>,
   ) => {
     const connectedClient = new Client({
@@ -108,7 +114,8 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
       connectHeaders: {},
       debug: (msg) => console.log(msg),
       onConnect: async () => {
-        setId(await getUserId(connectedClient));
+        const userId = await getUserId(connectedClient);
+        setId(userId);
         client.current = connectedClient;
 
         const joinSub = connectedClient.subscribe('/user/queue/signal/join', (msg: IMessage) => {
@@ -118,29 +125,34 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
             onAddParticipantData(participant.userId, participant);
             createPeerConnection(participant.userId, offerIceCandidate);
             const sdp = await createOfferSdp(participant.userId);
+            await registerOfferSdp(participant.userId, sdp);
             sendSdp('/app/signal/offer', participant.userId, sdp);
           });
         });
         subscriptions.current.set('join', joinSub);
 
         const offerSub = connectedClient.subscribe('/user/queue/signal/offer', async (msg: IMessage) => {
-          const { fromUserId, fromUserSdp } = parseMessage<SdpResponseType>(msg);
+          const { fromUserId, fromUserSDP } = parseMessage<SdpResponseType>(msg);
+          const fromSDP = JSON.parse(fromUserSDP) as RTCSessionDescriptionInit;
           createPeerConnection(fromUserId, offerIceCandidate);
-          await registerRemoteSdp(fromUserId, fromUserSdp);
-          const sdp = await createOfferSdp(fromUserId);
+          await registerAnswerSdp(fromUserId, fromSDP);
+          const sdp = await createAnswerSdp(fromUserId);
+          await registerOfferSdp(fromUserId, sdp);
           sendSdp('/app/signal/answer', fromUserId, sdp);
         });
         subscriptions.current.set('offer', offerSub);
 
         const answerSub = connectedClient.subscribe('/user/queue/signal/answer', async (msg: IMessage) => {
-          const { fromUserId, fromUserSdp } = parseMessage<SdpResponseType>(msg);
-          await registerRemoteSdp(fromUserId, fromUserSdp);
+          const { fromUserId, fromUserSDP } = parseMessage<SdpResponseType>(msg);
+          const sdp = JSON.parse(fromUserSDP) as RTCSessionDescription;
+          await registerAnswerSdp(fromUserId, sdp);
         });
         subscriptions.current.set('answer', answerSub);
 
         const iceSub = connectedClient.subscribe('/user/queue/signal/ice', async (msg: IMessage) => {
           const { fromUserId, fromCandidate } = parseMessage<IcePayloadType>(msg);
-          await registerRemoteIce(fromUserId, fromCandidate);
+          const candidate = JSON.parse(fromCandidate) as RTCLocalIceCandidateInit;
+          await registerRemoteIce(fromUserId, candidate);
         });
         subscriptions.current.set('ice', iceSub);
       },
@@ -149,7 +161,7 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
   };
 
   const sendJoin = (roomId: string) => {
-    if (!client.current || !id) {
+    if (!client.current || !useUserInfoStore.getState().id) {
       return;
     }
 
@@ -157,7 +169,7 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
       destination: '/app/signal/join',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        userId: id,
+        userId: useUserInfoStore.getState().id,
         roomId,
       }),
     });
@@ -170,7 +182,7 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
   };
 
   const sendLeave = (roomId: string) => {
-    if (!client.current || !id) {
+    if (!client.current || !useUserInfoStore.getState().id) {
       return;
     }
 
@@ -178,7 +190,7 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
       destination: '/app/signal/leave',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        userId: id,
+        userId: useUserInfoStore.getState().id,
         roomId,
       }),
     });

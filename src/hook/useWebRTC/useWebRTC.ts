@@ -1,23 +1,29 @@
 'use client';
 
-import { useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ParticipantDataType } from '@/type/signalType';
 import usePeerConnection from './usePeerConnection';
 import useSignalSocket from './useSignalSocket';
 
 const useWebRTC = () => {
-  const participantsMediaStream = useRef<Map<string, MediaStream>>(new Map());
+  const [participantsMediaStream, setParticipantsMediaStream] = useState<Map<string, MediaStream>>(new Map());
   const participantsUserData = useRef<Map<string, ParticipantDataType>>(new Map());
   const roomId = useRef<string | null>(null);
 
-  const onTrack = (targetId: string, stream: MediaStream) => {
-    participantsMediaStream.current.set(targetId, stream);
-  };
+  const onTrack = useCallback((targetId: string, stream: MediaStream) => {
+    setParticipantsMediaStream((prev) => {
+      const map = new Map(prev);
+      map.set(targetId, stream);
+      return map;
+    });
+  }, []);
 
   const {
     createPeerConnection,
     createOfferSdp,
-    registerRemoteSdp,
+    createAnswerSdp,
+    registerAnswerSdp,
+    registerOfferSdp,
     registerRemoteIce,
     disconnectPeerConection,
     disconnectAllPeerConnection,
@@ -30,7 +36,11 @@ const useWebRTC = () => {
   const deleteParticipant = (targetId: string) => {
     disconnectPeerConection(targetId);
     participantsUserData.current.delete(targetId);
-    participantsMediaStream.current.delete(targetId);
+    setParticipantsMediaStream((prev) => {
+      const map = new Map(prev);
+      prev.delete(targetId);
+      return map;
+    });
   };
 
   const { connectSocket, sendJoin, sendLeave, disconnectSocket } = useSignalSocket({
@@ -43,7 +53,9 @@ const useWebRTC = () => {
       (targetId: string, onIceCandidate: (targetId: string, candidate: RTCIceCandidate) => void) =>
         createPeerConnection(targetId, onIceCandidate),
       createOfferSdp,
-      registerRemoteSdp,
+      createAnswerSdp,
+      registerAnswerSdp,
+      registerOfferSdp,
       registerRemoteIce,
     );
   };
@@ -56,7 +68,7 @@ const useWebRTC = () => {
   const clearSession = () => {
     disconnectAllPeerConnection();
     participantsUserData.current.clear();
-    participantsMediaStream.current.clear();
+    setParticipantsMediaStream(new Map());
     roomId.current = null;
   };
 
@@ -70,6 +82,7 @@ const useWebRTC = () => {
     }
 
     const { roomId: id } = (await response.json()) as { roomId: string };
+    console.log(id);
 
     joinRoom(id);
   };
@@ -90,7 +103,7 @@ const useWebRTC = () => {
     disconnectSocket();
   };
 
-  return { joinSession, joinRoom, leaveRoom, createRoom, leaveSession };
+  return { joinSession, joinRoom, leaveRoom, createRoom, leaveSession, participantsMediaStream, participantsUserData };
 };
 
 export default useWebRTC;

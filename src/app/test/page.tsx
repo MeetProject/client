@@ -1,27 +1,48 @@
 'use client';
 
-import useSignalSocket from '@/hook/useWebRTC/useSignalSocket';
+import useWebRTC from '@/hook/useWebRTC/useWebRTC';
+import { useState } from 'react';
+import VideoPlayer from './VideoPlayer';
 
 export default function TestPage() {
-  const { connect, sendJoin, offerSDP } = useSignalSocket();
+  const [value, setValue] = useState('');
+  const { joinSession, createRoom, joinRoom, participantsMediaStream } = useWebRTC();
   const handleConnectButton = () => {
-    connect();
+    joinSession();
+  };
+
+  const handleCreateRoom = () => {
+    createRoom();
   };
 
   const handleJoinButton = async () => {
-    sendJoin('test');
+    joinRoom(value);
   };
+
+  console.log(participantsMediaStream);
+
   return (
-    <div className='flex flex-1 flex-col gap-2'>
-      <button type='button' onClick={handleConnectButton}>
-        소켓 연결하기
-      </button>
-      <button type='button' onClick={handleJoinButton}>
-        join 보내기
-      </button>
-      <button type='button' onClick={() => offerSDP('test', 'test')}>
-        offer 보내기
-      </button>
+    <div>
+      <div className='flex flex-1 flex-col gap-2 border'>
+        <button type='button' onClick={handleConnectButton}>
+          소켓 연결하기
+        </button>
+        <button type='button' onClick={handleCreateRoom}>
+          방 생성하기
+        </button>
+        <div className='flex flex-1 flex-row justify-center gap-2'>
+          <input className='w-60 border' value={value} onChange={(e) => setValue(e.target.value)} />
+          <button type='button' onClick={handleJoinButton}>
+            참여하기
+          </button>
+        </div>
+      </div>
+      <div>
+        {Array.from(participantsMediaStream.entries()).map(([userId, stream]) => (
+          <VideoPlayer key={userId} stream={stream} />
+        ))}
+        <video />
+      </div>
     </div>
   );
 }
