@@ -38,6 +38,8 @@ const useDevice = (isInitialUpdate = true) => {
   const [streamStatus, setStreamStatus] = useState<StreamStatusType>(null);
   const [isUpdateStream, setIsUpdateStream] = useState<boolean>(isInitialUpdate);
 
+  const [screenStream, setScrenStream] = useState<MediaStream | null>(null);
+
   const { updateDevice } = useCurrentDevice();
 
   const handleAudioInputChange = (value: Record<'id' | 'name', string>) => {
@@ -111,6 +113,31 @@ const useDevice = (isInitialUpdate = true) => {
       return 'failed';
     }
   }, [audioInput, videoInput, updatePermission]);
+
+  const getScreenStream = useCallback(
+    async (audio: boolean) => {
+      if (screenStream) {
+        return screenStream;
+      }
+
+      try {
+        const mediaStream = await navigator.mediaDevices.getDisplayMedia({ audio });
+        setScrenStream(mediaStream);
+        return mediaStream;
+      } catch {
+        throw new Error('화면 스트림 가져오는 데 실패하였습니다');
+      }
+    },
+    [screenStream],
+  );
+
+  const clearScreenStream = useCallback(() => {
+    if (!screenStream) {
+      return;
+    }
+    screenStream.getTracks().forEach((track) => track.stop());
+    setScrenStream(null);
+  }, [screenStream]);
 
   const setTrack = useCallback(async () => {
     if (streamStatus) {
@@ -231,6 +258,7 @@ const useDevice = (isInitialUpdate = true) => {
   return {
     stream,
     streamStatus,
+    screenStream,
     handleAudioInputChange,
     handleAudioOutputChange,
     handleVideoInputChange,
@@ -238,6 +266,8 @@ const useDevice = (isInitialUpdate = true) => {
     toggleVideoInput,
     handleUpdateStream,
     handleStreamClear,
+    clearScreenStream,
+    getScreenStream,
   };
 };
 

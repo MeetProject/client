@@ -1,21 +1,40 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
-import { ParticipantDataType } from '@/type/signalType';
+import { ParticipantDataType, StreamType } from '@/type/signalType';
 import usePeerConnection from './usePeerConnection';
 import useSignalSocket from './useSignalSocket';
+import useDevice from '../useDevice';
 
 const useWebRTC = () => {
   const [participantsMediaStream, setParticipantsMediaStream] = useState<Map<string, MediaStream>>(new Map());
+  const [screenSharingMediaStream, setScreenSharingMediaStream] = useState<MediaStream | null>(null);
   const participantsUserData = useRef<Map<string, ParticipantDataType>>(new Map());
   const roomId = useRef<string | null>(null);
 
-  const onTrack = useCallback((targetId: string, stream: MediaStream) => {
-    setParticipantsMediaStream((prev) => {
-      const map = new Map(prev);
-      map.set(targetId, stream);
-      return map;
-    });
+  const { stream, getScreenStream, clearScreenStream } = useDevice();
+
+  const stopShareScreenRef = useRef<() => void>();
+
+  const handleAddParticipantUserData = (userId: string, user: ParticipantDataType) => {
+    participantsUserData.current.set(userId, user);
+  };
+
+  const onTrack = useCallback(async (targetId: string, targetStream: MediaStream, streamType: StreamType) => {
+    if (streamType === 'USER') {
+      setParticipantsMediaStream((prev) => {
+        const map = new Map(prev);
+        map.set(targetId, targetStream);
+        return map;
+      });
+    }
+    if (streamType === 'SCREEN') {
+      setScreenSharingMediaStream(targetStream);
+    }
+  }, []);
+
+  const onDisplayShareEnd = useCallback(() => {
+    stopShareScreenRef.current?.();
   }, []);
 
   const {
@@ -25,85 +44,127 @@ const useWebRTC = () => {
     registerAnswerSdp,
     registerOfferSdp,
     registerRemoteIce,
-    disconnectPeerConection,
+    disconnectPeerConnection,
     disconnectAllPeerConnection,
-  } = usePeerConnection({ onTrack });
+    disconnectAllScreenPeerConnection,
+  } = usePeerConnection({ stream, getScreenStream, onTrack, onDisplayShareEnd });
 
-  const handleAddParticipantUserData = (userId: string, user: ParticipantDataType) => {
-    participantsUserData.current.set(userId, user);
-  };
+  const deleteParticipant = useCallback(
+    (targetId: string, streamType: StreamType) => {
+      disconnectPeerConnection(targetId, streamType);
+      if (streamType === 'USER') {
+        participantsUserData.current.delete(targetId);
+        setParticipantsMediaStream((prev) => {
+          const newMap = new Map(prev);
+          newMap.delete(targetId);
+          return newMap;
+        });
+        return;
+      }
 
-  const deleteParticipant = (targetId: string) => {
-    disconnectPeerConection(targetId);
-    participantsUserData.current.delete(targetId);
-    setParticipantsMediaStream((prev) => {
-      const map = new Map(prev);
-      prev.delete(targetId);
-      return map;
-    });
-  };
+      setScreenSharingMediaStream(null);
+    },
+    [disconnectPeerConnection],
+  );
 
-  const { connectSocket, sendJoin, sendLeave, disconnectSocket } = useSignalSocket({
+  const {
+    connectSocket,
+    sendJoin,
+    sendLeave,
+    disconnectSocket,
+    shareScreen: sharingScreen,
+  } = useSignalSocket({
     onAddParticipantData: handleAddParticipantUserData,
     onDeleteParticipant: deleteParticipant,
   });
 
-  const joinSession = () => {
+  const stopShareScreen = useCallback(() => {
+    if (!roomId.current || !screenSharingMediaStream) return;
+    sendLeave(roomId.current, 'SCREEN');
+    disconnectAllScreenPeerConnection();
+    setScreenSharingMediaStream(null);
+    clearScreenStream();
+  }, [screenSharingMediaStream, sendLeave, disconnectAllScreenPeerConnection, clearScreenStream]);
+
+  stopShareScreenRef.current = stopShareScreen;
+
+  const joinSession = useCallback(() => {
     connectSocket(
-      (targetId: string, onIceCandidate: (targetId: string, candidate: RTCIceCandidate) => void) =>
-        createPeerConnection(targetId, onIceCandidate),
+      (
+        targetId: string,
+        onIceCandidate: (targetId: string, candidate: RTCIceCandidate, streamType: StreamType) => void,
+        streamType: 'SCREEN' | 'USER',
+        isScreenSender = false,
+      ) => createPeerConnection(targetId, onIceCandidate, streamType, isScreenSender),
       createOfferSdp,
       createAnswerSdp,
       registerAnswerSdp,
       registerOfferSdp,
       registerRemoteIce,
     );
-  };
+  }, [
+    connectSocket,
+    createPeerConnection,
+    createOfferSdp,
+    createAnswerSdp,
+    registerAnswerSdp,
+    registerOfferSdp,
+    registerRemoteIce,
+  ]);
 
-  const joinRoom = (targetRoomId: string) => {
-    roomId.current = targetRoomId;
-    sendJoin(targetRoomId);
-  };
+  const joinRoom = useCallback(
+    (targetRoomId: string) => {
+      roomId.current = targetRoomId;
+      sendJoin(targetRoomId);
+    },
+    [sendJoin],
+  );
 
-  const clearSession = () => {
+  const shareScreen = useCallback(() => {
+    if (!roomId.current || screenSharingMediaStream) return;
+    sharingScreen(roomId.current);
+  }, [screenSharingMediaStream, sharingScreen]);
+
+  const clearPeerConnection = useCallback(() => {
     disconnectAllPeerConnection();
+    disconnectAllScreenPeerConnection();
     participantsUserData.current.clear();
     setParticipantsMediaStream(new Map());
-    roomId.current = null;
-  };
+    setScreenSharingMediaStream(null);
+  }, [disconnectAllPeerConnection, disconnectAllScreenPeerConnection]);
 
-  const createRoom = async () => {
-    const response = await fetch('http://localhost:8080/api/room/create', {
-      method: 'POST',
-    });
-
-    if (!response.ok) {
-      throw new Error('api error');
-    }
+  const createRoom = useCallback(async () => {
+    const response = await fetch('http://localhost:8080/api/room/create', { method: 'POST' });
+    if (!response.ok) throw new Error('api error');
 
     const { roomId: id } = (await response.json()) as { roomId: string };
-    console.log(id);
-
     joinRoom(id);
-  };
+  }, [joinRoom]);
 
-  const leaveRoom = () => {
-    if (!roomId.current) {
-      return;
-    }
+  const leaveRoom = useCallback(() => {
+    if (!roomId.current) return;
+    sendLeave(roomId.current, 'USER');
+    roomId.current = null;
+    clearPeerConnection();
+  }, [sendLeave, clearPeerConnection]);
 
-    sendLeave(roomId.current);
-    clearSession();
-  };
-
-  const leaveSession = () => {
-    if (roomId.current) {
-      leaveRoom();
-    }
+  const leaveSession = useCallback(() => {
+    if (roomId.current) leaveRoom();
     disconnectSocket();
-  };
+  }, [leaveRoom, disconnectSocket]);
 
-  return { joinSession, joinRoom, leaveRoom, createRoom, leaveSession, participantsMediaStream, participantsUserData };
+  return {
+    joinSession,
+    joinRoom,
+    leaveRoom,
+    createRoom,
+    leaveSession,
+    shareScreen,
+    stopShareScreen,
+    participantsMediaStream,
+    screenSharingMediaStream,
+    participantsUserData,
+  };
 };
 
 export default useWebRTC;

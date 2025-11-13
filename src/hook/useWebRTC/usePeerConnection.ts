@@ -3,10 +3,13 @@
 import { useEffect, useRef } from 'react';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { useShallow } from 'zustand/react/shallow';
-import useDevice from '../useDevice';
+import { StreamType } from '@/type/signalType';
 
 interface UsePeerConnectionProps {
-  onTrack: (targetId: string, stream: MediaStream) => void;
+  stream: MediaStream;
+  getScreenStream: (audio: boolean) => Promise<MediaStream>;
+  onTrack: (targetId: string, stream: MediaStream, type: 'SCREEN' | 'USER', isScreenSender?: boolean) => void;
+  onDisplayShareEnd: () => void;
 }
 
 interface PeerConnectionData {
@@ -15,21 +18,23 @@ interface PeerConnectionData {
   remoteSet: boolean;
 }
 
-const usePeerConnection = ({ onTrack }: UsePeerConnectionProps) => {
+const usePeerConnection = ({ stream, getScreenStream, onTrack, onDisplayShareEnd }: UsePeerConnectionProps) => {
   const peerConnections = useRef<Map<string, PeerConnectionData>>(new Map());
-
-  const { stream } = useDevice();
+  const screenPeerConnections = useRef<Map<string, PeerConnectionData>>(new Map());
   const { deviceEnable } = useDeviceStore(
     useShallow((state) => ({
       deviceEnable: state.deviceEnable,
     })),
   );
 
-  const createPeerConnection = (
+  const createPeerConnection = async (
     targetId: string,
-    onIceCandidate: (targetId: string, candidate: RTCIceCandidate) => void,
+    onIceCandidate: (targetId: string, candidate: RTCIceCandidate, streamType: StreamType) => void,
+    streamType: 'SCREEN' | 'USER',
+    isScreenSender = false,
   ) => {
-    if (peerConnections.current.has(targetId)) {
+    const connections = streamType === 'SCREEN' ? screenPeerConnections : peerConnections;
+    if (connections.current.has(targetId)) {
       return;
     }
 
@@ -43,98 +48,126 @@ const usePeerConnection = ({ onTrack }: UsePeerConnectionProps) => {
       remoteSet: false,
     };
 
-    pc.onicecandidate = (event) => {
+    pc.onicecandidate = async (event) => {
       if (event.candidate) {
-        onIceCandidate(targetId, event.candidate);
+        await onIceCandidate(targetId, event.candidate, streamType);
       }
     };
 
-    pc.ontrack = (event) => {
-      console.log('연결 완료');
-      const remoteStream = event.streams[0];
-      const audilEl = document.createElement('audio');
-      audilEl.srcObject = remoteStream;
-      audilEl.autoplay = true;
-      document.body.appendChild(audilEl);
-      console.log(remoteStream);
-      onTrack(targetId, remoteStream);
+    pc.ontrack = async (event) => {
+      if (!isScreenSender) {
+        const remoteStream = event.streams[0];
+        onTrack(targetId, remoteStream, streamType);
+      }
     };
 
-    if (stream) {
-      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-    }
+    console.log(streamType, isScreenSender);
 
-    peerConnections.current.set(targetId, data);
-  };
+    if (isScreenSender) {
+      const screenStream = await getScreenStream(true);
+      screenStream.getTracks().forEach((track) => {
+        pc.addTrack(track, screenStream);
+      });
+      connections.current.set(targetId, data);
+      onTrack(targetId, screenStream, 'SCREEN', true);
 
-  const createOfferSdp = async (targetId: string): Promise<RTCSessionDescriptionInit> => {
-    const peerConnection = peerConnections.current.get(targetId);
-
-    if (!peerConnection) {
+      screenStream.getVideoTracks()[0].onended = () => {
+        onDisplayShareEnd();
+      };
       return;
     }
+    stream.getTracks().forEach((track) => {
+      pc.addTrack(track, stream);
+    });
 
-    const offer = await peerConnection.pc.createOffer();
+    connections.current.set(targetId, data);
+  };
+
+  const createOfferSdp = async (targetId: string, streamType: StreamType): Promise<RTCSessionDescriptionInit> => {
+    const peerConnection = streamType === 'USER' ? peerConnections.current : screenPeerConnections.current;
+    const target = peerConnection.get(targetId);
+
+    if (!target) return;
+
+    const offer = await target.pc.createOffer();
     return offer;
   };
 
-  const createAnswerSdp = async (targetId: string): Promise<RTCSessionDescriptionInit> => {
-    const peerConnection = peerConnections.current.get(targetId);
+  const createAnswerSdp = async (targetId: string, streamType: StreamType): Promise<RTCSessionDescriptionInit> => {
+    const peerConnection = streamType === 'USER' ? peerConnections.current : screenPeerConnections.current;
+    const target = peerConnection.get(targetId);
 
-    if (!peerConnection) {
-      return;
-    }
+    if (!target) return;
 
-    const answer = await peerConnection.pc.createAnswer();
+    const answer = await target.pc.createAnswer();
     return answer;
   };
 
-  const registerOfferSdp = async (targetId: string, sdp: RTCSessionDescriptionInit) => {
-    const data = peerConnections.current.get(targetId);
-    if (!data) throw new Error('해당 id의 peerConnection이 없음');
+  const registerOfferSdp = async (targetId: string, sdp: RTCSessionDescriptionInit, streamType: StreamType) => {
+    const peerConnection = streamType === 'USER' ? peerConnections.current : screenPeerConnections.current;
+    const target = peerConnection.get(targetId);
 
-    await data.pc.setLocalDescription(sdp);
+    if (!target) return;
+
+    await target.pc.setLocalDescription(sdp);
   };
 
-  const registerAnswerSdp = async (targetId: string, targetSdp: RTCSessionDescriptionInit) => {
-    const data = peerConnections.current.get(targetId);
-    if (!data) throw new Error('해당 id의 peerConnection이 없음');
+  const registerAnswerSdp = async (targetId: string, targetSdp: RTCSessionDescriptionInit, streamType: StreamType) => {
+    const peerConnection = streamType === 'USER' ? peerConnections.current : screenPeerConnections.current;
+    const target = peerConnection.get(targetId);
 
-    await data.pc.setRemoteDescription(targetSdp);
-    data.remoteSet = true;
+    if (!target) return;
 
-    data.iceQueue.forEach(async (ice) => {
-      await data.pc.addIceCandidate(new RTCIceCandidate(ice));
+    if (target.pc.signalingState !== 'stable' && target.pc.signalingState !== 'have-local-offer') {
+      return;
+    }
+
+    await target.pc.setRemoteDescription(targetSdp);
+    target.remoteSet = true;
+
+    target.iceQueue.forEach(async (ice) => {
+      await target.pc.addIceCandidate(new RTCIceCandidate(ice));
     });
-    data.iceQueue = [];
+    target.iceQueue = [];
   };
 
-  const registerRemoteIce = async (targetId: string, targetIce: RTCIceCandidateInit) => {
-    const data = peerConnections.current.get(targetId);
-    if (!data) return;
+  const registerRemoteIce = async (targetId: string, targetIce: RTCIceCandidateInit, streamType: StreamType) => {
+    const peerConnection = streamType === 'USER' ? peerConnections.current : screenPeerConnections.current;
+    const target = peerConnection.get(targetId);
 
-    if (!data.remoteSet) {
-      data.iceQueue.push(targetIce);
+    if (!target) return;
+
+    if (!target.remoteSet) {
+      target.iceQueue.push(targetIce);
     } else {
-      await data.pc.addIceCandidate(new RTCIceCandidate(targetIce));
+      await target.pc.addIceCandidate(new RTCIceCandidate(targetIce));
     }
   };
 
-  const disconnectPeerConection = (targetId: string) => {
-    const data = peerConnections.current.get(targetId);
-    if (!data) return;
+  const disconnectPeerConnection = (targetId: string, streamType: StreamType) => {
+    const peerConnection = streamType === 'USER' ? peerConnections.current : screenPeerConnections.current;
+    const target = peerConnection.get(targetId);
 
-    data.pc.getSenders().forEach((sender) => sender.track?.stop());
-    data.pc.close();
-    peerConnections.current.delete(targetId);
+    if (!target) return;
+
+    target.pc.close();
+    peerConnection.delete(targetId);
   };
 
   const disconnectAllPeerConnection = () => {
-    peerConnections.current.forEach((data) => {
-      data.pc.getSenders().forEach((sender) => sender.track?.stop());
-      data.pc.close();
+    peerConnections.current.forEach((peerConnection) => {
+      peerConnection.pc.close();
     });
+
     peerConnections.current.clear();
+  };
+
+  const disconnectAllScreenPeerConnection = () => {
+    screenPeerConnections.current.forEach((peerConnection) => {
+      peerConnection.pc.close();
+    });
+
+    screenPeerConnections.current.clear();
   };
 
   useEffect(() => {
@@ -175,8 +208,9 @@ const usePeerConnection = ({ onTrack }: UsePeerConnectionProps) => {
     registerAnswerSdp,
     registerRemoteIce,
     peerConnections,
-    disconnectPeerConection,
+    disconnectPeerConnection,
     disconnectAllPeerConnection,
+    disconnectAllScreenPeerConnection,
   };
 };
 

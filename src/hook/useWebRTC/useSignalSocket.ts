@@ -11,13 +11,19 @@ import {
   SdpResponseType,
   LeaveResponseType,
   ParticipantDataType,
+  JoinPayloadType,
+  LeavePayloadType,
+  IceResponseType,
+  StreamType,
+  ScreenPayloadType,
+  ScreenResponseType,
 } from '@/type/signalType';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useShallow } from 'zustand/react/shallow';
 
 interface UseSignalSocketProps {
   onAddParticipantData: (userId: string, user: ParticipantDataType) => void;
-  onDeleteParticipant: (targetId: string) => void;
+  onDeleteParticipant: (targetId: string, streamType: StreamType) => void;
 }
 
 const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSignalSocketProps) => {
@@ -57,17 +63,20 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
     });
   };
 
-  const sendSdp = (destination: string, targetId: string, sdp: RTCSessionDescriptionInit) => {
-    if (!client.current || !useUserInfoStore.getState().id) {
+  const sendSdp = (
+    destination: string,
+    targetId: string,
+    sdp: RTCSessionDescriptionInit,
+    streamType: 'SCREEN' | 'USER',
+  ) => {
+    if (!client.current) {
       return;
     }
 
-    console.log('sending sdp');
-
     const payload: SdpPayloadType = {
-      fromUserId: useUserInfoStore.getState().id,
       toUserId: targetId,
       fromUserSDP: JSON.stringify(sdp),
+      streamType,
     };
 
     client.current.publish({
@@ -77,7 +86,7 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
     });
   };
 
-  const offerIceCandidate = (targetId: string, candidate: RTCIceCandidate) => {
+  const offerIceCandidate = (targetId: string, candidate: RTCIceCandidate, streamType: StreamType) => {
     if (!client.current || !useUserInfoStore.getState().id) {
       return;
     }
@@ -85,9 +94,9 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
     console.log('sending ice');
 
     const payload: IcePayloadType = {
-      fromUserId: useUserInfoStore.getState().id,
       toUserId: targetId,
       fromCandidate: JSON.stringify(candidate),
+      streamType,
     };
 
     client.current.publish({
@@ -100,13 +109,27 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
   const connectSocket = (
     createPeerConnection: (
       targetId: string,
-      onIceCandidate: (targetId: string, candidate: RTCIceCandidate) => void,
-    ) => void,
-    createOfferSdp: (targetId: string) => Promise<RTCSessionDescriptionInit>,
-    createAnswerSdp: (targetId: string) => Promise<RTCSessionDescriptionInit>,
-    registerAnswerSdp: (targetId: string, targetSdp: RTCSessionDescriptionInit) => Promise<void>,
-    registerOfferSdp: (targetId: string, targetSdp: RTCSessionDescriptionInit) => Promise<void>,
-    registerRemoteIce: (targetId: string, targetIce: RTCLocalIceCandidateInit) => Promise<void>,
+      onIceCandidate: (targetId: string, candidate: RTCIceCandidate, streamType: 'SCREEN' | 'USER') => void,
+      streamType: 'SCREEN' | 'USER',
+      isScreenSender?: boolean,
+    ) => Promise<void>,
+    createOfferSdp: (targetId: string, streamType: 'SCREEN' | 'USER') => Promise<RTCSessionDescriptionInit>,
+    createAnswerSdp: (targetId: string, streamType: 'SCREEN' | 'USER') => Promise<RTCSessionDescriptionInit>,
+    registerAnswerSdp: (
+      targetId: string,
+      targetSdp: RTCSessionDescriptionInit,
+      streamType: 'SCREEN' | 'USER',
+    ) => Promise<void>,
+    registerOfferSdp: (
+      targetId: string,
+      targetSdp: RTCSessionDescriptionInit,
+      streamType: 'SCREEN' | 'USER',
+    ) => Promise<void>,
+    registerRemoteIce: (
+      targetId: string,
+      targetIce: RTCLocalIceCandidateInit,
+      streamType: 'SCREEN' | 'USER',
+    ) => Promise<void>,
   ) => {
     const connectedClient = new Client({
       brokerURL: undefined,
@@ -118,43 +141,64 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
         setId(userId);
         client.current = connectedClient;
 
-        const joinSub = connectedClient.subscribe('/user/queue/signal/join', (msg: IMessage) => {
-          const { participants } = parseMessage<JoinResponseType>(msg);
-
+        const joinSub = connectedClient.subscribe('/user/queue/signal/join', async (msg: IMessage) => {
+          const { participants, screenId } = parseMessage<JoinResponseType>(msg);
           participants.forEach(async (participant) => {
             onAddParticipantData(participant.userId, participant);
-            createPeerConnection(participant.userId, offerIceCandidate);
-            const sdp = await createOfferSdp(participant.userId);
-            await registerOfferSdp(participant.userId, sdp);
-            sendSdp('/app/signal/offer', participant.userId, sdp);
+            console.log('joining');
+            await createPeerConnection(participant.userId, offerIceCandidate, 'USER', false);
+            const sdp = await createOfferSdp(participant.userId, 'USER');
+            await registerOfferSdp(participant.userId, sdp, 'USER');
+            sendSdp('/app/signal/offer', participant.userId, sdp, 'USER');
           });
+
+          if (screenId) {
+            console.log('has screen');
+            await createPeerConnection(screenId, offerIceCandidate, 'SCREEN', false);
+            const sdp = await createOfferSdp(screenId, 'SCREEN');
+            await registerOfferSdp(screenId, sdp, 'SCREEN');
+            sendSdp('/app/signal/offer', screenId, sdp, 'SCREEN');
+          }
         });
         subscriptions.current.set('join', joinSub);
 
         const offerSub = connectedClient.subscribe('/user/queue/signal/offer', async (msg: IMessage) => {
-          const { fromUserId, fromUserSDP } = parseMessage<SdpResponseType>(msg);
+          const { fromUserId, fromUserSDP, streamType } = parseMessage<SdpResponseType>(msg);
           const fromSDP = JSON.parse(fromUserSDP) as RTCSessionDescriptionInit;
-          createPeerConnection(fromUserId, offerIceCandidate);
-          await registerAnswerSdp(fromUserId, fromSDP);
-          const sdp = await createAnswerSdp(fromUserId);
-          await registerOfferSdp(fromUserId, sdp);
-          sendSdp('/app/signal/answer', fromUserId, sdp);
+
+          createPeerConnection(fromUserId, offerIceCandidate, streamType, false);
+          await registerAnswerSdp(fromUserId, fromSDP, streamType);
+          const sdp = await createAnswerSdp(fromUserId, streamType);
+          await registerOfferSdp(fromUserId, sdp, streamType);
+          sendSdp('/app/signal/answer', fromUserId, sdp, streamType);
         });
         subscriptions.current.set('offer', offerSub);
 
         const answerSub = connectedClient.subscribe('/user/queue/signal/answer', async (msg: IMessage) => {
-          const { fromUserId, fromUserSDP } = parseMessage<SdpResponseType>(msg);
-          const sdp = JSON.parse(fromUserSDP) as RTCSessionDescription;
-          await registerAnswerSdp(fromUserId, sdp);
+          const { fromUserId, fromUserSDP, streamType } = parseMessage<SdpResponseType>(msg);
+          const sdp = JSON.parse(fromUserSDP) as RTCSessionDescriptionInit;
+          await registerAnswerSdp(fromUserId, sdp, streamType);
         });
         subscriptions.current.set('answer', answerSub);
 
         const iceSub = connectedClient.subscribe('/user/queue/signal/ice', async (msg: IMessage) => {
-          const { fromUserId, fromCandidate } = parseMessage<IcePayloadType>(msg);
-          const candidate = JSON.parse(fromCandidate) as RTCLocalIceCandidateInit;
-          await registerRemoteIce(fromUserId, candidate);
+          const { fromUserId, fromUserIce, streamType } = parseMessage<IceResponseType>(msg);
+          const candidate = JSON.parse(fromUserIce) as RTCLocalIceCandidateInit;
+          await registerRemoteIce(fromUserId, candidate, streamType);
         });
         subscriptions.current.set('ice', iceSub);
+
+        const screenSub = connectedClient.subscribe('/user/queue/signal/screen', async (msg: IMessage) => {
+          const { participants } = parseMessage<ScreenResponseType>(msg);
+          participants.forEach(async (participant) => {
+            await createPeerConnection(participant.userId, offerIceCandidate, 'SCREEN', true);
+            const sdp = await createOfferSdp(participant.userId, 'SCREEN');
+            await registerOfferSdp(participant.userId, sdp, 'SCREEN');
+            sendSdp('/app/signal/offer', participant.userId, sdp, 'SCREEN');
+          });
+        });
+
+        subscriptions.current.set('screen', screenSub);
       },
     });
     connectedClient.activate();
@@ -165,35 +209,75 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
       return;
     }
 
+    const payload: JoinPayloadType = {
+      roomId,
+    };
+
     client.current.publish({
       destination: '/app/signal/join',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        userId: useUserInfoStore.getState().id,
-        roomId,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const leaveSub = client.current.subscribe(`/topic/room/${roomId}/leave`, (msg: IMessage) => {
-      const { fromUserId } = parseMessage<LeaveResponseType>(msg);
-      onDeleteParticipant(fromUserId);
+      const { fromUserId, streamType } = parseMessage<LeaveResponseType>(msg);
+      onDeleteParticipant(fromUserId, streamType);
     });
     subscriptions.current.set(`leave-${roomId}`, leaveSub);
   };
 
-  const sendLeave = (roomId: string) => {
-    if (!client.current || !useUserInfoStore.getState().id) {
+  const shareScreen = (roomId: string) => {
+    const userId = useUserInfoStore.getState().id;
+    if (!client.current || !userId) {
       return;
     }
+
+    const payload: ScreenPayloadType = {
+      roomId,
+    };
+
+    client.current.publish({
+      destination: '/app/signal/screen',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  };
+
+  const stopScreenShare = (roomId: string) => {
+    const userId = useUserInfoStore.getState().id;
+
+    if (!client.current || !userId) {
+      return;
+    }
+
+    const payload = {
+      roomId,
+      ownerId: userId,
+    };
 
     client.current.publish({
       destination: '/app/signal/leave',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        userId: useUserInfoStore.getState().id,
-        roomId,
-      }),
+      body: JSON.stringify(payload),
     });
+  };
+
+  const sendLeave = (roomId: string, streamType: StreamType) => {
+    if (!client.current || !useUserInfoStore.getState().id) {
+      return;
+    }
+
+    const payload: LeavePayloadType = {
+      roomId,
+      streamType,
+    };
+
+    client.current.publish({
+      destination: '/app/signal/leave',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
     subscriptions.current.get(`leave-${roomId}`)?.unsubscribe();
     subscriptions.current.delete(`leave-${roomId}`);
   };
@@ -212,6 +296,8 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
     connectSocket,
     sendJoin,
     sendLeave,
+    shareScreen,
+    stopScreenShare,
     disconnectSocket,
   };
 };

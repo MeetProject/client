@@ -6,7 +6,17 @@ import VideoPlayer from './VideoPlayer';
 
 export default function TestPage() {
   const [value, setValue] = useState('');
-  const { joinSession, createRoom, joinRoom, participantsMediaStream } = useWebRTC();
+  const {
+    joinSession,
+    createRoom,
+    joinRoom,
+    leaveRoom,
+    leaveSession,
+    shareScreen,
+    stopShareScreen,
+    participantsMediaStream,
+    screenSharingMediaStream,
+  } = useWebRTC();
   const handleConnectButton = () => {
     joinSession();
   };
@@ -16,7 +26,15 @@ export default function TestPage() {
   };
 
   const handleJoinButton = async () => {
-    joinRoom(value);
+    joinRoom(value.slice(1, value.length - 1));
+  };
+
+  const handleLeaveButton = () => {
+    leaveRoom();
+  };
+
+  const handleDisconnectButton = () => {
+    leaveSession();
   };
 
   console.log(participantsMediaStream);
@@ -36,12 +54,27 @@ export default function TestPage() {
             참여하기
           </button>
         </div>
+        <div className='flex gap-2'>
+          <button type='button' onClick={shareScreen}>
+            화면 공유하기
+          </button>
+          <button type='button' onClick={stopShareScreen}>
+            화면 공유하기
+          </button>
+        </div>
+
+        <button type='button' onClick={handleLeaveButton}>
+          방 나가기
+        </button>
+        <button type='button' onClick={handleDisconnectButton}>
+          소켓 끊기
+        </button>
       </div>
-      <div>
+      <div className='flex flex-1 border'>
+        {screenSharingMediaStream && <VideoPlayer stream={screenSharingMediaStream} />}
         {Array.from(participantsMediaStream.entries()).map(([userId, stream]) => (
-          <VideoPlayer key={userId} stream={stream} />
+          <VideoPlayer key={`${userId}-${stream.id}`} stream={stream} />
         ))}
-        <video />
       </div>
     </div>
   );

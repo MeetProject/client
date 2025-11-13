@@ -6,11 +6,17 @@ interface Props {
 
 export default function VideoPlayer({ stream }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  console.log('render');
 
   useEffect(() => {
     if (!videoRef.current) return;
-    videoRef.current.srcObject = stream;
+
+    const liveTracks = stream.getTracks().filter((t) => t.readyState === 'live');
+    const safeStream = new MediaStream(liveTracks);
+
+    videoRef.current.srcObject = safeStream;
+    videoRef.current.play().catch(() => {});
   }, [stream]);
 
-  return <video ref={videoRef} autoPlay playsInline muted className='size-full' />;
+  return <video ref={videoRef} autoPlay playsInline className='size-full' />;
 }
