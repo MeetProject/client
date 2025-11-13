@@ -35,6 +35,7 @@ export interface SdpResponseType extends SignalResponseType {
   fromUserId: string;
   fromUserSDP: string;
   streamType: 'SCREEN' | 'USER';
+  isScreenSender: boolean;
 }
 
 export interface IcePayloadType {

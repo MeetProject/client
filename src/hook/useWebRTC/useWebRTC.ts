@@ -4,15 +4,16 @@ import { useCallback, useRef, useState } from 'react';
 import { ParticipantDataType, StreamType } from '@/type/signalType';
 import usePeerConnection from './usePeerConnection';
 import useSignalSocket from './useSignalSocket';
-import useDevice from '../useDevice';
+import { useDevice2 } from '..';
 
 const useWebRTC = () => {
+  const [isScreenShare, setIsScreenShare] = useState(false);
   const [participantsMediaStream, setParticipantsMediaStream] = useState<Map<string, MediaStream>>(new Map());
   const [screenSharingMediaStream, setScreenSharingMediaStream] = useState<MediaStream | null>(null);
   const participantsUserData = useRef<Map<string, ParticipantDataType>>(new Map());
   const roomId = useRef<string | null>(null);
 
-  const { stream, getScreenStream, clearScreenStream } = useDevice();
+  const { streamRef, screenStreamRef, updateStream, stopStream, updateScreenStream, stopScreenStream } = useDevice2();
 
   const stopShareScreenRef = useRef<() => void>();
 
@@ -47,7 +48,7 @@ const useWebRTC = () => {
     disconnectPeerConnection,
     disconnectAllPeerConnection,
     disconnectAllScreenPeerConnection,
-  } = usePeerConnection({ stream, getScreenStream, onTrack, onDisplayShareEnd });
+  } = usePeerConnection({ streamRef, screenStreamRef, onTrack, onDisplayShareEnd });
 
   const deleteParticipant = useCallback(
     (targetId: string, streamType: StreamType) => {
@@ -83,8 +84,9 @@ const useWebRTC = () => {
     sendLeave(roomId.current, 'SCREEN');
     disconnectAllScreenPeerConnection();
     setScreenSharingMediaStream(null);
-    clearScreenStream();
-  }, [screenSharingMediaStream, sendLeave, disconnectAllScreenPeerConnection, clearScreenStream]);
+    stopScreenStream();
+    setIsScreenShare(false);
+  }, [screenSharingMediaStream, sendLeave, disconnectAllScreenPeerConnection, stopScreenStream]);
 
   stopShareScreenRef.current = stopShareScreen;
 
@@ -113,17 +115,20 @@ const useWebRTC = () => {
   ]);
 
   const joinRoom = useCallback(
-    (targetRoomId: string) => {
+    async (targetRoomId: string) => {
       roomId.current = targetRoomId;
+      await updateStream();
       sendJoin(targetRoomId);
     },
-    [sendJoin],
+    [sendJoin, updateStream],
   );
 
-  const shareScreen = useCallback(() => {
+  const shareScreen = useCallback(async () => {
     if (!roomId.current || screenSharingMediaStream) return;
+    await updateScreenStream(true);
     sharingScreen(roomId.current);
-  }, [screenSharingMediaStream, sharingScreen]);
+    setIsScreenShare(true);
+  }, [screenSharingMediaStream, sharingScreen, updateScreenStream]);
 
   const clearPeerConnection = useCallback(() => {
     disconnectAllPeerConnection();
@@ -138,15 +143,20 @@ const useWebRTC = () => {
     if (!response.ok) throw new Error('api error');
 
     const { roomId: id } = (await response.json()) as { roomId: string };
-    joinRoom(id);
+    await joinRoom(id);
   }, [joinRoom]);
 
   const leaveRoom = useCallback(() => {
     if (!roomId.current) return;
+    if (isScreenShare) {
+      stopShareScreen();
+    }
     sendLeave(roomId.current, 'USER');
+
     roomId.current = null;
     clearPeerConnection();
-  }, [sendLeave, clearPeerConnection]);
+    stopStream();
+  }, [sendLeave, clearPeerConnection, stopStream, isScreenShare, stopShareScreen]);
 
   const leaveSession = useCallback(() => {
     if (roomId.current) leaveRoom();

@@ -163,10 +163,10 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
         subscriptions.current.set('join', joinSub);
 
         const offerSub = connectedClient.subscribe('/user/queue/signal/offer', async (msg: IMessage) => {
-          const { fromUserId, fromUserSDP, streamType } = parseMessage<SdpResponseType>(msg);
+          const { fromUserId, fromUserSDP, streamType, isScreenSender } = parseMessage<SdpResponseType>(msg);
           const fromSDP = JSON.parse(fromUserSDP) as RTCSessionDescriptionInit;
 
-          createPeerConnection(fromUserId, offerIceCandidate, streamType, false);
+          await createPeerConnection(fromUserId, offerIceCandidate, streamType, isScreenSender);
           await registerAnswerSdp(fromUserId, fromSDP, streamType);
           const sdp = await createAnswerSdp(fromUserId, streamType);
           await registerOfferSdp(fromUserId, sdp, streamType);
@@ -175,6 +175,7 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
         subscriptions.current.set('offer', offerSub);
 
         const answerSub = connectedClient.subscribe('/user/queue/signal/answer', async (msg: IMessage) => {
+          console.log(msg);
           const { fromUserId, fromUserSDP, streamType } = parseMessage<SdpResponseType>(msg);
           const sdp = JSON.parse(fromUserSDP) as RTCSessionDescriptionInit;
           await registerAnswerSdp(fromUserId, sdp, streamType);

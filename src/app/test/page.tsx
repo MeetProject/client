@@ -17,12 +17,12 @@ export default function TestPage() {
     participantsMediaStream,
     screenSharingMediaStream,
   } = useWebRTC();
-  const handleConnectButton = () => {
-    joinSession();
+  const handleConnectButton = async () => {
+    await joinSession();
   };
 
-  const handleCreateRoom = () => {
-    createRoom();
+  const handleCreateRoom = async () => {
+    await createRoom();
   };
 
   const handleJoinButton = async () => {
