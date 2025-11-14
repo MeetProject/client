@@ -65,5 +65,5 @@ export interface ScreenPayloadType {
 }
 
 export interface ScreenResponseType extends SignalResponseType {
-  participants: ParticipantDataType[];
+  participants: string[];
 }

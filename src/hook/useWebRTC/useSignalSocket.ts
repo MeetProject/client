@@ -193,10 +193,10 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
         const screenSub = connectedClient.subscribe('/user/queue/signal/screen', async (msg: IMessage) => {
           const { participants } = parseMessage<ScreenResponseType>(msg);
           participants.forEach(async (participant) => {
-            await createPeerConnection(participant.userId, offerIceCandidate, 'SCREEN', true);
-            const sdp = await createOfferSdp(participant.userId, 'SCREEN');
-            await registerOfferSdp(participant.userId, sdp, 'SCREEN');
-            sendSdp('/app/signal/offer', participant.userId, sdp, 'SCREEN');
+            await createPeerConnection(participant, offerIceCandidate, 'SCREEN', true);
+            const sdp = await createOfferSdp(participant, 'SCREEN');
+            await registerOfferSdp(participant, sdp, 'SCREEN');
+            sendSdp('/app/signal/offer', participant, sdp, 'SCREEN');
           });
         });
 
@@ -281,10 +281,11 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
       body: JSON.stringify(payload),
     });
 
-    subscriptions.current.get(`leave-${currentRoomId.current}`)?.unsubscribe();
-    subscriptions.current.delete(`leave-${currentRoomId.current}`);
-
-    currentRoomId.current = null;
+    if (streamType === 'USER') {
+      subscriptions.current.get(`leave-${currentRoomId.current}`)?.unsubscribe();
+      subscriptions.current.delete(`leave-${currentRoomId.current}`);
+      currentRoomId.current = null;
+    }
   };
 
   const disconnectSocket = () => {
