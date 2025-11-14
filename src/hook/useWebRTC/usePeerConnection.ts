@@ -8,7 +8,7 @@ import { StreamType } from '@/type/signalType';
 interface UsePeerConnectionProps {
   streamRef: MutableRefObject<MediaStream>;
   screenStreamRef: MutableRefObject<MediaStream>;
-  onTrack: (targetId: string, stream: MediaStream, type: 'SCREEN' | 'USER', isScreenSender?: boolean) => void;
+  onTrack: (targetId: string, stream: MediaStream, type: 'SCREEN' | 'USER', isScreenSender: boolean) => void;
   onDisplayShareEnd: () => void;
 }
 
@@ -26,6 +26,9 @@ const usePeerConnection = ({ streamRef, screenStreamRef, onTrack, onDisplayShare
       deviceEnable: state.deviceEnable,
     })),
   );
+
+  console.log(peerConnections.current);
+  console.log(screenPeerConnections.current);
 
   const replaceTracks = async (stream: MediaStream) => {
     peerConnections.current.forEach((data) => {
@@ -66,11 +69,11 @@ const usePeerConnection = ({ streamRef, screenStreamRef, onTrack, onDisplayShare
     pc.ontrack = async (event) => {
       if (!isScreenSender) {
         const remoteStream = event.streams[0];
-        onTrack(targetId, remoteStream, streamType);
+        onTrack(targetId, remoteStream, streamType, isScreenSender);
       }
     };
 
-    if (isScreenSender) {
+    if (streamType === 'SCREEN' && isScreenSender) {
       screenStreamRef.current.getTracks().forEach((track) => pc.addTrack(track, screenStreamRef.current));
       connections.current.set(targetId, data);
       onTrack(targetId, screenStreamRef.current, 'SCREEN', true);

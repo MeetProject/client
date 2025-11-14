@@ -2,7 +2,7 @@
 
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   IcePayloadType,
   JoinResponseType,
@@ -29,6 +29,7 @@ interface UseSignalSocketProps {
 const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSignalSocketProps) => {
   const client = useRef<Client | null>(null);
   const subscriptions = useRef<Map<string, StompSubscription>>(new Map());
+  const currentRoomId = useRef<string | null>(null);
 
   const { name, color, setId } = useUserInfoStore(
     useShallow((state) => ({
@@ -225,16 +226,17 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
       onDeleteParticipant(fromUserId, streamType);
     });
     subscriptions.current.set(`leave-${roomId}`, leaveSub);
+    currentRoomId.current = roomId;
   };
 
-  const shareScreen = (roomId: string) => {
+  const shareScreen = () => {
     const userId = useUserInfoStore.getState().id;
-    if (!client.current || !userId) {
+    if (!client.current || !userId || !currentRoomId.current) {
       return;
     }
 
     const payload: ScreenPayloadType = {
-      roomId,
+      roomId: currentRoomId.current,
     };
 
     client.current.publish({
@@ -244,15 +246,15 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
     });
   };
 
-  const stopScreenShare = (roomId: string) => {
+  const stopScreenShare = () => {
     const userId = useUserInfoStore.getState().id;
 
-    if (!client.current || !userId) {
+    if (!client.current || !userId || !currentRoomId.current) {
       return;
     }
 
     const payload = {
-      roomId,
+      roomId: currentRoomId.current,
       ownerId: userId,
     };
 
@@ -263,13 +265,13 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
     });
   };
 
-  const sendLeave = (roomId: string, streamType: StreamType) => {
-    if (!client.current || !useUserInfoStore.getState().id) {
+  const sendLeave = (streamType: StreamType) => {
+    if (!client.current || !useUserInfoStore.getState().id || !currentRoomId.current) {
       return;
     }
 
     const payload: LeavePayloadType = {
-      roomId,
+      roomId: currentRoomId.current,
       streamType,
     };
 
@@ -279,8 +281,10 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
       body: JSON.stringify(payload),
     });
 
-    subscriptions.current.get(`leave-${roomId}`)?.unsubscribe();
-    subscriptions.current.delete(`leave-${roomId}`);
+    subscriptions.current.get(`leave-${currentRoomId.current}`)?.unsubscribe();
+    subscriptions.current.delete(`leave-${currentRoomId.current}`);
+
+    currentRoomId.current = null;
   };
 
   const disconnectSocket = () => {
@@ -292,6 +296,23 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
     client.current.deactivate();
     client.current = null;
   };
+
+  useEffect(() => {
+    const handler = () => {
+      const userId = useUserInfoStore.getState().id;
+      const roomId = currentRoomId.current;
+      if (!userId || !roomId) return;
+
+      const data = new FormData();
+      data.append('userId', userId);
+      data.append('roomId', roomId);
+
+      navigator.sendBeacon('http://localhost:8080/api/leave', data);
+    };
+
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
 
   return {
     connectSocket,
