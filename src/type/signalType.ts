@@ -1,4 +1,4 @@
-type ResponseType = 'REGISTER' | 'JOIN' | 'ANSWER' | 'OFFER' | 'ICE' | 'LEAVE';
+type ResponseType = 'REGISTER' | 'JOIN' | 'ANSWER' | 'OFFER' | 'ICE' | 'LEAVE' | 'SCREEN' | 'ERROR';
 export type StreamType = 'USER' | 'SCREEN';
 
 interface SignalResponseType {
@@ -66,4 +66,9 @@ export interface ScreenPayloadType {
 
 export interface ScreenResponseType extends SignalResponseType {
   participants: string[];
+}
+
+export interface ErrorResponseType extends SignalResponseType {
+  code: string;
+  message: string;
 }

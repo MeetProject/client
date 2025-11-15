@@ -140,7 +140,10 @@ const useWebRTC = () => {
 
   const createRoom = useCallback(async () => {
     const response = await fetch('http://localhost:8080/api/room/create', { method: 'POST' });
-    if (!response.ok) throw new Error('api error');
+    if (!response.ok) {
+      console.log(response);
+      throw new Error('api Error');
+    }
 
     const { roomId: id } = (await response.json()) as { roomId: string };
     await joinRoom(id);

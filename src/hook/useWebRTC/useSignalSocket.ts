@@ -17,6 +17,7 @@ import {
   StreamType,
   ScreenPayloadType,
   ScreenResponseType,
+  ErrorResponseType,
 } from '@/type/signalType';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -62,6 +63,29 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
         }),
       });
     });
+  };
+
+  const sendJoin = (roomId: string) => {
+    if (!client.current || !useUserInfoStore.getState().id) {
+      return;
+    }
+
+    const payload: JoinPayloadType = {
+      roomId,
+    };
+
+    client.current.publish({
+      destination: '/app/signal/join',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const leaveSub = client.current.subscribe(`/topic/room/${roomId}/leave`, (msg: IMessage) => {
+      const { fromUserId, streamType } = parseMessage<LeaveResponseType>(msg);
+      onDeleteParticipant(fromUserId, streamType);
+    });
+    subscriptions.current.set(`leave-${roomId}`, leaveSub);
+    currentRoomId.current = roomId;
   };
 
   const sendSdp = (
@@ -141,12 +165,10 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
         const userId = await getUserId(connectedClient);
         setId(userId);
         client.current = connectedClient;
-
         const joinSub = connectedClient.subscribe('/user/queue/signal/join', async (msg: IMessage) => {
           const { participants, screenId } = parseMessage<JoinResponseType>(msg);
           participants.forEach(async (participant) => {
             onAddParticipantData(participant.userId, participant);
-            console.log('joining');
             await createPeerConnection(participant.userId, offerIceCandidate, 'USER', false);
             const sdp = await createOfferSdp(participant.userId, 'USER');
             await registerOfferSdp(participant.userId, sdp, 'USER');
@@ -154,7 +176,6 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
           });
 
           if (screenId) {
-            console.log('has screen');
             await createPeerConnection(screenId, offerIceCandidate, 'SCREEN', false);
             const sdp = await createOfferSdp(screenId, 'SCREEN');
             await registerOfferSdp(screenId, sdp, 'SCREEN');
@@ -176,7 +197,6 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
         subscriptions.current.set('offer', offerSub);
 
         const answerSub = connectedClient.subscribe('/user/queue/signal/answer', async (msg: IMessage) => {
-          console.log(msg);
           const { fromUserId, fromUserSDP, streamType } = parseMessage<SdpResponseType>(msg);
           const sdp = JSON.parse(fromUserSDP) as RTCSessionDescriptionInit;
           await registerAnswerSdp(fromUserId, sdp, streamType);
@@ -199,34 +219,21 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
             sendSdp('/app/signal/offer', participant, sdp, 'SCREEN');
           });
         });
-
         subscriptions.current.set('screen', screenSub);
+
+        const errorSub = connectedClient.subscribe('/user/queue/signal/error', async (msg: IMessage) => {
+          const { code, message } = parseMessage<ErrorResponseType>(msg);
+          console.log(code, message);
+          alert(message);
+        });
+        subscriptions.current.set('error', errorSub);
+
+        if (currentRoomId.current) {
+          sendJoin(currentRoomId.current);
+        }
       },
     });
     connectedClient.activate();
-  };
-
-  const sendJoin = (roomId: string) => {
-    if (!client.current || !useUserInfoStore.getState().id) {
-      return;
-    }
-
-    const payload: JoinPayloadType = {
-      roomId,
-    };
-
-    client.current.publish({
-      destination: '/app/signal/join',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    const leaveSub = client.current.subscribe(`/topic/room/${roomId}/leave`, (msg: IMessage) => {
-      const { fromUserId, streamType } = parseMessage<LeaveResponseType>(msg);
-      onDeleteParticipant(fromUserId, streamType);
-    });
-    subscriptions.current.set(`leave-${roomId}`, leaveSub);
-    currentRoomId.current = roomId;
   };
 
   const shareScreen = () => {
