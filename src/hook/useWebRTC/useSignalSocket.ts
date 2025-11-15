@@ -49,13 +49,13 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
 
   const getUserId = async (targetClient: Client): Promise<string> => {
     return new Promise((resolve) => {
-      const subscribe = targetClient.subscribe('/user/queue/userId', (msg: IMessage) => {
+      const subscribe = targetClient.subscribe('/user/queue/signal/userId', (msg: IMessage) => {
         resolve(parseMessage<RegisterResponseType>(msg).userId);
         subscribe.unsubscribe();
       });
 
       targetClient.publish({
-        destination: '/app/register',
+        destination: '/app/signal/register',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           userName: name,
