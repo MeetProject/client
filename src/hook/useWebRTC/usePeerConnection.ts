@@ -1,13 +1,11 @@
 'use client';
 
-import { MutableRefObject, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { useShallow } from 'zustand/react/shallow';
 import { StreamType } from '@/type/signalType';
 
 interface UsePeerConnectionProps {
-  streamRef: MutableRefObject<MediaStream>;
-  screenStreamRef: MutableRefObject<MediaStream>;
   onTrack: (targetId: string, stream: MediaStream, type: 'SCREEN' | 'USER', isScreenSender: boolean) => void;
   onDisplayShareEnd: () => void;
 }
@@ -18,28 +16,18 @@ interface PeerConnectionData {
   remoteSet: boolean;
 }
 
-const usePeerConnection = ({ streamRef, screenStreamRef, onTrack, onDisplayShareEnd }: UsePeerConnectionProps) => {
+const usePeerConnection = ({ onTrack, onDisplayShareEnd }: UsePeerConnectionProps) => {
   const peerConnections = useRef<Map<string, PeerConnectionData>>(new Map());
   const screenPeerConnections = useRef<Map<string, PeerConnectionData>>(new Map());
-  const { deviceEnable } = useDeviceStore(
+  const { stream, deviceEnable } = useDeviceStore(
     useShallow((state) => ({
+      stream: state.stream,
       deviceEnable: state.deviceEnable,
     })),
   );
 
   console.log(peerConnections.current);
   console.log(screenPeerConnections.current);
-
-  const replaceTracks = async (stream: MediaStream) => {
-    peerConnections.current.forEach((data) => {
-      data.pc.getSenders().forEach((sender) => {
-        const newTrack = stream.getTracks().find((t) => t.kind === sender.track?.kind);
-        if (newTrack) {
-          sender.replaceTrack(newTrack);
-        }
-      });
-    });
-  };
 
   const createPeerConnection = async (
     targetId: string,
@@ -74,17 +62,19 @@ const usePeerConnection = ({ streamRef, screenStreamRef, onTrack, onDisplayShare
     };
 
     if (streamType === 'SCREEN' && isScreenSender) {
-      screenStreamRef.current.getTracks().forEach((track) => pc.addTrack(track, screenStreamRef.current));
+      const { screenStream: mediaStream } = useDeviceStore.getState();
+      mediaStream.getTracks().forEach((track) => pc.addTrack(track, mediaStream));
       connections.current.set(targetId, data);
-      onTrack(targetId, screenStreamRef.current, 'SCREEN', true);
+      onTrack(targetId, mediaStream, 'SCREEN', true);
 
-      screenStreamRef.current.getVideoTracks()[0].onended = () => {
+      mediaStream.getVideoTracks()[0].onended = () => {
         onDisplayShareEnd();
       };
       return;
     }
 
-    streamRef.current.getTracks().forEach((track) => pc.addTrack(track, streamRef.current));
+    const mediaStream = useDeviceStore.getState().stream;
+    mediaStream.getTracks().forEach((track) => pc.addTrack(track, mediaStream));
     connections.current.set(targetId, data);
   };
 
@@ -168,30 +158,21 @@ const usePeerConnection = ({ streamRef, screenStreamRef, onTrack, onDisplayShare
   }, [deviceEnable]);
 
   useEffect(() => {
-    const handleDeviceChange = async () => {
-      if (!streamRef.current) return;
+    if (!stream) return;
 
-      try {
-        const newStream = await navigator.mediaDevices.getUserMedia({
-          audio: deviceEnable.audio,
-          video: deviceEnable.video,
+    const replaceTracks = async () => {
+      peerConnections.current.forEach((data) => {
+        data.pc.getSenders().forEach((sender) => {
+          const newTrack = stream.getTracks().find((t) => t.kind === sender.track?.kind);
+          if (newTrack) {
+            sender.replaceTrack(newTrack);
+          }
         });
-
-        streamRef.current.getTracks().forEach((t) => t.stop());
-        streamRef.current = newStream;
-
-        await replaceTracks(newStream);
-      } catch (err) {
-        console.error('Device change error:', err);
-      }
+      });
     };
 
-    navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
-
-    return () => {
-      navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange);
-    };
-  }, [deviceEnable, streamRef]);
+    replaceTracks();
+  }, [stream]);
 
   return {
     createPeerConnection,

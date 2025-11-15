@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { ParticipantDataType, StreamType } from '@/type/signalType';
 import { ChatResponseType, EmojiResponseType } from '@/type/reactionType';
+import { useDeviceStore } from '@/store/DeviceStore';
 import usePeerConnection from './usePeerConnection';
 import useSignalSocket from './useSignalSocket';
 import { useDevice2 } from '..';
@@ -18,7 +19,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
   const [screenSharingMediaStream, setScreenSharingMediaStream] = useState<MediaStream | null>(null);
   const participantsUserData = useRef<Map<string, ParticipantDataType>>(new Map());
 
-  const { streamRef, screenStreamRef, updateStream, stopStream, updateScreenStream, stopScreenStream } = useDevice2();
+  const { updateStream, stopStream, updateScreenStream, stopScreenStream } = useDevice2();
 
   const stopShareScreenRef = useRef<() => void>();
 
@@ -56,7 +57,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
     disconnectPeerConnection,
     disconnectAllPeerConnection,
     disconnectAllScreenPeerConnection,
-  } = usePeerConnection({ streamRef, screenStreamRef, onTrack, onDisplayShareEnd });
+  } = usePeerConnection({ onTrack, onDisplayShareEnd });
 
   const deleteParticipant = useCallback(
     (targetId: string, streamType: StreamType) => {
@@ -125,7 +126,10 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
 
   const joinRoom = useCallback(
     async (targetRoomId: string) => {
-      await updateStream();
+      const { stream: mediaStream } = useDeviceStore.getState();
+      if (!mediaStream) {
+        await updateStream();
+      }
       sendJoin(targetRoomId);
     },
     [sendJoin, updateStream],

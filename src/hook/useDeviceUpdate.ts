@@ -5,17 +5,19 @@ import { getStreamConstraint } from '@/lib/getStreamConstraint';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { StreamStatusType } from '@/type/streamType';
 import { getCurrentDeviceInfo } from '@/lib/getCurrentDeviceInfo';
+import { useShallow } from 'zustand/react/shallow';
 import useCheckPermission from './useCheckPermission';
 
 const useDevice = () => {
   const { updatePermission, checkPermissionQuery, addPermissionListener } = useCheckPermission();
 
-  const [stream, setStream] = useState<MediaStream>(null);
-  const [screenStream, setScreenStream] = useState<MediaStream>(null);
   const [streamStatus, setStreamStatus] = useState<StreamStatusType>(null);
 
-  const streamRef = useRef<MediaStream>(null);
-  const screenStreamRef = useRef<MediaStream>(null);
+  const { deviceStream } = useDeviceStore(
+    useShallow((state) => ({
+      deviceStream: state.stream,
+    })),
+  );
 
   const timerRef = useRef<NodeJS.Timeout>(null);
 
@@ -52,39 +54,30 @@ const useDevice = () => {
       );
       await updateDeviceStatus(newStream);
 
-      setStream(newStream);
-      streamRef.current = newStream;
+      useDeviceStore.getState().setStream(newStream);
       setStreamStatus('success');
       return newStream;
     } catch {
       setStreamStatus('rejected');
-      setStream(null);
-      streamRef.current = null;
+      useDeviceStore.getState().setStream(null);
       useDeviceStore.getState().setDeviceEnable({ audio: false, video: false });
       return null;
     }
   }, [updateDeviceStatus, updatePermission]);
 
-  const updateScreenStream = useCallback(
-    async (audio: boolean) => {
-      if (screenStream) {
-        return screenStream;
-      }
-
-      try {
-        const mediaStream = await navigator.mediaDevices.getDisplayMedia({ audio });
-        setScreenStream(mediaStream);
-        screenStreamRef.current = mediaStream;
-        return mediaStream;
-      } catch {
-        throw new Error('화면 공유 스트림 가져오기 실패');
-      }
-    },
-    [screenStream],
-  );
+  const updateScreenStream = useCallback(async (audio: boolean) => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getDisplayMedia({ audio });
+      useDeviceStore.getState().setScreenStream(mediaStream);
+      return mediaStream;
+    } catch {
+      throw new Error('화면 공유 스트림 가져오기 실패');
+    }
+  }, []);
 
   const toggleAudioInput = async () => {
-    if (stream && useDeviceStore.getState().audioInputList.length !== 0) {
+    const { stream } = useDeviceStore.getState();
+    if (useDeviceStore.getState().stream && useDeviceStore.getState().audioInputList.length !== 0) {
       useDeviceStore.getState().setDeviceEnable((prev) => {
         const newValue = !prev.audio;
         stream.getAudioTracks().forEach((track) => {
@@ -96,6 +89,7 @@ const useDevice = () => {
   };
 
   const toggleVideoInput = async () => {
+    const { stream } = useDeviceStore.getState();
     if (stream && useDeviceStore.getState().videoInputList.length !== 0) {
       useDeviceStore.getState().setDeviceEnable((prev) => {
         if (prev.video) {
@@ -111,6 +105,7 @@ const useDevice = () => {
   };
 
   const stopStream = useCallback(() => {
+    const { stream } = useDeviceStore.getState();
     if (!stream) {
       return;
     }
@@ -127,34 +122,33 @@ const useDevice = () => {
     useDeviceStore.getState().setAudioOutputList(null);
     useDeviceStore.getState().setVideoInputList(null);
 
-    setStream(null);
-    streamRef.current = null;
-  }, [stream]);
+    useDeviceStore.getState().setStream(null);
+  }, []);
 
   const stopScreenStream = useCallback(() => {
+    const { screenStream, setScreenStream } = useDeviceStore.getState();
     if (!screenStream) {
       return screenStream;
     }
     screenStream.getTracks().forEach((track) => track.stop());
     setScreenStream(null);
-    screenStreamRef.current = null;
-  }, [screenStream]);
+  }, []);
 
   useEffect(() => {
     return () => {
-      stream?.getTracks().forEach((track) => track.stop());
+      deviceStream?.getTracks().forEach((track) => track.stop());
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
     };
-  }, [stream]);
+  }, [deviceStream]);
 
   useEffect(() => {
     const handleDeviceChange = async () => {
-      if (!stream) {
+      if (!deviceStream) {
         return;
       }
-      await updateDeviceStatus(stream);
+      await updateDeviceStatus(deviceStream);
     };
 
     navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
@@ -162,10 +156,10 @@ const useDevice = () => {
     return () => {
       navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange);
     };
-  }, [stream, updateDeviceStatus]);
+  }, [deviceStream, updateDeviceStatus]);
 
   useEffect(() => {
-    if (!stream) {
+    if (!deviceStream) {
       return;
     }
     const checkDevicePermission = async () => {
@@ -179,7 +173,7 @@ const useDevice = () => {
       }
 
       const checkTrack = async () => {
-        if (!stream.active) {
+        if (!deviceStream.active) {
           if (timerRef.current) {
             clearInterval(timerRef.current);
             timerRef.current = null;
@@ -200,11 +194,9 @@ const useDevice = () => {
         timerRef.current = null;
       }
     };
-  }, [stream, addPermissionListener, checkPermissionQuery, updateStream, stopStream]);
+  }, [deviceStream, addPermissionListener, checkPermissionQuery, updateStream, stopStream]);
 
   return {
-    streamRef,
-    screenStreamRef,
     updateStream,
     updateScreenStream,
     stopStream,

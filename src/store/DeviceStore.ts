@@ -9,6 +9,8 @@ type DeviceCallback = (deviceEnable: Record<'video' | 'audio', boolean>) => Reco
 type DeviceEnable = Record<'video' | 'audio', boolean>;
 
 interface DeviceStoreType {
+  stream: MediaStream | null;
+  screenStream: MediaStream | null;
   permission: null | PermissionType;
   audioInput: DeviceType;
   audioOutput: DeviceType;
@@ -17,6 +19,8 @@ interface DeviceStoreType {
   audioInputList: MediaDeviceInfo[];
   audioOuputList: MediaDeviceInfo[];
   videoInputList: MediaDeviceInfo[];
+  setStream: (value: MediaStream | null) => void;
+  setScreenStream: (value: MediaStream | null) => void;
   setPermission: (callback: Record<'audio' | 'video', boolean> | null | PermissionCallback) => void;
   setAudioInput: (value: DeviceType) => void;
   setAudioOutput: (value: DeviceType) => void;
@@ -28,6 +32,8 @@ interface DeviceStoreType {
 }
 
 export const useDeviceStore = create<DeviceStoreType>((set) => ({
+  stream: null,
+  screenStream: null,
   permission: null,
   audioInput: { id: '', name: '' },
   audioOutput: { id: '', name: '' },
@@ -36,6 +42,8 @@ export const useDeviceStore = create<DeviceStoreType>((set) => ({
   audioInputList: [],
   audioOuputList: [],
   videoInputList: [],
+  setStream: (value: MediaStream | null) => set(() => ({ stream: value })),
+  setScreenStream: (value: MediaStream | null) => set(() => ({ screenStream: value })),
   setPermission: (callback: Record<'audio' | 'video', boolean> | null | PermissionCallback) =>
     set((state) => {
       if (typeof callback === 'function') {
