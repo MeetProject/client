@@ -21,13 +21,16 @@ import {
 } from '@/type/signalType';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useShallow } from 'zustand/react/shallow';
+import { ChatResponseType, EmojiResponseType } from '@/type/reactionType';
 
 interface UseSignalSocketProps {
   onAddParticipantData: (userId: string, user: ParticipantDataType) => void;
   onDeleteParticipant: (targetId: string, streamType: StreamType) => void;
+  onChat: (data: ChatResponseType) => void;
+  onEmoji: (data: EmojiResponseType) => void;
 }
 
-const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSignalSocketProps) => {
+const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, onEmoji }: UseSignalSocketProps) => {
   const client = useRef<Client | null>(null);
   const subscriptions = useRef<Map<string, StompSubscription>>(new Map());
   const currentRoomId = useRef<string | null>(null);
@@ -45,6 +48,11 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
     const data = JSON.parse(msg.body) as T;
     console.log(data);
     return data;
+  };
+
+  const deleteSubscribe = (id: string) => {
+    subscriptions.current.get(id)?.unsubscribe();
+    subscriptions.current.delete(id);
   };
 
   const getUserId = async (targetClient: Client): Promise<string> => {
@@ -85,6 +93,19 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
       onDeleteParticipant(fromUserId, streamType);
     });
     subscriptions.current.set(`leave-${roomId}`, leaveSub);
+
+    const chatSub = client.current.subscribe(`/topic/room/${roomId}/chat`, (msg: IMessage) => {
+      const response = parseMessage<ChatResponseType>(msg);
+      onChat(response);
+    });
+    subscriptions.current.set(`chat-${roomId}`, chatSub);
+
+    const emojuSub = client.current.subscribe(`/topic/room/${roomId}/emoji`, (msg: IMessage) => {
+      const response = parseMessage<EmojiResponseType>(msg);
+      onEmoji(response);
+    });
+    subscriptions.current.set(`emoji-${roomId}`, emojuSub);
+
     currentRoomId.current = roomId;
   };
 
@@ -289,8 +310,10 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant }: UseSigna
     });
 
     if (streamType === 'USER') {
-      subscriptions.current.get(`leave-${currentRoomId.current}`)?.unsubscribe();
-      subscriptions.current.delete(`leave-${currentRoomId.current}`);
+      deleteSubscribe(`leave-${currentRoomId.current}`);
+      deleteSubscribe(`chat-${currentRoomId.current}`);
+      deleteSubscribe(`emoji-${currentRoomId.current}`);
+
       currentRoomId.current = null;
     }
   };

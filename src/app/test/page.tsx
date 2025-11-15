@@ -16,7 +16,7 @@ export default function TestPage() {
     stopShareScreen,
     participantsMediaStream,
     screenSharingMediaStream,
-  } = useWebRTC();
+  } = useWebRTC({});
   const handleConnectButton = async () => {
     await joinSession();
   };

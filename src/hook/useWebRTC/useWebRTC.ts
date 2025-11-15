@@ -2,11 +2,17 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { ParticipantDataType, StreamType } from '@/type/signalType';
+import { ChatResponseType, EmojiResponseType } from '@/type/reactionType';
 import usePeerConnection from './usePeerConnection';
 import useSignalSocket from './useSignalSocket';
 import { useDevice2 } from '..';
 
-const useWebRTC = () => {
+interface UseWebRTCProps {
+  onChat?: (data: ChatResponseType) => void;
+  onEmoji?: (data: EmojiResponseType) => void;
+}
+
+const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
   const [isScreenShare, setIsScreenShare] = useState(false);
   const [participantsMediaStream, setParticipantsMediaStream] = useState<Map<string, MediaStream>>(new Map());
   const [screenSharingMediaStream, setScreenSharingMediaStream] = useState<MediaStream | null>(null);
@@ -79,6 +85,8 @@ const useWebRTC = () => {
   } = useSignalSocket({
     onAddParticipantData: handleAddParticipantUserData,
     onDeleteParticipant: deleteParticipant,
+    onChat,
+    onEmoji,
   });
 
   const stopShareScreen = useCallback(() => {
