@@ -33,6 +33,7 @@ interface UseSignalSocketProps {
 const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, onEmoji }: UseSignalSocketProps) => {
   const client = useRef<Client | null>(null);
   const subscriptions = useRef<Map<string, StompSubscription>>(new Map());
+  const roomSubscriptions = useRef<Map<string, StompSubscription>>(new Map());
   const currentRoomId = useRef<string | null>(null);
 
   const { name, color, setId } = useUserInfoStore(
@@ -48,11 +49,6 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
     const data = JSON.parse(msg.body) as T;
     console.log(data);
     return data;
-  };
-
-  const deleteSubscribe = (id: string) => {
-    subscriptions.current.get(id)?.unsubscribe();
-    subscriptions.current.delete(id);
   };
 
   const getUserId = async (targetClient: Client): Promise<string> => {
@@ -92,19 +88,19 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
       const { fromUserId, streamType } = parseMessage<LeaveResponseType>(msg);
       onDeleteParticipant(fromUserId, streamType);
     });
-    subscriptions.current.set(`leave-${roomId}`, leaveSub);
+    roomSubscriptions.current.set('leave', leaveSub);
 
     const chatSub = client.current.subscribe(`/topic/room/${roomId}/chat`, (msg: IMessage) => {
       const response = parseMessage<ChatResponseType>(msg);
       onChat(response);
     });
-    subscriptions.current.set(`chat-${roomId}`, chatSub);
+    roomSubscriptions.current.set('chat', chatSub);
 
     const emojuSub = client.current.subscribe(`/topic/room/${roomId}/emoji`, (msg: IMessage) => {
       const response = parseMessage<EmojiResponseType>(msg);
       onEmoji(response);
     });
-    subscriptions.current.set(`emoji-${roomId}`, emojuSub);
+    roomSubscriptions.current.set('emoji', emojuSub);
 
     currentRoomId.current = roomId;
   };
@@ -310,10 +306,8 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
     });
 
     if (streamType === 'USER') {
-      deleteSubscribe(`leave-${currentRoomId.current}`);
-      deleteSubscribe(`chat-${currentRoomId.current}`);
-      deleteSubscribe(`emoji-${currentRoomId.current}`);
-
+      roomSubscriptions.current.forEach((subscription) => subscription.unsubscribe());
+      roomSubscriptions.current.clear();
       currentRoomId.current = null;
     }
   };
