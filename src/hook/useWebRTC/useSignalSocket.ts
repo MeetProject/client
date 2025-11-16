@@ -57,7 +57,7 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
 
   const getUserId = async (targetClient: Client): Promise<string> => {
     return new Promise((resolve) => {
-      const subscribe = targetClient.subscribe('/user/queue/signal/userId', (msg: IMessage) => {
+      const subscribe = targetClient.subscribe('/user/queue/signal/register', (msg: IMessage) => {
         resolve(parseMessage<RegisterResponseType>(msg).userId);
         subscribe.unsubscribe();
       });
