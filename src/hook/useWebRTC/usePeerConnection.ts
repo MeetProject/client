@@ -73,8 +73,20 @@ const usePeerConnection = ({ onTrack, onDisplayShareEnd }: UsePeerConnectionProp
       return;
     }
 
-    const mediaStream = useDeviceStore.getState().stream;
-    mediaStream.getTracks().forEach((track) => pc.addTrack(track, mediaStream));
+    const { audioInput, videoInput, stream: mediaStream } = useDeviceStore.getState();
+
+    mediaStream.getAudioTracks().forEach((track) => {
+      if (audioInput && track.id === audioInput.id) {
+        pc.addTrack(track, mediaStream);
+      }
+    });
+
+    mediaStream.getVideoTracks().forEach((track) => {
+      if (videoInput && track.id === videoInput.id) {
+        pc.addTrack(track, mediaStream);
+      }
+    });
+
     connections.current.set(targetId, data);
   };
 

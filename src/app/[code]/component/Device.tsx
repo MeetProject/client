@@ -42,11 +42,10 @@ export default function Device() {
   );
 
   const { streamStatus, toggleVideoInput, toggleAudioInput, updateStream } = useDevice2();
-
   /* const { stream, streamStatus, toggleVideoInput, toggleAudioInput, handleUpdateStream } = useDevice(); */
 
   const [isOpenModal, setIsOpenModal] = useState(false);
-  const audioDisabled = !audioInput?.id;
+  const audioDisabled = streamStatus === 'rejected' || (permission && !permission.audio);
   const videoDisabled = streamStatus === 'rejected' || (permission && !permission.video);
 
   useEffect(() => {
@@ -86,7 +85,9 @@ export default function Device() {
   };
 
   useEffect(() => {
-    updateStream();
+    if (!useDeviceStore.getState().stream) {
+      updateStream();
+    }
   }, [updateStream]);
 
   return (
@@ -122,7 +123,7 @@ export default function Device() {
               ) : (
                 <Icon.MicOff width={24} height={24} fill='#ffffff' />
               )}
-              {audioDisabled && streamStatus !== null && (
+              {audioDisabled && (
                 <div className='absolute right-0 top-0 size-3 rounded-full bg-white'>
                   <Icon.Warn width={20} height={20} fill='#FA7B17' className='relative -left-1 -top-1' />
                 </div>
@@ -136,7 +137,7 @@ export default function Device() {
               onClick={handleVideoButton}
               className={`relative flex items-center justify-center border border-solid shadow-sm ${permission?.video ? 'border-white' : 'border-[#EA4335] bg-[#EA4335]'} size-14 rounded-full`}
             >
-              {deviceEnable.video ? (
+              {deviceEnable.video && permission?.video ? (
                 <Icon.VideoOn width={24} height={24} fill='#ffffff' />
               ) : (
                 <Icon.VideoOff width={24} height={24} fill='#ffffff' />

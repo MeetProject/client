@@ -86,7 +86,10 @@ const useDevice = () => {
     const { deviceEnable } = useDeviceStore.getState();
 
     try {
-      const newStream = await navigator.mediaDevices.getUserMedia(getStreamConstraint(permission, deviceEnable));
+      const { audioInput, videoInput } = useDeviceStore.getState();
+      const newStream = await navigator.mediaDevices.getUserMedia(
+        getStreamConstraint(permission, deviceEnable, { audio: audioInput?.id, video: videoInput?.id }),
+      );
       console.log(useDeviceStore.getState().deviceEnable);
       await updateDeviceStatus(newStream);
       console.log(useDeviceStore.getState().deviceEnable);

@@ -15,7 +15,7 @@ export const getStreamConstraint = (
   enabled: Record<'audio' | 'video', boolean>,
   id?: Record<'audio' | 'video', string>,
 ) => {
-  const audio = getDeviceConstraint(permission.audio, id?.audio);
+  const audio = getDeviceConstraint(permission.audio && enabled.audio, id?.audio);
   if (!audio) {
     return { audio: false, video: getDeviceConstraint(permission.video && enabled.video, id?.video) };
   }

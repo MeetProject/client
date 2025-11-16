@@ -38,13 +38,11 @@ export default function VideoNotification({ status, onClickButton }: VideoNotifi
     onClickButton();
   };
 
-  if (permission && permission.video && status === 'success' && deviceEnable.video) {
-    return;
-  }
-
   return (
-    <div className='absolute top-0 flex size-full items-center justify-center bg-[#202124] font-googleSans text-2xl text-white'>
-      {status !== null && (status === 'rejected' || (permission && !permission.video && status !== 'failed')) ? (
+    <div
+      className={`absolute top-0 flex size-full items-center justify-center ${status === 'success' && deviceEnable.video ? 'bg-transparent' : 'bg-[#202124]'} font-googleSans text-2xl text-white`}
+    >
+      {status === 'rejected' || (permission && !permission.video && status !== 'failed') ? (
         <div className='flex flex-col items-center justify-center p-[5px]'>
           <div className='text-center'>회의에서 참여자들이 나를 보고 듣도록 하시겠습니까?</div>
           <button

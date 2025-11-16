@@ -91,6 +91,7 @@ export default function DeviceButton({
 
     if (type === 'audioInput') {
       setAudioInput({ name: device.label, id: device.deviceId });
+      console.log(device.deviceId);
     }
 
     if (type === 'videoInput') {
