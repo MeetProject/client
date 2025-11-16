@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { setTrackChage } from '@/lib/setTrackChange';
-import { useDevice } from '@/hook';
+import { useDevice2 } from '@/hook';
 import { useDeviceStore } from '@/store/DeviceStore';
 import * as Icon from '@/asset/icon';
 import { Visualizer } from '@/component';
@@ -35,11 +35,19 @@ export default function Device() {
     })),
   );
 
-  const { stream, streamStatus, toggleVideoInput, toggleAudioInput, handleUpdateStream } = useDevice();
+  const { stream } = useDeviceStore(
+    useShallow((state) => ({
+      stream: state.stream,
+    })),
+  );
+
+  const { streamStatus, toggleVideoInput, toggleAudioInput, updateStream } = useDevice2();
+
+  /* const { stream, streamStatus, toggleVideoInput, toggleAudioInput, handleUpdateStream } = useDevice(); */
 
   const [isOpenModal, setIsOpenModal] = useState(false);
-  const audioDisabled = !audioInput.id;
-  const videoDisabled = !videoInput.id || streamStatus === 'rejected' || (permission && !permission.video);
+  const audioDisabled = !audioInput?.id;
+  const videoDisabled = streamStatus === 'rejected' || (permission && !permission.video);
 
   useEffect(() => {
     if (stream && videoRef.current) {
@@ -77,6 +85,10 @@ export default function Device() {
     setIsOpenModal(false);
   };
 
+  useEffect(() => {
+    updateStream();
+  }, [updateStream]);
+
   return (
     <div className='w-full max-w-[764px] p-4 pr-2 lg:h-[284px] lg:pr-4'>
       <div
@@ -103,7 +115,7 @@ export default function Device() {
             <button
               type='button'
               onClick={handleMicButton}
-              className={`relative flex items-center justify-center border border-solid ${deviceEnable.audio && permission?.audio ? 'border-white' : 'border-[#EA4335] bg-[#EA4335]'} size-14 rounded-full`}
+              className={`relative flex items-center justify-center border border-solid shadow-sm ${deviceEnable.audio && permission?.audio ? 'border-white' : 'border-[#EA4335] bg-[#EA4335]'} size-14 rounded-full`}
             >
               {deviceEnable.audio && permission?.audio ? (
                 <Icon.MicOn width={24} height={24} fill='#ffffff' />
@@ -122,14 +134,14 @@ export default function Device() {
             <button
               type='button'
               onClick={handleVideoButton}
-              className={`relative flex items-center justify-center border border-solid ${deviceEnable.video && permission?.video ? 'border-white' : 'border-[#EA4335] bg-[#EA4335]'} size-14 rounded-full`}
+              className={`relative flex items-center justify-center border border-solid shadow-sm ${permission?.video ? 'border-white' : 'border-[#EA4335] bg-[#EA4335]'} size-14 rounded-full`}
             >
-              {deviceEnable.video && permission?.video ? (
+              {deviceEnable.video ? (
                 <Icon.VideoOn width={24} height={24} fill='#ffffff' />
               ) : (
                 <Icon.VideoOff width={24} height={24} fill='#ffffff' />
               )}
-              {videoDisabled && streamStatus !== null && (
+              {videoDisabled && (
                 <div className='absolute right-0 top-0 size-3 rounded-full bg-white'>
                   <Icon.Warn width={20} height={20} fill='#FA7B17' className='relative -left-1 -top-1' />
                 </div>
@@ -146,7 +158,7 @@ export default function Device() {
                 width={14}
                 height={14}
                 fill={
-                  (streamStatus === 'failed' && !audioInput.id) ||
+                  (streamStatus === 'failed' && !audioInput?.id) ||
                   streamStatus === 'rejected' ||
                   (permission && !permission.audio)
                     ? '#B5B6B7'
@@ -158,7 +170,6 @@ export default function Device() {
             deviceList={audioInputList}
             type='audioInput'
             onTrackChange={handleTrackChange}
-            stream={stream}
             status={streamStatus}
           />
         )}
@@ -170,7 +181,7 @@ export default function Device() {
                 width={14}
                 height={14}
                 fill={
-                  (streamStatus === 'failed' && !audioOutput.id) ||
+                  (streamStatus === 'failed' && !audioOutput?.id) ||
                   streamStatus === 'rejected' ||
                   (permission && !permission.audio)
                     ? '#B5B6B7'
@@ -211,7 +222,7 @@ export default function Device() {
         isOpenModal={isOpenModal}
         status={streamStatus}
         onClose={handleModalClose}
-        onUpdateStream={handleUpdateStream}
+        onUpdateStream={updateStream}
       />
     </div>
   );

@@ -65,24 +65,21 @@ const useCheckPermission = () => {
     }
   }, []);
 
-  const checkPermission = useCallback(
-    async (audio: boolean, video: boolean) => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio, video });
-        setPermission({ audio, video });
-        setDeviceEnable((prev) => ({ audio: audio && prev.audio, video: video && prev.video }));
-        stream.getTracks().forEach((track) => track.stop());
-        return true;
-      } catch (error) {
-        const e = error as DOMException;
-        if (e.name === 'NotAllowedError') {
-          return false;
-        }
-        return 'failed';
+  const checkPermission = useCallback(async (audio: boolean, video: boolean) => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio, video });
+      useDeviceStore.getState().setPermission({ audio, video });
+      useDeviceStore.getState().setDeviceEnable((prev) => ({ audio: audio && prev.audio, video: video && prev.video }));
+      stream.getTracks().forEach((track) => track.stop());
+      return true;
+    } catch (error) {
+      const e = error as DOMException;
+      if (e.name === 'NotAllowedError') {
+        return false;
       }
-    },
-    [setDeviceEnable, setPermission],
-  );
+      return 'failed';
+    }
+  }, []);
 
   const updatePermission = useCallback(async () => {
     if (isSupportedPermission === null || isSupportedPermission === true) {

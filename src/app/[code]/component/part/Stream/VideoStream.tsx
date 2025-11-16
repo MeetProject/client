@@ -56,7 +56,7 @@ export default function VideoStream({
 
     subscriber.addVideoElement(videoRef.current);
     if (videoRef.current.setSinkId) {
-      videoRef.current.setSinkId(audioOutput.id);
+      videoRef.current.setSinkId(audioOutput?.id);
     }
 
     if (isScreen) {

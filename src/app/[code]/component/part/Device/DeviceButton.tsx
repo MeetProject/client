@@ -85,7 +85,7 @@ export default function DeviceButton({
   };
 
   const handleCardClick = async (device: MediaDeviceInfo) => {
-    if (device.deviceId === currentDevice.id) {
+    if (device.deviceId === currentDevice?.id) {
       return;
     }
 
@@ -165,7 +165,7 @@ export default function DeviceButton({
               <DeviceCard
                 key={device.deviceId}
                 device={device}
-                isChoosed={device.deviceId === currentDevice.id}
+                isChoosed={device.deviceId === currentDevice?.id}
                 onClick={handleCardClick}
                 color={color}
               />

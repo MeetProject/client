@@ -120,8 +120,8 @@ const useOpenvidu = (sessionId: string) => {
   const publishVideo = useCallback(
     async (newOV: OpenVidu, newSession: OVSession) => {
       const publishConstraint = {
-        audioSource: permission && permission.audio ? (audioInput.id ? audioInput.id : true) : false,
-        videoSource: permission && permission.video ? (videoInput.id ? videoInput.id : true) : false,
+        audioSource: permission && permission.audio ? (audioInput?.id ? audioInput.id : true) : false,
+        videoSource: permission && permission.video ? (videoInput?.id ? videoInput.id : true) : false,
       };
 
       const newPublisher = newOV.initPublisher(undefined, publishConstraint);

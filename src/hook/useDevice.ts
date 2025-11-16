@@ -101,7 +101,7 @@ const useDevice = (isInitialUpdate = true) => {
     const newPermission = await updatePermission();
     try {
       const newStream = await navigator.mediaDevices.getUserMedia(
-        getStreamConstraint(newPermission, { audio: audioInput.id, video: videoInput.id }),
+        getStreamConstraint(newPermission, { audio: audioInput?.id, video: videoInput?.id }),
       );
       return { stream: newStream, isFailed: newPermission.isFailed };
     } catch (error) {

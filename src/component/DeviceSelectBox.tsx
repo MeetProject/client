@@ -97,11 +97,11 @@ export default function DeviceSelectBox({
                 className='relative h-11 w-full truncate bg-white pl-14 pr-4 hover:bg-[#F5F5F5] active:bg-[#D7D7D7]'
               >
                 <p
-                  className={`w-full truncate ${device.deviceId === currentValue.id ? 'text-[#1A73E8]' : 'text-black'} text-left`}
+                  className={`w-full truncate ${device.deviceId === currentValue?.id ? 'text-[#1A73E8]' : 'text-black'} text-left`}
                 >
                   {device.label}
                 </p>
-                {device.deviceId === currentValue.id && (
+                {device.deviceId === currentValue?.id && (
                   <Icon.Check width={24} height={24} fill='#1A73E8' className='absolute left-4 top-2.5 ' />
                 )}
               </button>

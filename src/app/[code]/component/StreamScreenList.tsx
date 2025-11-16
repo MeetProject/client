@@ -64,8 +64,8 @@ export default function StreamScreenList({
               id,
               name,
               color,
-              audio: Boolean(deviceEnable.audio && audioInput.id),
-              video: Boolean(deviceEnable.video && videoInput.id),
+              audio: Boolean(deviceEnable.audio && audioInput?.id),
+              video: Boolean(deviceEnable.video && videoInput?.id),
             }}
             subscriber={publisher}
             muted
