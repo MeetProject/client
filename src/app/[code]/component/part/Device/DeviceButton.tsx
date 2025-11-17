@@ -13,7 +13,7 @@ interface DeviceButtonIcon {
   currentDevice: Record<'name' | 'id', string>;
   deviceList: MediaDeviceInfo[];
   type: 'audioInput' | 'audioOutput' | 'videoInput';
-  onTrackChange?: (device: MediaDeviceInfo, type: 'audioInput' | 'audioOutput' | 'videoInput') => Promise<void>;
+  onTrackChange?: (device?: MediaDeviceInfo, type?: 'audioInput' | 'audioOutput' | 'videoInput') => Promise<void>;
   color?: 'black' | 'white';
   width?: number;
 }
@@ -88,7 +88,6 @@ export default function DeviceButton({
 
     if (type === 'audioInput') {
       setAudioInput({ name: device.label, id: device.deviceId });
-      console.log(device.deviceId);
     }
 
     if (type === 'videoInput') {

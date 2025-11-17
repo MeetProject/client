@@ -70,7 +70,7 @@ const useCheckPermission = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio, video });
       useDeviceStore.getState().setPermission({ audio, video });
       useDeviceStore.getState().setDeviceEnable((prev) => ({ audio: audio && prev.audio, video: video && prev.video }));
-      stream.getTracks().forEach((track) => track.stop());
+      stream?.getTracks().forEach((track) => track.stop());
       return true;
     } catch (error) {
       const e = error as DOMException;

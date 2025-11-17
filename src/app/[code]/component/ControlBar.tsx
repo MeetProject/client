@@ -6,20 +6,16 @@ import { ToggleType } from '@/type/toggleType';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { useShallow } from 'zustand/react/shallow';
 import { Alert } from '@/component';
-import { StreamStatusType } from '@/type/streamType';
 import { checkBrowser } from '@/lib/checkBrowser';
 import { ControlButton, MenuButton, OptionButton, CallEndButton } from './part/ControlBar';
 import { PermissionModal } from './part/Device';
 
 interface ControlBarProps {
-  stream: MediaStream | null | undefined;
-  streamStatus: StreamStatusType;
-  changeDevice: (type: 'audio' | 'video', value: boolean | string) => Promise<MediaStream | undefined>;
-  handleUpdateStream: () => void;
+  changeDevice: () => Promise<MediaStream>;
   handleScreenShare: () => void;
   handleStopScreenShare: () => void;
   handleLeavSession: () => void;
-  handleHandsUp: (value: boolean) => void;
+  /* handleHandsUp: (value: boolean) => void; */
 }
 
 interface ControlButtonType {
@@ -37,14 +33,11 @@ const CONTROL_BUTTON_OFF_PROPS = { width: 24, height: 24, fill: '#06306D' };
 const CONTROL_BUTTON_ON_PROPS = { width: 24, height: 24, fill: '#E3E3E3' };
 
 export default function ControlBar({
-  stream,
-  streamStatus,
   changeDevice,
-  handleUpdateStream,
   handleScreenShare,
   handleStopScreenShare,
   handleLeavSession,
-  handleHandsUp,
+  /* handleHandsUp, */
 }: ControlBarProps) {
   const [isOpenAlert, setIsOpenAlert] = useState(false);
   const handleScreenShareButtonClick = (value: boolean | 'disable') => {
@@ -63,7 +56,8 @@ export default function ControlBar({
     if (value === 'disable') {
       return;
     }
-    handleHandsUp(value);
+    console.log('handsup', value);
+    /* handleHandsUp(value); */
   };
 
   const isSupportScreenShareBrowser = checkBrowser();
@@ -137,8 +131,6 @@ export default function ControlBar({
         icon={<Icon.MicOn width={24} height={24} fill='#E3E3E3' />}
         clickedIcon={<Icon.MicOff width={24} height={24} fill='#5F1312' />}
         name={{ chevron: '오디오 설정', iconOn: '마이크 끄기(ctrl + d)', iconOff: '마이크 켜기(ctrl + d)' }}
-        status={streamStatus}
-        stream={stream}
         changeDevice={changeDevice}
         shortcutKey={['Control', 'd']}
       />
@@ -148,7 +140,6 @@ export default function ControlBar({
         icon={<Icon.VideoOn width={24} height={24} fill='#E3E3E3' />}
         clickedIcon={<Icon.VideoOff width={24} height={24} fill='#5F1312' />}
         name={{ chevron: '영상 설정', iconOn: '비디오 끄기(ctrl + e)', iconOff: '비디오 켜기(ctrl + e)' }}
-        status={streamStatus}
         changeDevice={changeDevice}
         shortcutKey={['Control', 'e']}
       />
@@ -157,12 +148,7 @@ export default function ControlBar({
       ))}
       <MenuButton />
       <CallEndButton onClick={handleLeavSession} />
-      <PermissionModal
-        isOpenModal={isOpenModal}
-        status='success'
-        onClose={handleModalClose}
-        onUpdateStream={handleUpdateStream}
-      />
+      <PermissionModal isOpenModal={isOpenModal} onClose={handleModalClose} onUpdateStream={changeDevice} />
       <Alert text='다른 사람이 화면 공유 중 입니다.' isOpen={isOpenAlert} onCloseAlert={handleAlertClose} />
     </div>
   );

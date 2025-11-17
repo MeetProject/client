@@ -8,7 +8,7 @@ interface SignalResponseType {
 export interface ParticipantDataType {
   userId: string;
   userName: string;
-  profieColor: string;
+  profileColor: string;
 }
 
 export interface RegisterResponseType extends SignalResponseType {

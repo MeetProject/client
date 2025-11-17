@@ -1,13 +1,12 @@
-import { Subscriber } from 'openvidu-browser';
 import { useEffect, useRef } from 'react';
 
 interface OtherAudioStreamProps {
-  otherSubscriber: [string, Subscriber | null][];
+  otherStreams: [string, MediaStream][];
   color: string;
   name: string;
 }
 
-export default function OtherAudioStream({ otherSubscriber, color, name }: OtherAudioStreamProps) {
+export default function OtherAudioStream({ otherStreams, color, name }: OtherAudioStreamProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const destinationRef = useRef<MediaStreamAudioDestinationNode | null>(null);
@@ -25,15 +24,12 @@ export default function OtherAudioStream({ otherSubscriber, color, name }: Other
 
     const currentSources = new Set<MediaStreamAudioSourceNode>();
 
-    otherSubscriber.forEach((entity) => {
-      const mediaStream = entity[1]?.stream.getMediaStream();
-      if (mediaStream) {
-        const audioTrack = mediaStream.getAudioTracks();
-        if (audioTrack.length > 0 && audioContextRef.current && destinationRef.current) {
-          const audioSource = audioContextRef.current.createMediaStreamSource(new MediaStream(audioTrack));
-          audioSource.connect(destinationRef.current);
-          currentSources.add(audioSource);
-        }
+    otherStreams.forEach(([, stream]) => {
+      const audioTrack = stream.getAudioTracks();
+      if (audioTrack.length > 0 && audioContextRef.current && destinationRef.current) {
+        const audioSource = audioContextRef.current.createMediaStreamSource(new MediaStream(audioTrack));
+        audioSource.connect(destinationRef.current);
+        currentSources.add(audioSource);
       }
     });
 
@@ -49,7 +45,7 @@ export default function OtherAudioStream({ otherSubscriber, color, name }: Other
         currentSources.clear();
       }
     };
-  }, [otherSubscriber]);
+  }, [otherStreams]);
 
   return (
     <div className='relative flex size-full flex-col items-center justify-center overflow-hidden rounded-lg'>
@@ -61,7 +57,7 @@ export default function OtherAudioStream({ otherSubscriber, color, name }: Other
           {name.slice(0, 3)}
         </div>
         <p className='absolute bottom-3 left-1/2 -translate-x-1/2 text-white' style={{ fontSize: '100%' }}>
-          {`외 ${otherSubscriber.length - 1}명`}
+          {`외 ${otherStreams.length - 1}명`}
         </p>
       </div>
       <audio ref={audioRef} autoPlay />

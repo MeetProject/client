@@ -11,7 +11,7 @@ export default function VideoPlayer({ stream }: Props) {
   useEffect(() => {
     if (!videoRef.current) return;
 
-    const liveTracks = stream.getTracks().filter((t) => t.readyState === 'live');
+    const liveTracks = stream?.getTracks().filter((t) => t.readyState === 'live');
     const safeStream = new MediaStream(liveTracks);
 
     videoRef.current.srcObject = safeStream;

@@ -37,8 +37,6 @@ export default function TestPage() {
     leaveSession();
   };
 
-  console.log(participantsMediaStream);
-
   return (
     <div>
       <div className='flex flex-1 flex-col gap-2 border'>

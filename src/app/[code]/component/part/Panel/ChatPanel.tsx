@@ -2,12 +2,11 @@
 
 import { ChangeEvent, FormEvent, useRef, useState } from 'react';
 import * as Icon from '@/asset/icon';
-
-import { ChatInfo } from '@/type/sessionType';
+import { ChatType } from '@/type/reactionType';
 import { ChatMessage } from './ChatMessage';
 
 interface ChatPanelProps {
-  chatList: ChatInfo[];
+  chatList: ChatType[];
   onSendMessage: (value: string) => void;
 }
 

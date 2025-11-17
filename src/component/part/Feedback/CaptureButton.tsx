@@ -42,7 +42,7 @@ export default function CaptureButton({ imgSrc, onImageChange, onVisible }: Capt
 
         video.remove();
         canvas.remove();
-        stream.getTracks().forEach((track) => track.stop());
+        stream?.getTracks().forEach((track) => track.stop());
         onVisible(true);
       };
     } catch {

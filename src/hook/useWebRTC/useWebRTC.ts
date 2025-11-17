@@ -4,7 +4,6 @@ import { useCallback, useRef, useState } from 'react';
 import { ParticipantDataType, StreamType } from '@/type/signalType';
 import { ChatResponseType, EmojiResponseType } from '@/type/reactionType';
 import { useDeviceStore } from '@/store/DeviceStore';
-import { useUserInfoStore } from '@/store/UserInfoStore';
 import usePeerConnection from './usePeerConnection';
 import useSignalSocket from './useSignalSocket';
 import { useDevice2 } from '..';
@@ -19,6 +18,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
   const [participantsMediaStream, setParticipantsMediaStream] = useState<Map<string, MediaStream>>(new Map());
   const [screenSharingMediaStream, setScreenSharingMediaStream] = useState<MediaStream | null>(null);
   const participantsUserData = useRef<Map<string, ParticipantDataType>>(new Map());
+  const [screenOwnerId, setScreenOwnerId] = useState<string | null>(null);
 
   const { updateStream, stopStream, updateScreenStream, stopScreenStream } = useDevice2();
 
@@ -39,6 +39,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
       }
       if (streamType === 'SCREEN' && !isScreenSender) {
         setScreenSharingMediaStream(targetStream);
+        setScreenOwnerId(targetId);
       }
     },
     [],
@@ -46,6 +47,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
 
   const onDisplayShareEnd = useCallback(() => {
     stopShareScreenRef.current?.();
+    setScreenOwnerId(null);
   }, []);
 
   const {
@@ -74,6 +76,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
       }
 
       setScreenSharingMediaStream(null);
+      setScreenOwnerId(null);
     },
     [disconnectPeerConnection],
   );
@@ -82,6 +85,8 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
     connectSocket,
     sendJoin,
     sendLeave,
+    sendChat,
+    sendEmoji,
     disconnectSocket,
     shareScreen: sharingScreen,
   } = useSignalSocket({
@@ -102,44 +107,19 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
   stopShareScreenRef.current = stopShareScreen;
 
   const joinSession = useCallback(async () => {
-    const payload = {
-      userName: 'name',
-      userColor: 'color',
-    };
-
-    try {
-      const response = await fetch('http://localhost:8080/api/user/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error('api error');
-      }
-
-      const { userId } = await response.json();
-
-      useUserInfoStore.getState().setId(userId);
-
-      connectSocket(
-        (
-          targetId: string,
-          onIceCandidate: (targetId: string, candidate: RTCIceCandidate, streamType: StreamType) => void,
-          streamType: 'SCREEN' | 'USER',
-          isScreenSender = false,
-        ) => createPeerConnection(targetId, onIceCandidate, streamType, isScreenSender),
-        createOfferSdp,
-        createAnswerSdp,
-        registerAnswerSdp,
-        registerOfferSdp,
-        registerRemoteIce,
-      );
-    } catch {
-      console.log('api error');
-    }
+    connectSocket(
+      (
+        targetId: string,
+        onIceCandidate: (targetId: string, candidate: RTCIceCandidate, streamType: StreamType) => void,
+        streamType: 'SCREEN' | 'USER',
+        isScreenSender = false,
+      ) => createPeerConnection(targetId, onIceCandidate, streamType, isScreenSender),
+      createOfferSdp,
+      createAnswerSdp,
+      registerAnswerSdp,
+      registerOfferSdp,
+      registerRemoteIce,
+    );
   }, [
     connectSocket,
     createPeerConnection,
@@ -176,16 +156,6 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
     setScreenSharingMediaStream(null);
   }, [disconnectAllPeerConnection, disconnectAllScreenPeerConnection]);
 
-  const createRoom = useCallback(async () => {
-    const response = await fetch('http://localhost:8080/api/room/create', { method: 'POST' });
-    if (!response.ok) {
-      throw new Error('api Error');
-    }
-
-    const { roomId: id } = (await response.json()) as { roomId: string };
-    await joinRoom(id);
-  }, [joinRoom]);
-
   const leaveRoom = useCallback(() => {
     if (isScreenShare) {
       stopShareScreen();
@@ -204,14 +174,16 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
   return {
     joinSession,
     joinRoom,
+    sendChat,
+    sendEmoji,
     leaveRoom,
-    createRoom,
     leaveSession,
     shareScreen,
     stopShareScreen,
     participantsMediaStream,
     screenSharingMediaStream,
     participantsUserData,
+    screenOwnerId,
   };
 };
 

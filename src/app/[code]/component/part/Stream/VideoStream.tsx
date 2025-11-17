@@ -2,13 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image, { StaticImageData } from 'next/image';
-import { Publisher, Subscriber } from 'openvidu-browser';
 import { Visualizer } from '@/component';
 import * as Icon from '@/asset/icon';
 import * as ImageSrc from '@/asset/image';
-import { useDeviceStore } from '@/store/DeviceStore';
-import { EmojiInfo } from '@/type/sessionType';
 import { EmojiType } from '@/type/toggleType';
+import { EmojiResponseType } from '@/type/reactionType';
 
 interface UserInfo extends Record<'id' | 'name' | 'color', string> {
   audio: boolean;
@@ -17,11 +15,11 @@ interface UserInfo extends Record<'id' | 'name' | 'color', string> {
 
 interface VideoStreamProps {
   user: UserInfo;
-  subscriber: Subscriber | Publisher | null;
+  isScreen?: boolean;
+  stream: MediaStream | null;
   muted?: boolean;
-  emojiList?: EmojiInfo[];
+  emojiList?: EmojiResponseType[];
   handsUpList?: Record<string, boolean>;
-  stream?: MediaStream | null | undefined;
 }
 
 const EMOJI_IMAGE: Record<EmojiType, StaticImageData> = {
@@ -38,31 +36,31 @@ const EMOJI_IMAGE: Record<EmojiType, StaticImageData> = {
 
 export default function VideoStream({
   user,
-  subscriber,
+  isScreen = false,
+  stream,
   muted = false,
   emojiList,
   handsUpList,
-  stream,
 }: VideoStreamProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [emojiIcon, setEmojiIcon] = useState<EmojiInfo | null>(null);
-  const audioOutput = useDeviceStore((state) => state.audioOutput);
-  const isScreen = subscriber?.stream.typeOfVideo === 'SCREEN';
+  const [emojiIcon, setEmojiIcon] = useState<EmojiResponseType | null>(null);
 
   useEffect(() => {
-    if (!subscriber || !videoRef.current) {
+    if (!videoRef.current || !stream) return;
+
+    const liveTracks = stream.getTracks().filter((t): t is MediaStreamTrack => t.readyState === 'live');
+
+    if (liveTracks.length === 0) {
+      // live track이 없으면 빈 스트림 대신 null 설정
+      videoRef.current.srcObject = null;
       return;
     }
 
-    subscriber.addVideoElement(videoRef.current);
-    if (videoRef.current.setSinkId) {
-      videoRef.current.setSinkId(audioOutput?.id);
-    }
+    const safeStream = new MediaStream(liveTracks);
+    videoRef.current.srcObject = safeStream;
 
-    if (isScreen) {
-      videoRef.current.style.setProperty('transform', 'rotateY(0deg)');
-    }
-  }, [subscriber, audioOutput, isScreen]);
+    videoRef.current.play().catch(() => {});
+  }, [stream, isScreen]);
 
   useEffect(() => {
     if (!emojiList) {
@@ -72,7 +70,6 @@ export default function VideoStream({
     setEmojiIcon(emojiList.findLast((emoji) => emoji.userId === user.id) ?? null);
   }, [emojiList, user.id]);
 
-  const mediaStream = stream ?? subscriber?.stream.getMediaStream();
   return (
     <div className='relative flex size-full items-center'>
       <div className=' relative flex size-full items-center justify-center overflow-hidden rounded-lg bg-[#3C4043]'>
@@ -93,8 +90,8 @@ export default function VideoStream({
           </div>
         )}
         <div className='absolute right-2 top-2 z-30'>
-          {mediaStream && user.audio ? (
-            <Visualizer stream={mediaStream} />
+          {user.audio ? (
+            <Visualizer stream={stream} />
           ) : (
             <div className='flex size-[26px] items-center justify-center rounded-full bg-[#34373A]'>
               <Icon.MicOff width={18} height={18} fill='#ffffff' />
@@ -104,7 +101,7 @@ export default function VideoStream({
 
         {emojiIcon && (
           <div className='absolute left-2 top-2 z-30 flex size-[26px] items-center justify-center rounded-full bg-[#34373A]'>
-            <Image alt={emojiIcon.emojiType} src={EMOJI_IMAGE[emojiIcon.emojiType]} width={16} height={16} />
+            <Image alt={emojiIcon.emoji} src={EMOJI_IMAGE[emojiIcon.emoji]} width={16} height={16} />
           </div>
         )}
 

@@ -62,7 +62,7 @@ const useDevice = () => {
     return deviceInfo;
   }, []);
 
-  const updateDeviceEnable = () => {
+  const updateDeviceEnable = useCallback(() => {
     const { permission, deviceEnable } = useDeviceStore.getState();
     const audioDeviceId = (permission.audio && useDeviceStore.getState().audioInputList?.[0]?.deviceId) || undefined;
     const videoDeviceId = (permission.video && useDeviceStore.getState().videoInputList?.[0]?.deviceId) || undefined;
@@ -71,7 +71,7 @@ const useDevice = () => {
       audio: deviceEnable.audio && !!audioDeviceId,
       video: deviceEnable.video && !!videoDeviceId,
     });
-  };
+  }, []);
 
   const updateStream = useCallback(async () => {
     const { setStreamStatus, deviceEnable, audioInput, videoInput } = useDeviceStore.getState();
@@ -100,7 +100,7 @@ const useDevice = () => {
       useDeviceStore.getState().setDeviceEnable({ audio: false, video: false });
       return null;
     }
-  }, [updateDeviceStatus, updatePermission, stopStream]);
+  }, [updateDeviceStatus, updatePermission, stopStream, updateDeviceEnable]);
 
   const updateScreenStream = useCallback(async (audio: boolean) => {
     try {
@@ -112,7 +112,7 @@ const useDevice = () => {
     }
   }, []);
 
-  const toggleAudioInput = async () => {
+  const toggleAudioInput = useCallback(async () => {
     const { stream } = useDeviceStore.getState();
     if (useDeviceStore.getState().stream && useDeviceStore.getState().audioInputList.length !== 0) {
       useDeviceStore.getState().setDeviceEnable((prev) => {
@@ -123,9 +123,9 @@ const useDevice = () => {
         return { ...prev, audio: newValue };
       });
     }
-  };
+  }, []);
 
-  const toggleVideoInput = async () => {
+  const toggleVideoInput = useCallback(async () => {
     const { stream } = useDeviceStore.getState();
     if (!stream) {
       return;
@@ -137,7 +137,7 @@ const useDevice = () => {
         track.stop();
       });
     }
-  };
+  }, []);
 
   useEffect(() => {
     return () => {

@@ -6,19 +6,19 @@ import { PanelType } from '@/type/panelType';
 import * as Icon from '@/asset/icon';
 import { ButtonTag } from '@/component';
 import { UserListType } from '@/type/participantType';
-import { ChatInfo } from '@/type/sessionType';
+import { ChatType } from '@/type/reactionType';
 import { UserPanel, InfoPanel, ChatPanel } from './part/Panel';
 
 interface PanelProps {
   userList: UserListType[];
-  chatList: ChatInfo[];
+  chatList: ChatType[];
   onSendMessage: (value: string) => void;
 }
 
 interface CurrentPanelProps {
   type: PanelType;
   userList: UserListType[];
-  chatList: ChatInfo[];
+  chatList: ChatType[];
   onSendMessage: (value: string) => void;
 }
 

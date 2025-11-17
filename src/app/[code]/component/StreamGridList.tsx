@@ -1,30 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Publisher, Subscriber } from 'openvidu-browser';
+import { useState, useEffect, MutableRefObject } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useDeviceStore } from '@/store/DeviceStore';
-import { UserInfo, EmojiInfo } from '@/type/sessionType';
+import { EmojiResponseType } from '@/type/reactionType';
+import { ParticipantDataType } from '@/type/signalType';
 import { VideoStream, OtherAudioStream } from './part/Stream';
 
 interface StreamGridListProps {
-  subscribers: [string, Subscriber | null][];
-  publisher: Publisher | null | undefined;
-  participants: Record<string, UserInfo>;
-  emojiList: EmojiInfo[];
-  handsUpList: Record<string, boolean>;
-  stream: MediaStream | null | undefined;
+  participantsMediaStream: Map<string, MediaStream>;
+  participantsUserData: MutableRefObject<Map<string, ParticipantDataType>>;
+  emojiList: EmojiResponseType[];
 }
 
 export default function StreamGridList({
-  subscribers,
-  publisher,
-  participants,
+  participantsMediaStream,
+  participantsUserData,
   emojiList,
-  handsUpList,
-  stream,
 }: StreamGridListProps) {
   const [maxRow, setMaxRow] = useState(Math.min(Math.floor((window.innerWidth - 400) / 166), 1));
 
@@ -36,8 +30,9 @@ export default function StreamGridList({
     })),
   );
 
-  const { deviceEnable, audioInput, videoInput } = useDeviceStore(
+  const { stream, deviceEnable, audioInput, videoInput } = useDeviceStore(
     useShallow((state) => ({
+      stream: state.stream,
       deviceEnable: state.deviceEnable,
       audioInput: state.audioInput,
       videoInput: state.videoInput,
@@ -45,8 +40,9 @@ export default function StreamGridList({
   );
 
   const maxNum = maxRow <= 1 ? 1 : maxRow === 2 ? 4 : maxRow * (maxRow - 1);
-  const currentPageSubscribers = maxNum === 1 ? [] : subscribers.slice(0, maxNum - 2);
-  const otherSubscriber = maxNum === 1 ? subscribers : subscribers.slice(maxNum - 2);
+  const currentPageSubscribers = maxNum === 1 ? [] : Array.from(participantsMediaStream).slice(0, maxNum - 2);
+  const otherSubscriber =
+    maxNum === 1 ? Array.from(participantsMediaStream) : Array.from(participantsMediaStream).slice(maxNum - 2);
 
   const rowNum = currentPageSubscribers.length + 1 < maxRow ? currentPageSubscribers.length + 1 : maxRow;
 
@@ -69,42 +65,51 @@ export default function StreamGridList({
         gridTemplateColumns: `repeat(${currentPageSubscribers.length === 0 ? '1' : Math.min(rowNum, Math.ceil(Math.sqrt(1 + 4 * currentPageSubscribers.length) / 2))}, 1fr)`,
       }}
     >
-      {publisher !== undefined && (
+      <VideoStream
+        user={{
+          id,
+          name,
+          color,
+          audio: Boolean(deviceEnable.audio && audioInput?.id),
+          video: Boolean(deviceEnable.video && videoInput?.id),
+        }}
+        muted
+        emojiList={emojiList}
+        stream={stream}
+      />
+
+      {currentPageSubscribers.map(([userId, mediaStream]) => (
         <VideoStream
+          key={userId}
           user={{
-            id,
-            name,
-            color,
-            audio: Boolean(deviceEnable.audio && audioInput?.id),
-            video: Boolean(deviceEnable.video && videoInput?.id),
+            id: userId,
+            name: participantsUserData.current.get(userId)?.userName,
+            color: participantsUserData.current.get(userId)?.profileColor,
+            audio: true,
+            video: true,
           }}
-          subscriber={publisher}
-          muted
+          stream={mediaStream}
           emojiList={emojiList}
-          handsUpList={handsUpList}
-          stream={stream}
-        />
-      )}
-      {currentPageSubscribers.map((entity) => (
-        <VideoStream
-          key={entity[0]}
-          user={{ id: entity[0], ...participants[entity[0]] }}
-          subscriber={entity[1]}
-          emojiList={emojiList}
-          handsUpList={handsUpList}
         />
       ))}
       {otherSubscriber.length >= 1 &&
         (otherSubscriber.length === 1 ? (
           <VideoStream
-            user={{ id: otherSubscriber[0][0], ...participants[otherSubscriber[0][0]] }}
-            subscriber={otherSubscriber[0][1]}
+            user={{
+              id: otherSubscriber[0][0],
+              name: participantsUserData.current.get(otherSubscriber[0][0])?.userName,
+              color: participantsUserData.current.get(otherSubscriber[0][0])?.profileColor,
+              audio: true,
+              video: true,
+            }}
+            stream={otherSubscriber[0][1]}
+            emojiList={emojiList}
           />
         ) : (
           <OtherAudioStream
-            otherSubscriber={otherSubscriber}
-            name={participants[otherSubscriber[0][0]].name}
-            color={participants[otherSubscriber[0][0]].color}
+            otherStreams={otherSubscriber}
+            name={participantsUserData.current.get(otherSubscriber[0][0])?.userName}
+            color={participantsUserData.current.get(otherSubscriber[0][0])?.profileColor}
           />
         ))}
     </div>

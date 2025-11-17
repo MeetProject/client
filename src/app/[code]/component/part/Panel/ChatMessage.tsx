@@ -1,10 +1,10 @@
 import { memo } from 'react';
 import { formatTime } from '@/lib/formatDate';
 import { useUserInfoStore } from '@/store/UserInfoStore';
-import { ChatInfo } from '@/type/sessionType';
+import { ChatType } from '@/type/reactionType';
 
 interface MessageProps {
-  chat: ChatInfo;
+  chat: ChatType;
 }
 
 function Message({ chat }: MessageProps) {
@@ -13,11 +13,11 @@ function Message({ chat }: MessageProps) {
     <div className={`${chat.header ? 'mt-6' : 'mt-1'} mx-3 px-4 text-[13px] text-[#202124]`}>
       {chat.header && (
         <div className='flex items-center gap-2'>
-          <p className='max-w-56 truncate font-bold'>{chat.userId === id ? '나' : chat.userName}</p>
-          <p className='text-xs text-[#5F6368]'>{formatTime(chat.date)}</p>
+          <p className='max-w-56 truncate font-bold'>{chat.userId === id ? '나' : chat.timestamp}</p>
+          <p className='text-xs text-[#5F6368]'>{formatTime(chat.timestamp)}</p>
         </div>
       )}
-      <div className='mt-1'>{chat.content}</div>
+      <div className='mt-1'>{chat.message}</div>
     </div>
   );
 }

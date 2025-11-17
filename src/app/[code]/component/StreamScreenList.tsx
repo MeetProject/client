@@ -1,31 +1,27 @@
 'use client';
 
-import { Publisher, Subscriber } from 'openvidu-browser';
 import { useShallow } from 'zustand/react/shallow';
-
 import { useDeviceStore } from '@/store/DeviceStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
-import { EmojiInfo, UserInfo } from '@/type/sessionType';
+import { EmojiResponseType } from '@/type/reactionType';
+import { MutableRefObject } from 'react';
+import { ParticipantDataType } from '@/type/signalType';
 import { VideoStream, OtherAudioStream } from './part/Stream';
 
 interface StreamScreenListProps {
-  screenPublisher: [string, Publisher | Subscriber];
-  participants: Record<string, UserInfo>;
-  publisher: Publisher | null | undefined;
-  subscribers: [string, Subscriber | null][];
-  emojiList: EmojiInfo[];
-  handsUpList: Record<string, boolean>;
-  stream: MediaStream | null | undefined;
+  screenSharingMediaStream: MediaStream | null;
+  participantsMediaStream: Map<string, MediaStream>;
+  participantsUserData: MutableRefObject<Map<string, ParticipantDataType>>;
+  screenOwnerId: string;
+  emojiList: EmojiResponseType[];
 }
 
 export default function StreamScreenList({
-  screenPublisher,
-  participants,
-  publisher,
-  subscribers,
+  screenSharingMediaStream,
+  participantsMediaStream,
+  screenOwnerId,
   emojiList,
-  handsUpList,
-  stream,
+  participantsUserData,
 }: StreamScreenListProps) {
   const { id, name, color } = useUserInfoStore(
     useShallow((state) => ({
@@ -35,57 +31,67 @@ export default function StreamScreenList({
     })),
   );
 
-  const { deviceEnable, audioInput, videoInput } = useDeviceStore(
+  const { stream, deviceEnable, audioInput, videoInput } = useDeviceStore(
     useShallow((state) => ({
+      stream: state.stream,
       deviceEnable: state.deviceEnable,
       audioInput: state.audioInput,
       videoInput: state.videoInput,
     })),
   );
 
-  const isOverflow = publisher ? subscribers.length > 3 : subscribers.length > 4;
-  const currentSubscribers = isOverflow ? subscribers.slice(0, publisher ? 2 : 3) : subscribers;
-  const otherSubscriber = isOverflow ? subscribers.slice(publisher ? 2 : 3) : [];
+  const isOverflow = participantsMediaStream.size > 4;
+  const currentParticipants = isOverflow
+    ? Array.from(participantsMediaStream).slice(0, 3)
+    : Array.from(participantsMediaStream);
+
+  const otherSubscriber = isOverflow ? Array.from(participantsMediaStream).slice(3) : [];
+
+  const screenOwnerInfo = {
+    id: screenOwnerId,
+    name: participantsUserData.current.get(screenOwnerId)?.userName ?? name,
+    color: participantsUserData.current.get(screenOwnerId)?.profileColor ?? color,
+    audio: screenOwnerId ? true : Boolean(deviceEnable.audio && audioInput?.id),
+    video: screenOwnerId ? true : Boolean(deviceEnable.video && videoInput?.id),
+  };
 
   return (
     <div className='relative flex size-full gap-4'>
       <div className='h-full flex-1 pr-2'>
-        <VideoStream
-          user={{ id: screenPublisher[0], ...participants[screenPublisher[0]] }}
-          subscriber={screenPublisher[1]}
-          emojiList={emojiList}
-          handsUpList={handsUpList}
-        />
+        <VideoStream user={screenOwnerInfo} emojiList={emojiList} stream={screenSharingMediaStream} />
       </div>
       <div className='grid h-full grid-rows-4 gap-4' style={{ width: 'min(25%, 208px)' }}>
-        {publisher !== undefined && (
+        <VideoStream
+          user={{
+            id,
+            name,
+            color,
+            audio: Boolean(deviceEnable.audio && audioInput?.id),
+            video: Boolean(deviceEnable.video && videoInput?.id),
+          }}
+          muted
+          stream={stream}
+        />
+
+        {currentParticipants.map(([userId, mediaStream]) => (
           <VideoStream
+            key={userId}
             user={{
-              id,
-              name,
-              color,
-              audio: Boolean(deviceEnable.audio && audioInput?.id),
-              video: Boolean(deviceEnable.video && videoInput?.id),
+              id: userId,
+              name: participantsUserData.current.get(userId)?.userName,
+              color: participantsUserData.current.get(userId)?.profileColor,
+              audio: true,
+              video: true,
             }}
-            subscriber={publisher}
-            muted
-            stream={stream}
-          />
-        )}
-        {currentSubscribers.map((entity) => (
-          <VideoStream
-            key={entity[0]}
-            user={{ id: entity[0], ...participants[entity[0]] }}
-            subscriber={entity[1]}
             emojiList={emojiList}
-            handsUpList={handsUpList}
+            stream={mediaStream}
           />
         ))}
         {isOverflow && (
           <OtherAudioStream
-            otherSubscriber={otherSubscriber}
-            name={participants[otherSubscriber[0][0]].name}
-            color={participants[otherSubscriber[0][0]].color}
+            otherStreams={otherSubscriber}
+            name={participantsUserData.current.get(otherSubscriber[0][0])?.userName}
+            color={participantsUserData.current.get(otherSubscriber[0][0])?.profileColor}
           />
         )}
       </div>

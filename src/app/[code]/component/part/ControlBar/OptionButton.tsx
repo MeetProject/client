@@ -3,7 +3,6 @@
 import { ReactNode, useState, MouseEvent, useCallback } from 'react';
 import * as Icon from '@/asset/icon';
 import { ButtonTag } from '@/component';
-import { StreamStatusType } from '@/type/streamType';
 import { useOutsideClick, useShortcutKey } from '@/hook';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -16,9 +15,7 @@ interface OptionButtonProps {
   clickedIcon: ReactNode;
   icon: ReactNode;
   name: Record<'chevron' | 'iconOn' | 'iconOff', string>;
-  stream?: MediaStream | null;
-  status: StreamStatusType;
-  changeDevice: (type: 'audio' | 'video', value: boolean | string) => Promise<MediaStream | undefined>;
+  changeDevice: () => Promise<MediaStream>;
   shortcutKey?: string[];
 }
 
@@ -29,13 +26,12 @@ export default function OptionButton({
   clickedIcon,
   icon,
   name,
-  stream = null,
-  status,
   changeDevice,
   shortcutKey,
 }: OptionButtonProps) {
-  const { deviceEnable, permission, audioInput, videoInput } = useDeviceStore(
+  const { streamStatus, deviceEnable, permission, audioInput, videoInput } = useDeviceStore(
     useShallow((state) => ({
+      streamStatus: state.streamStatus,
       deviceEnable: state.deviceEnable,
       permission: state.permission,
       audioInput: state.audioInput,
@@ -48,7 +44,7 @@ export default function OptionButton({
   const [currentHover, setCurrentHover] = useState<'chevron' | 'iconOn' | 'iconOff'>('chevron');
 
   const audioDisabled = !audioInput?.id;
-  const videoDisabled = !videoInput?.id || status === 'rejected' || (permission && !permission.video);
+  const videoDisabled = !videoInput?.id || streamStatus === 'rejected' || (permission && !permission.video);
 
   const isDisabled = type === 'audio' ? audioDisabled : videoDisabled;
 
@@ -62,9 +58,9 @@ export default function OptionButton({
       return;
     }
     setIsPending(true);
-    await changeDevice(type, !deviceEnable[type]);
+    await changeDevice();
     setIsPending(false);
-  }, [deviceEnable, changeDevice, isDisabled, onClickButton, type]);
+  }, [changeDevice, isDisabled, onClickButton, type]);
 
   const handleChevronClick = () => {
     setIsClickedChevron((prev) => {
@@ -124,7 +120,7 @@ export default function OptionButton({
           )}
         </div>
       </ButtonTag>
-      {isClickedChevron && <DeviceList type={type} stream={stream} status={status} changeDevice={changeDevice} />}
+      {isClickedChevron && <DeviceList type={type} changeDevice={changeDevice} />}
     </div>
   );
 }

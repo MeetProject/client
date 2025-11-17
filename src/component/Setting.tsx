@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { useDevice, useCheckPermission } from '@/hook';
+import { useState } from 'react';
 import * as Icon from '@/asset/icon';
+import { useDeviceStore } from '@/store/DeviceStore';
+import { useShallow } from 'zustand/react/shallow';
 import Modal from './Modal';
 import RequestModal from './RequestModal';
 import InitialRequestModal from './InitialRequestModal';
@@ -12,15 +13,11 @@ interface SettingProps {
 }
 
 interface SettingModalProps {
-  stream: MediaStream | null | undefined;
   onClose: () => void;
-  onUpdateStream: () => void;
 }
 
 interface SettingContentProps {
-  stream: MediaStream | null | undefined;
   category: Category;
-  onUpdateStream: () => void;
 }
 
 type Category = 'audio' | 'video' | 'general';
@@ -44,15 +41,15 @@ const CATEGORY_BUTTON: CategoryButtonType[] = [
   },
 ];
 
-function SettingContent({ category, stream, onUpdateStream }: SettingContentProps) {
+function SettingContent({ category }: SettingContentProps) {
   if (category === 'audio') {
-    return <AudioSetting stream={stream} onUpdateStream={onUpdateStream} />;
+    return <AudioSetting />;
   }
 
-  return <VideoSetting stream={stream} onUpdateStream={onUpdateStream} />;
+  return <VideoSetting />;
 }
 
-function SettingModal({ stream, onUpdateStream, onClose }: SettingModalProps) {
+function SettingModal({ onClose }: SettingModalProps) {
   const [category, setCategory] = useState<Category>('audio');
   const handleCategoryButtonClick = (value: Category) => {
     setCategory(value);
@@ -107,76 +104,21 @@ function SettingModal({ stream, onUpdateStream, onClose }: SettingModalProps) {
         <Icon.Delete width={24} height={24} fill='#5F6368' />
       </button>
       <div className='m-6 pt-[60px] md:w-settingContent-md'>
-        <SettingContent stream={stream} category={category} onUpdateStream={onUpdateStream} />
+        <SettingContent category={category} />
       </div>
     </div>
   );
 }
 
 export default function Setting({ isOpen, onClose }: SettingProps) {
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
   const [isTimeOut, setIsTimeOut] = useState(false);
-  const [isRequsetStream, setIsRequestStream] = useState(false);
   const [isRenderSetting, setIsRenderSetting] = useState(false);
 
-  const [isPending, setIsPending] = useState(false);
-
-  const { stream, streamStatus, handleUpdateStream, handleStreamClear } = useDevice(false);
-  const { checkPermissionQuery } = useCheckPermission();
-
-  const updateStream = useCallback(async () => {
-    setIsTimeOut(false);
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-    handleUpdateStream();
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-    timerRef.current = setTimeout(() => {
-      setIsTimeOut(true);
-      timerRef.current = null;
-    }, 2000);
-  }, [handleUpdateStream]);
-
-  useEffect(() => {
-    const getPermission = async () => {
-      const value = await checkPermissionQuery();
-
-      if (value === false) {
-        setIsTimeOut(true);
-        return;
-      }
-
-      if (value === null) {
-        setIsRequestStream(true);
-      }
-
-      updateStream();
-    };
-
-    if (isOpen && !isPending) {
-      setIsPending(true);
-      getPermission();
-    }
-  }, [isOpen, isPending, checkPermissionQuery, updateStream]);
-
-  useEffect(() => {
-    if (stream || streamStatus === 'rejected' || streamStatus === 'failed') {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-      setIsTimeOut(true);
-      setIsRenderSetting(true);
-    }
-  }, [stream, streamStatus]);
-
-  const handleUpdateStreamButtonClick = () => {
-    setIsRequestStream(true);
-    updateStream();
-  };
+  const { permission } = useDeviceStore(
+    useShallow((state) => ({
+      permission: state.permission,
+    })),
+  );
 
   const handleSkipUpdateStreamButtonClick = () => {
     setIsRenderSetting(true);
@@ -186,26 +128,29 @@ export default function Setting({ isOpen, onClose }: SettingProps) {
     if (!isRenderSetting) {
       return;
     }
-    setIsRequestStream(false);
     setIsRenderSetting(false);
     setIsTimeOut(false);
-    handleStreamClear();
     onClose();
-    setIsPending(false);
   };
 
   return (
     <Modal isOpen={isOpen && isTimeOut} onCloseModal={handleModalClose}>
-      {isRenderSetting ? (
-        <SettingModal stream={stream} onClose={handleModalClose} onUpdateStream={handleUpdateStream} />
-      ) : isRequsetStream ? (
+      {
+        isRenderSetting &&
+          (permission === null ? (
+            <InitialRequestModal />
+          ) : permission.audio || permission.video ? (
+            <SettingModal onClose={handleModalClose} />
+          ) : (
+            <RequestModal onSkipUpdateStream={handleSkipUpdateStreamButtonClick} />
+          )) /* isRequsetStream ? (
         <InitialRequestModal />
       ) : (
         <RequestModal
           onUpdateStream={handleUpdateStreamButtonClick}
           onSkipUpdateStream={handleSkipUpdateStreamButtonClick}
-        />
-      )}
+        /> */
+      }
     </Modal>
   );
 }

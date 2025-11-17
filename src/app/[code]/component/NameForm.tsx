@@ -100,7 +100,7 @@ export default function NameForm() {
       <button
         type='submit'
         className={`mt-4 h-14 w-60 rounded-full  ${name.length ? 'bg-[#0B57D0] text-white' : 'bg-[#E4E4E4] text-[#999999]'} text-center`}
-        disabled={name.length === 0}
+        disabled={name.length === 0 || isPending}
       >
         참여하기
       </button>
