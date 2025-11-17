@@ -7,7 +7,6 @@ import {
   IcePayloadType,
   JoinResponseType,
   SdpPayloadType,
-  RegisterResponseType,
   SdpResponseType,
   LeaveResponseType,
   ParticipantDataType,
@@ -20,7 +19,6 @@ import {
   ErrorResponseType,
 } from '@/type/signalType';
 import { useUserInfoStore } from '@/store/UserInfoStore';
-import { useShallow } from 'zustand/react/shallow';
 import { ChatResponseType, EmojiResponseType } from '@/type/reactionType';
 
 interface UseSignalSocketProps {
@@ -36,37 +34,10 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
   const roomSubscriptions = useRef<Map<string, StompSubscription>>(new Map());
   const currentRoomId = useRef<string | null>(null);
 
-  const { name, color, setId } = useUserInfoStore(
-    useShallow((state) => ({
-      name: state.name,
-      color: state.color,
-      id: state.id,
-      setId: state.setId,
-    })),
-  );
-
   const parseMessage = <T>(msg: IMessage) => {
     const data = JSON.parse(msg.body) as T;
     console.log(data);
     return data;
-  };
-
-  const getUserId = async (targetClient: Client): Promise<string> => {
-    return new Promise((resolve) => {
-      const subscribe = targetClient.subscribe('/user/queue/signal/register', (msg: IMessage) => {
-        resolve(parseMessage<RegisterResponseType>(msg).userId);
-        subscribe.unsubscribe();
-      });
-
-      targetClient.publish({
-        destination: '/app/signal/register',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          userName: name,
-          userColor: color,
-        }),
-      });
-    });
   };
 
   const sendJoin = (roomId: string) => {
@@ -173,14 +144,12 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
       streamType: 'SCREEN' | 'USER',
     ) => Promise<void>,
   ) => {
+    console.log(useUserInfoStore.getState().id);
     const connectedClient = new Client({
       brokerURL: undefined,
-      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
-      connectHeaders: {},
+      webSocketFactory: () => new SockJS(`http://localhost:8080/ws?userId=${useUserInfoStore.getState().id}`),
       debug: (msg) => console.log(msg),
       onConnect: async () => {
-        const userId = await getUserId(connectedClient);
-        setId(userId);
         client.current = connectedClient;
         const joinSub = connectedClient.subscribe('/user/queue/signal/join', async (msg: IMessage) => {
           const { participants, screenId } = parseMessage<JoinResponseType>(msg);
@@ -216,6 +185,7 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
         const answerSub = connectedClient.subscribe('/user/queue/signal/answer', async (msg: IMessage) => {
           const { fromUserId, fromUserSDP, streamType } = parseMessage<SdpResponseType>(msg);
           const sdp = JSON.parse(fromUserSDP) as RTCSessionDescriptionInit;
+          console.log(sdp);
           await registerAnswerSdp(fromUserId, sdp, streamType);
         });
         subscriptions.current.set('answer', answerSub);

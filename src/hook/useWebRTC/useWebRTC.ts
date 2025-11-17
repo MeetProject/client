@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 import { ParticipantDataType, StreamType } from '@/type/signalType';
 import { ChatResponseType, EmojiResponseType } from '@/type/reactionType';
 import { useDeviceStore } from '@/store/DeviceStore';
+import { useUserInfoStore } from '@/store/UserInfoStore';
 import usePeerConnection from './usePeerConnection';
 import useSignalSocket from './useSignalSocket';
 import { useDevice2 } from '..';
@@ -100,20 +101,45 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
 
   stopShareScreenRef.current = stopShareScreen;
 
-  const joinSession = useCallback(() => {
-    connectSocket(
-      (
-        targetId: string,
-        onIceCandidate: (targetId: string, candidate: RTCIceCandidate, streamType: StreamType) => void,
-        streamType: 'SCREEN' | 'USER',
-        isScreenSender = false,
-      ) => createPeerConnection(targetId, onIceCandidate, streamType, isScreenSender),
-      createOfferSdp,
-      createAnswerSdp,
-      registerAnswerSdp,
-      registerOfferSdp,
-      registerRemoteIce,
-    );
+  const joinSession = useCallback(async () => {
+    const payload = {
+      userName: 'name',
+      userColor: 'color',
+    };
+
+    try {
+      const response = await fetch('http://localhost:8080/api/user/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('api error');
+      }
+
+      const { userId } = await response.json();
+
+      useUserInfoStore.getState().setId(userId);
+
+      connectSocket(
+        (
+          targetId: string,
+          onIceCandidate: (targetId: string, candidate: RTCIceCandidate, streamType: StreamType) => void,
+          streamType: 'SCREEN' | 'USER',
+          isScreenSender = false,
+        ) => createPeerConnection(targetId, onIceCandidate, streamType, isScreenSender),
+        createOfferSdp,
+        createAnswerSdp,
+        registerAnswerSdp,
+        registerOfferSdp,
+        registerRemoteIce,
+      );
+    } catch {
+      console.log('api error');
+    }
   }, [
     connectSocket,
     createPeerConnection,
@@ -153,7 +179,6 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
   const createRoom = useCallback(async () => {
     const response = await fetch('http://localhost:8080/api/room/create', { method: 'POST' });
     if (!response.ok) {
-      console.log(response);
       throw new Error('api Error');
     }
 

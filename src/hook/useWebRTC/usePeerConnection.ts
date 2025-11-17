@@ -26,9 +26,6 @@ const usePeerConnection = ({ onTrack, onDisplayShareEnd }: UsePeerConnectionProp
     })),
   );
 
-  console.log(peerConnections.current);
-  console.log(screenPeerConnections.current);
-
   const createPeerConnection = async (
     targetId: string,
     onIceCandidate: (targetId: string, candidate: RTCIceCandidate, streamType: StreamType) => void,
@@ -73,20 +70,11 @@ const usePeerConnection = ({ onTrack, onDisplayShareEnd }: UsePeerConnectionProp
       return;
     }
 
-    const { audioInput, videoInput, stream: mediaStream } = useDeviceStore.getState();
+    const { stream: mediaStream } = useDeviceStore.getState();
 
-    mediaStream.getAudioTracks().forEach((track) => {
-      if (audioInput && track.id === audioInput.id) {
-        pc.addTrack(track, mediaStream);
-      }
+    mediaStream.getTracks().forEach((track) => {
+      pc.addTrack(track, mediaStream);
     });
-
-    mediaStream.getVideoTracks().forEach((track) => {
-      if (videoInput && track.id === videoInput.id) {
-        pc.addTrack(track, mediaStream);
-      }
-    });
-
     connections.current.set(targetId, data);
   };
 
@@ -115,8 +103,6 @@ const usePeerConnection = ({ onTrack, onDisplayShareEnd }: UsePeerConnectionProp
     const peerConnection = streamType === 'USER' ? peerConnections.current : screenPeerConnections.current;
     const target = peerConnection.get(targetId);
     if (!target) return;
-
-    if (target.pc.signalingState !== 'stable' && target.pc.signalingState !== 'have-local-offer') return;
 
     await target.pc.setRemoteDescription(targetSdp);
     target.remoteSet = true;
