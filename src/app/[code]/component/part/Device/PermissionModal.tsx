@@ -5,25 +5,24 @@ import { Modal, InitialRequestModal, RequestModal } from '@/component';
 
 import { useDeviceStore } from '@/store/DeviceStore';
 import { useShallow } from 'zustand/react/shallow';
-import { StreamStatusType } from '@/type/streamType';
 
 import { NotificationModal, RequestInfoModal } from './PermissionModal/index';
 
 interface PermissionModalProps {
   isOpenModal: boolean;
-  status: StreamStatusType;
   onClose: () => void;
   onUpdateStream: () => void;
 }
 
 type ModalContentProps = Omit<PermissionModalProps, 'isOpenModal'>;
 
-function ModalContent({ status, onClose, onUpdateStream }: ModalContentProps) {
+function ModalContent({ onClose, onUpdateStream }: ModalContentProps) {
   const [isDenied, setIsDenied] = useState(false);
 
-  const { permission: devicePermission } = useDeviceStore(
+  const { permission: devicePermission, streamStatus } = useDeviceStore(
     useShallow((state) => ({
       permission: state.permission,
+      streamStatus: state.streamStatus,
     })),
   );
 
@@ -35,7 +34,7 @@ function ModalContent({ status, onClose, onUpdateStream }: ModalContentProps) {
     return <InitialRequestModal />;
   }
 
-  if (status === 'failed') {
+  if (streamStatus === 'failed') {
     return <NotificationModal onClose={onClose} onUpdateStream={onUpdateStream} />;
   }
 
@@ -46,7 +45,7 @@ function ModalContent({ status, onClose, onUpdateStream }: ModalContentProps) {
   return <RequestInfoModal onClose={onClose} />;
 }
 
-export default function PermissionModal({ isOpenModal, status, onClose, onUpdateStream }: PermissionModalProps) {
+export default function PermissionModal({ isOpenModal, onClose, onUpdateStream }: PermissionModalProps) {
   const [isTimeOut, setIsTimeOut] = useState(false);
 
   const { permission: devicePermission } = useDeviceStore(
@@ -75,7 +74,7 @@ export default function PermissionModal({ isOpenModal, status, onClose, onUpdate
 
   return (
     <Modal isOpen={isOpenModal || (!devicePermission && isTimeOut)} onCloseModal={handleOutsideModalClick}>
-      <ModalContent status={status} onClose={onClose} onUpdateStream={onUpdateStream} />
+      <ModalContent onClose={onClose} onUpdateStream={onUpdateStream} />
     </Modal>
   );
 }

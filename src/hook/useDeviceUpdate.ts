@@ -1,17 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
 import { getStreamConstraint } from '@/lib/getStreamConstraint';
 import { useDeviceStore } from '@/store/DeviceStore';
-import { StreamStatusType } from '@/type/streamType';
 import { getCurrentDeviceInfo } from '@/lib/getCurrentDeviceInfo';
 import { useShallow } from 'zustand/react/shallow';
+import { checkPermissionOnchange } from '@/lib/checkBrowser';
 import useCheckPermission from './useCheckPermission';
 
 const useDevice = () => {
   const { updatePermission, checkPermissionQuery, addPermissionListener } = useCheckPermission();
-
-  const [streamStatus, setStreamStatus] = useState<StreamStatusType>(null);
 
   const { deviceStream, enable } = useDeviceStore(
     useShallow((state) => ({
@@ -20,10 +18,8 @@ const useDevice = () => {
     })),
   );
 
-  const timerRef = useRef<NodeJS.Timeout>(null);
-
   const stopStream = useCallback(() => {
-    const { stream } = useDeviceStore.getState();
+    const { stream, setStreamStatus } = useDeviceStore.getState();
     if (!stream) {
       return;
     }
@@ -79,20 +75,17 @@ const useDevice = () => {
 
   const updateStream = useCallback(async () => {
     stopStream();
+    const { setStreamStatus, deviceEnable } = useDeviceStore.getState();
     console.log(useDeviceStore.getState().deviceEnable);
     setStreamStatus('pending');
     const permission = await updatePermission();
-    console.log(useDeviceStore.getState().deviceEnable);
-    const { deviceEnable } = useDeviceStore.getState();
 
     try {
       const { audioInput, videoInput } = useDeviceStore.getState();
       const newStream = await navigator.mediaDevices.getUserMedia(
         getStreamConstraint(permission, deviceEnable, { audio: audioInput?.id, video: videoInput?.id }),
       );
-      console.log(useDeviceStore.getState().deviceEnable);
       await updateDeviceStatus(newStream);
-      console.log(useDeviceStore.getState().deviceEnable);
       updateDeviceEnable();
 
       if (!deviceEnable.audio) {
@@ -100,7 +93,6 @@ const useDevice = () => {
           track.enabled = false;
         });
       }
-      console.log(useDeviceStore.getState().deviceEnable);
 
       useDeviceStore.getState().setStream(newStream);
       setStreamStatus('success');
@@ -153,9 +145,6 @@ const useDevice = () => {
   useEffect(() => {
     return () => {
       deviceStream?.getTracks().forEach((track) => track.stop());
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
     };
   }, [deviceStream]);
 
@@ -179,37 +168,16 @@ const useDevice = () => {
       return;
     }
     const checkDevicePermission = async () => {
-      const isEnableCheckPermission = await checkPermissionQuery();
+      const isEnableCheckPermission = await checkPermissionOnchange('microphone');
       if (isEnableCheckPermission) {
         await addPermissionListener(async () => {
           stopStream();
           await updateStream();
         });
-        return;
       }
-
-      const checkTrack = async () => {
-        if (!deviceStream.active) {
-          if (timerRef.current) {
-            clearInterval(timerRef.current);
-            timerRef.current = null;
-          }
-          stopStream();
-          await updateStream();
-        }
-      };
-
-      timerRef.current = setInterval(checkTrack, 1000);
     };
 
     checkDevicePermission();
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    };
   }, [deviceStream, addPermissionListener, checkPermissionQuery, updateStream, stopStream]);
 
   useEffect(() => {
@@ -223,7 +191,6 @@ const useDevice = () => {
     updateScreenStream,
     stopStream,
     stopScreenStream,
-    streamStatus,
     toggleAudioInput,
     toggleVideoInput,
   };

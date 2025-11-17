@@ -1,25 +1,24 @@
 'use client';
 
 import { useShallow } from 'zustand/react/shallow';
-import { StreamStatusType } from '@/type/streamType';
 import { useDeviceStore } from '@/store/DeviceStore';
 
 interface VideoNotificationProps {
-  status: StreamStatusType;
   onClickButton: () => void;
 }
 
-export default function VideoNotification({ status, onClickButton }: VideoNotificationProps) {
-  const { permission, deviceEnable, videoInput } = useDeviceStore(
+export default function VideoNotification({ onClickButton }: VideoNotificationProps) {
+  const { permission, deviceEnable, videoInput, streamStatus } = useDeviceStore(
     useShallow((state) => ({
       permission: state.permission,
       deviceEnable: state.deviceEnable,
       videoInput: state.videoInput,
+      streamStatus: state.streamStatus,
     })),
   );
 
   const getStreamMessage = () => {
-    if (status === 'failed' || status === 'rejected' || (permission && !permission.video)) {
+    if (streamStatus === 'failed' || streamStatus === 'rejected' || (permission && !permission.video)) {
       return '카메라를 사용할 수 없음';
     }
 
@@ -27,7 +26,7 @@ export default function VideoNotification({ status, onClickButton }: VideoNotifi
       return '카메라가 꺼져 있음';
     }
 
-    if (status === 'pending') {
+    if (streamStatus === 'pending') {
       return '카메라 시작 중';
     }
 
@@ -40,9 +39,9 @@ export default function VideoNotification({ status, onClickButton }: VideoNotifi
 
   return (
     <div
-      className={`absolute top-0 flex size-full items-center justify-center ${status === 'success' && deviceEnable.video ? 'bg-transparent' : 'bg-[#202124]'} font-googleSans text-2xl text-white`}
+      className={`absolute top-0 flex size-full items-center justify-center ${streamStatus === 'success' && deviceEnable.video ? 'bg-transparent' : 'bg-[#202124]'} font-googleSans text-2xl text-white`}
     >
-      {status === 'rejected' || (permission && !permission.video && status !== 'failed') ? (
+      {streamStatus === 'rejected' || (permission && !permission.video && streamStatus !== 'failed') ? (
         <div className='flex flex-col items-center justify-center p-[5px]'>
           <div className='text-center'>회의에서 참여자들이 나를 보고 듣도록 하시겠습니까?</div>
           <button

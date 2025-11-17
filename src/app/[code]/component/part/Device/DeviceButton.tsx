@@ -5,7 +5,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { useDeviceStore } from '@/store/DeviceStore';
 import * as Icon from '@/asset/icon';
 import { useOutsideClick, useVolume } from '@/hook';
-import { StreamStatusType } from '@/type/streamType';
 import DeviceCard from './DeviceCard';
 import DeviceSubButton from './DeviceSubButton';
 
@@ -16,7 +15,6 @@ interface DeviceButtonIcon {
   type: 'audioInput' | 'audioOutput' | 'videoInput';
   stream?: MediaStream | null;
   onTrackChange?: (device: MediaDeviceInfo, type: 'audioInput' | 'audioOutput' | 'videoInput') => Promise<void>;
-  status: StreamStatusType;
   color?: 'black' | 'white';
   width?: number;
 }
@@ -27,16 +25,17 @@ export default function DeviceButton({
   deviceList,
   type,
   stream,
-  status,
   onTrackChange,
   color = 'white',
   width,
 }: DeviceButtonIcon) {
   const [isOpen, setIsOpen] = useState(false);
-  const permission = useDeviceStore((state) => state.permission);
+  const { permission, streamStatus } = useDeviceStore(
+    useShallow((state) => ({ permission: state.permission, streamStatus: state.streamStatus })),
+  );
 
   const getDisabledStatus = () => {
-    if (status === 'rejected') {
+    if (streamStatus === 'rejected') {
       return 'permission';
     }
 
@@ -54,7 +53,7 @@ export default function DeviceButton({
       if (permission && !permission.video) {
         return 'permission';
       }
-      if (status === 'failed') {
+      if (streamStatus === 'failed') {
         return 'failed';
       }
     }

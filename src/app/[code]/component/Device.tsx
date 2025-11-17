@@ -41,7 +41,12 @@ export default function Device() {
     })),
   );
 
-  const { streamStatus, toggleVideoInput, toggleAudioInput, updateStream } = useDevice2();
+  const { toggleVideoInput, toggleAudioInput, updateStream } = useDevice2();
+  const { streamStatus } = useDeviceStore(
+    useShallow((state) => ({
+      streamStatus: state.streamStatus,
+    })),
+  );
   /* const { stream, streamStatus, toggleVideoInput, toggleAudioInput, handleUpdateStream } = useDevice(); */
 
   const [isOpenModal, setIsOpenModal] = useState(false);
@@ -104,7 +109,7 @@ export default function Device() {
           className='aspect-video size-full object-cover'
           style={{ transform: 'rotateY(180deg)' }}
         />
-        <VideoNotification status={streamStatus} onClickButton={handleVideoButtonClick} />
+        <VideoNotification onClickButton={handleVideoButtonClick} />
         {deviceEnable.audio && permission?.audio && (
           <div className='absolute bottom-4 left-4'>
             <Visualizer stream={stream} />
@@ -171,7 +176,6 @@ export default function Device() {
             deviceList={audioInputList}
             type='audioInput'
             onTrackChange={handleTrackChange}
-            status={streamStatus}
           />
         )}
 
@@ -194,7 +198,6 @@ export default function Device() {
             deviceList={audioOutputList}
             type='audioOutput'
             onTrackChange={handleTrackChange}
-            status={streamStatus}
           />
         )}
 
@@ -215,16 +218,10 @@ export default function Device() {
             deviceList={videoInputList}
             type='videoInput'
             onTrackChange={handleTrackChange}
-            status={streamStatus}
           />
         )}
       </div>
-      <PermissionModal
-        isOpenModal={isOpenModal}
-        status={streamStatus}
-        onClose={handleModalClose}
-        onUpdateStream={updateStream}
-      />
+      <PermissionModal isOpenModal={isOpenModal} onClose={handleModalClose} onUpdateStream={updateStream} />
     </div>
   );
 }
