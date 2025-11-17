@@ -5,37 +5,26 @@ import { useRouter } from 'next/navigation';
 
 import * as Icon from '@/asset/icon';
 import { Alert, Loading } from '@/component';
-import { useUserInfoStore } from '@/store/UserInfoStore';
-import { useShallow } from 'zustand/react/shallow';
-import { createSession } from '@/lib/createSession';
 
 export default function AddNewMeetingButton() {
   const router = useRouter();
-  const { name, color } = useUserInfoStore(
-    useShallow((state) => ({
-      name: state.name,
-      color: state.color,
-    })),
-  );
   const [isFailed, setIsFailed] = useState(false);
   const [isPending, setIsPending] = useState(false);
 
   const handleButtonClick = async () => {
-    if (!name || !color) {
-      router.push('/user');
-      return;
-    }
-
     setIsPending(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/room/create', { method: 'POST' });
+      if (!response.ok) {
+        throw new Error('api Error');
+      }
 
-    const key = await createSession(3);
-
-    if (key) {
-      router.push(`/${key}`);
-      return;
+      const { roomId: id } = (await response.json()) as { roomId: string };
+      router.push(`/${id}`);
+    } catch {
+      setIsFailed(true);
+      setIsPending(false);
     }
-    setIsFailed(true);
-    setIsPending(false);
   };
 
   const handleCloseAlert = () => {

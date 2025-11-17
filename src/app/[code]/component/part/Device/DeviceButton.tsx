@@ -13,7 +13,6 @@ interface DeviceButtonIcon {
   currentDevice: Record<'name' | 'id', string>;
   deviceList: MediaDeviceInfo[];
   type: 'audioInput' | 'audioOutput' | 'videoInput';
-  stream?: MediaStream | null;
   onTrackChange?: (device: MediaDeviceInfo, type: 'audioInput' | 'audioOutput' | 'videoInput') => Promise<void>;
   color?: 'black' | 'white';
   width?: number;
@@ -24,14 +23,13 @@ export default function DeviceButton({
   currentDevice,
   deviceList,
   type,
-  stream,
   onTrackChange,
   color = 'white',
   width,
 }: DeviceButtonIcon) {
   const [isOpen, setIsOpen] = useState(false);
-  const { permission, streamStatus } = useDeviceStore(
-    useShallow((state) => ({ permission: state.permission, streamStatus: state.streamStatus })),
+  const { stream, permission, streamStatus } = useDeviceStore(
+    useShallow((state) => ({ stream: state.stream, permission: state.permission, streamStatus: state.streamStatus })),
   );
 
   const getDisabledStatus = () => {
@@ -161,7 +159,7 @@ export default function DeviceButton({
           }}
         >
           <div>
-            {deviceList.map((device) => (
+            {deviceList?.map((device) => (
               <DeviceCard
                 key={device.deviceId}
                 device={device}

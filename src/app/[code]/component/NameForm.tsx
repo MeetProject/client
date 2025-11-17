@@ -3,27 +3,25 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { ChangeEvent, FormEvent, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-
-import { postCheckSessionId } from '@/app/api/mongoAPI';
 import { getRandomHexColor } from '@/lib/getRandomColor';
-import { createSession } from '@/lib/createSession';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { Alert, Loading } from '@/component';
 
-interface NameFormProps {
-  isHost: boolean;
-}
-
 const MAX_SIZE = 60;
 
-export default function NameForm({ isHost }: NameFormProps) {
+export default function NameForm() {
   const [isPending, setIsPending] = useState(false);
   const [name, setName] = useState('');
   const [isFailed, setIsFailed] = useState(false);
-  const { setName: setUserName, setColor: setUserColor } = useUserInfoStore(
+  const {
+    setName: setUserName,
+    setColor: setUserColor,
+    setId,
+  } = useUserInfoStore(
     useShallow((state) => ({
       setName: state.setName,
       setColor: state.setColor,
+      setId: state.setId,
     })),
   );
   const sessionId = usePathname().slice(1);
@@ -44,28 +42,44 @@ export default function NameForm({ isHost }: NameFormProps) {
 
     const randomColor = getRandomHexColor();
 
-    if (isHost) {
-      const key = await createSession(3);
-      if (key) {
-        setUserName(name);
-        setUserColor(randomColor);
-        router.push(`${key}`);
-      } else {
-        setIsPending(false);
-        setIsFailed(true);
-        return;
-      }
-    }
+    try {
+      const payload = {
+        userName: name,
+        userColor: randomColor,
+      };
 
-    if (!isHost) {
-      const isValidSessionId = await postCheckSessionId(sessionId);
-      if (!isValidSessionId) {
+      const response = await fetch('http://localhost:8080/api/user/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('회원 등록 실패');
+      }
+
+      const { userId } = await response.json();
+
+      const roomResponse = await fetch(`http://localhost:8080/api/room/validate?roomId=${sessionId}`);
+      if (!roomResponse.ok) {
+        throw new Error('방 id 검사 api 오류');
+      }
+
+      const { value } = await roomResponse.json();
+
+      if (!value) {
         alert('이미 닫힌 회의방입니다.');
         router.push('/');
         return;
       }
+
+      setId(userId);
       setUserName(name);
       setUserColor(randomColor);
+    } catch (error) {
+      console.log(error.message);
     }
   };
 
@@ -88,7 +102,7 @@ export default function NameForm({ isHost }: NameFormProps) {
         className={`mt-4 h-14 w-60 rounded-full  ${name.length ? 'bg-[#0B57D0] text-white' : 'bg-[#E4E4E4] text-[#999999]'} text-center`}
         disabled={name.length === 0}
       >
-        {isHost ? '생성하기' : '참여하기'}
+        참여하기
       </button>
       <Loading isPending={isPending} />
       <Alert isOpen={isFailed} onCloseAlert={handleAlertClose} text='세션 생성에 실패하였습니다' />

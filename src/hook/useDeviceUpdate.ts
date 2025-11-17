@@ -74,17 +74,14 @@ const useDevice = () => {
   };
 
   const updateStream = useCallback(async () => {
+    const { setStreamStatus, deviceEnable, audioInput, videoInput } = useDeviceStore.getState();
     stopStream();
-    const { setStreamStatus, deviceEnable } = useDeviceStore.getState();
-    console.log(useDeviceStore.getState().deviceEnable);
     setStreamStatus('pending');
     const permission = await updatePermission();
 
     try {
-      const { audioInput, videoInput } = useDeviceStore.getState();
-      const newStream = await navigator.mediaDevices.getUserMedia(
-        getStreamConstraint(permission, deviceEnable, { audio: audioInput?.id, video: videoInput?.id }),
-      );
+      const con = getStreamConstraint(permission, deviceEnable, { audio: audioInput?.id, video: videoInput?.id });
+      const newStream = await navigator.mediaDevices.getUserMedia(con);
       await updateDeviceStatus(newStream);
       updateDeviceEnable();
 

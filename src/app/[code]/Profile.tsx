@@ -1,12 +1,8 @@
 import Link from 'next/link';
 import * as Icon from '@/asset/icon';
-import { Device, EntirePeople, NameForm } from './component';
+import { Device, NameForm } from './component';
 
-interface SettingProps {
-  isHost?: boolean;
-}
-
-export default function Setting({ isHost = false }: SettingProps) {
+export default function Profile() {
   return (
     <div className='flex h-screen w-screen flex-col bg-white'>
       <header className='relative p-4'>
@@ -20,8 +16,8 @@ export default function Setting({ isHost = false }: SettingProps) {
         <Device />
         <div className='flex w-full max-w-[448px] flex-col items-center p-4 font-googleSans'>
           <p className='text-2xl'>이름이 무엇인가요?</p>
-          <NameForm isHost={isHost} />
-          {!isHost && <EntirePeople />}
+          <NameForm />
+          {/* <EntirePeople /> */}
         </div>
       </div>
       <footer className='flex items-center justify-center p-2 text-center text-xs text-[#5F6368]'>

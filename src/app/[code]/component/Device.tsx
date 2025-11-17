@@ -79,6 +79,7 @@ export default function Device() {
 
   const handleTrackChange = async (device: MediaDeviceInfo, type: 'audioInput' | 'videoInput' | 'audioOutput') => {
     setTrackChage(stream, videoRef, device, type);
+    await updateStream();
   };
 
   const handleVideoButtonClick = () => {
@@ -94,6 +95,9 @@ export default function Device() {
       updateStream();
     }
   }, [updateStream]);
+
+  console.log(audioInput);
+  console.log(audioInputList);
 
   return (
     <div className='w-full max-w-[764px] p-4 pr-2 lg:h-[284px] lg:pr-4'>

@@ -3,7 +3,6 @@
 import { ChangeEvent, FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as Icon from '@/asset/icon';
-import { checkKey } from '@/lib/checkKey';
 import { Alert, Loading } from '@/component';
 
 export default function ParticipateMeetingForm() {
@@ -22,13 +21,25 @@ export default function ParticipateMeetingForm() {
       return;
     }
     setIsPending(true);
-    const result = await checkKey(value);
-    if (result) {
-      router.push(`/${result}`);
-      return;
+    try {
+      const roomResponse = await fetch(`https://localhost:8080/api/room/validate?roomId=${value}`);
+      if (!roomResponse.ok) {
+        alert('서버 오류. 다시 시도해주세요.');
+        throw new Error('방 id 검사 api 오류');
+      }
+
+      const { value: isValid } = await roomResponse.json();
+
+      if (!isValid) {
+        alert('이미 닫힌 회의방입니다.');
+        throw new Error('유효하지 않은 id');
+      }
+      router.push(`/${value}`);
+    } catch {
+      setIsFailed(true);
+    } finally {
+      setIsPending(false);
     }
-    setIsPending(false);
-    setIsFailed(true);
   };
 
   const handleAlertClose = () => {
