@@ -3,10 +3,12 @@ import { create } from 'zustand';
 
 interface ClientStoreType {
   client: Client | null;
+  isClientReady: boolean;
   subscriptions: Map<string, StompSubscription>;
   roomSubscriptions: Map<string, StompSubscription>;
 
   setClient: (value: Client | null) => void;
+  setIsClientReady: (value: boolean | null) => void;
   addSubscriptions: (id: string, sub: StompSubscription) => void;
   removeSubscriptions: (id: string) => void;
   addRoomSubscriptions: (id: string, sub: StompSubscription) => void;
@@ -17,10 +19,12 @@ interface ClientStoreType {
 
 export const useClientStore = create<ClientStoreType>((set, get) => ({
   client: null,
+  isClientReady: null,
   subscriptions: new Map(),
   roomSubscriptions: new Map(),
 
   setClient: (value) => set(() => ({ client: value })),
+  setIsClientReady: (value: boolean) => set({ isClientReady: value }),
 
   addSubscriptions: (id, sub) => {
     get().subscriptions.set(id, sub);

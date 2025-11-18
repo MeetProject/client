@@ -12,6 +12,7 @@ import { PermissionModal, VideoNotification, DeviceButton } from './part/Device'
 
 export default function Device() {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const isRender = useRef(false);
 
   const {
     permission,
@@ -78,8 +79,7 @@ export default function Device() {
   };
 
   const handleTrackChange = async (device: MediaDeviceInfo, type: 'audioInput' | 'videoInput' | 'audioOutput') => {
-    setTrackChage(stream, videoRef, device, type);
-    await updateStream();
+    setTrackChage(stream, device, type);
   };
 
   const handleVideoButtonClick = () => {
@@ -91,7 +91,8 @@ export default function Device() {
   };
 
   useEffect(() => {
-    if (!useDeviceStore.getState().stream) {
+    if (!isRender.current) {
+      isRender.current = true;
       updateStream();
     }
   }, [updateStream]);
@@ -221,7 +222,7 @@ export default function Device() {
           />
         )}
       </div>
-      <PermissionModal isOpenModal={isOpenModal} onClose={handleModalClose} onUpdateStream={updateStream} />
+      <PermissionModal isOpenModal={isOpenModal} onClose={handleModalClose} />
     </div>
   );
 }

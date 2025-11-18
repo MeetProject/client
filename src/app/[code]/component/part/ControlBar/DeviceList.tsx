@@ -4,29 +4,30 @@ import { useShallow } from 'zustand/react/shallow';
 import { useDeviceStore } from '@/store/DeviceStore';
 
 import * as Icon from '@/asset/icon';
+import { setTrackChage } from '@/lib/setTrackChange';
 import { DeviceButton } from '../Device';
 
 interface DeviceListProps {
   type: 'audio' | 'video';
-  changeDevice: () => Promise<MediaStream>;
 }
 
-export default function DeviceList({ type, changeDevice }: DeviceListProps) {
-  const { audioInput, audioOutput, videoInput, audioInputList, audioOutputList, videoInputList } = useDeviceStore(
-    useShallow((state) => ({
-      stream: state.stream,
-      streamStatus: state.streamStatus,
-      audioInput: state.audioInput,
-      audioOutput: state.audioOutput,
-      videoInput: state.videoInput,
-      audioInputList: state.audioInputList,
-      audioOutputList: state.audioOuputList,
-      videoInputList: state.videoInputList,
-    })),
-  );
+export default function DeviceList({ type }: DeviceListProps) {
+  const { stream, audioInput, audioOutput, videoInput, audioInputList, audioOutputList, videoInputList } =
+    useDeviceStore(
+      useShallow((state) => ({
+        stream: state.stream,
+        streamStatus: state.streamStatus,
+        audioInput: state.audioInput,
+        audioOutput: state.audioOutput,
+        videoInput: state.videoInput,
+        audioInputList: state.audioInputList,
+        audioOutputList: state.audioOuputList,
+        videoInputList: state.videoInputList,
+      })),
+    );
 
-  const handleTrackChange = async () => {
-    await changeDevice();
+  const handleTrackChange = async (device: MediaDeviceInfo, trackType: 'audioInput' | 'videoInput' | 'audioOutput') => {
+    setTrackChage(stream, device, trackType);
   };
 
   return (
@@ -47,6 +48,7 @@ export default function DeviceList({ type, changeDevice }: DeviceListProps) {
             icon={<Icon.Sound width={14} height={14} fill='#8AB4F8' />}
             deviceList={audioOutputList}
             currentDevice={audioOutput}
+            onTrackChange={handleTrackChange}
             color='black'
             width={244}
           />

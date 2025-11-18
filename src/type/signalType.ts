@@ -28,12 +28,14 @@ export interface JoinResponseType extends SignalResponseType {
 export interface SdpPayloadType {
   toUserId: string;
   fromUserSDP: string;
+  mediaOption: Record<'audio' | 'video', boolean> | null;
   streamType: 'SCREEN' | 'USER';
 }
 
 export interface SdpResponseType extends SignalResponseType {
   fromUserId: string;
   fromUserSDP: string;
+  mediaOption?: Record<'audio' | 'video', boolean> | null;
   streamType: 'SCREEN' | 'USER';
   isScreenSender: boolean;
 }

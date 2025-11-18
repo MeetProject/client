@@ -15,18 +15,16 @@ interface OptionButtonProps {
   clickedIcon: ReactNode;
   icon: ReactNode;
   name: Record<'chevron' | 'iconOn' | 'iconOff', string>;
-  changeDevice: () => Promise<MediaStream>;
   shortcutKey?: string[];
 }
 
 export default function OptionButton({
   type,
-  onClickButton,
   onClickChevron,
+  onClickButton,
   clickedIcon,
   icon,
   name,
-  changeDevice,
   shortcutKey,
 }: OptionButtonProps) {
   const { streamStatus, deviceEnable, permission, audioInput, videoInput } = useDeviceStore(
@@ -53,14 +51,11 @@ export default function OptionButton({
   });
 
   const handleButtonClick = useCallback(async () => {
-    if (isDisabled && onClickButton) {
-      onClickButton(type);
-      return;
-    }
     setIsPending(true);
-    await changeDevice();
+    onClickButton?.(type);
+
     setIsPending(false);
-  }, [changeDevice, isDisabled, onClickButton, type]);
+  }, [onClickButton, type]);
 
   const handleChevronClick = () => {
     setIsClickedChevron((prev) => {
@@ -120,7 +115,7 @@ export default function OptionButton({
           )}
         </div>
       </ButtonTag>
-      {isClickedChevron && <DeviceList type={type} changeDevice={changeDevice} />}
+      {isClickedChevron && <DeviceList type={type} />}
     </div>
   );
 }

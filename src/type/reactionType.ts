@@ -1,3 +1,4 @@
+import { DeviceEnableType } from './streamType';
 import { EmojiType } from './toggleType';
 
 export interface ChatResponseType {
@@ -17,4 +18,9 @@ export interface EmojiResponseType {
 export interface ChatType extends ChatResponseType {
   userName: string;
   header?: boolean;
+}
+
+export interface DeviceResponseType {
+  userId: string;
+  mediaOption: DeviceEnableType;
 }

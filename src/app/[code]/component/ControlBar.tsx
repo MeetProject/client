@@ -4,17 +4,18 @@ import { ReactNode, useCallback, useState } from 'react';
 import * as Icon from '@/asset/icon';
 import { ToggleType } from '@/type/toggleType';
 import { useDeviceStore } from '@/store/DeviceStore';
-import { useShallow } from 'zustand/react/shallow';
 import { Alert } from '@/component';
 import { checkBrowser } from '@/lib/checkBrowser';
+import { DeviceEnableType } from '@/type/streamType';
+import { useDevice2 } from '@/hook';
 import { ControlButton, MenuButton, OptionButton, CallEndButton } from './part/ControlBar';
 import { PermissionModal } from './part/Device';
 
 interface ControlBarProps {
-  changeDevice: () => Promise<MediaStream>;
   handleScreenShare: () => void;
   handleStopScreenShare: () => void;
   handleLeavSession: () => void;
+  handleDeviceEnable: (device: DeviceEnableType) => void;
   /* handleHandsUp: (value: boolean) => void; */
 }
 
@@ -33,10 +34,10 @@ const CONTROL_BUTTON_OFF_PROPS = { width: 24, height: 24, fill: '#06306D' };
 const CONTROL_BUTTON_ON_PROPS = { width: 24, height: 24, fill: '#E3E3E3' };
 
 export default function ControlBar({
-  changeDevice,
   handleScreenShare,
   handleStopScreenShare,
   handleLeavSession,
+  handleDeviceEnable,
   /* handleHandsUp, */
 }: ControlBarProps) {
   const [isOpenAlert, setIsOpenAlert] = useState(false);
@@ -94,13 +95,8 @@ export default function ControlBar({
     },
   ];
   const [isOpenModal, setIsOpenModal] = useState(false);
-  const { permission } = useDeviceStore(
-    useShallow((state) => ({
-      permission: state.permission,
-      audioInput: state.audioInput,
-      videoInput: state.videoInput,
-    })),
-  );
+
+  const { toggleAudioInput, toggleVideoInput } = useDevice2();
 
   const handleModalClose = () => {
     setIsOpenModal(false);
@@ -112,15 +108,21 @@ export default function ControlBar({
 
   const handleButtonClick = useCallback(
     (type: 'audio' | 'video') => {
-      if (type === 'audio' && permission && permission.audio) {
-        return;
-      }
-      if (type === 'video' && permission && permission.video) {
+      const { permission, deviceEnable } = useDeviceStore.getState();
+      if (permission && permission[type]) {
+        const enable = { ...deviceEnable, [type]: !deviceEnable[type] };
+        console.log(enable);
+        handleDeviceEnable({ ...deviceEnable, [type]: !deviceEnable[type] });
+        if (type === 'audio') {
+          toggleAudioInput();
+          return;
+        }
+        toggleVideoInput();
         return;
       }
       setIsOpenModal(true);
     },
-    [permission],
+    [handleDeviceEnable],
   );
 
   return (
@@ -131,7 +133,6 @@ export default function ControlBar({
         icon={<Icon.MicOn width={24} height={24} fill='#E3E3E3' />}
         clickedIcon={<Icon.MicOff width={24} height={24} fill='#5F1312' />}
         name={{ chevron: '오디오 설정', iconOn: '마이크 끄기(ctrl + d)', iconOff: '마이크 켜기(ctrl + d)' }}
-        changeDevice={changeDevice}
         shortcutKey={['Control', 'd']}
       />
       <OptionButton
@@ -140,7 +141,6 @@ export default function ControlBar({
         icon={<Icon.VideoOn width={24} height={24} fill='#E3E3E3' />}
         clickedIcon={<Icon.VideoOff width={24} height={24} fill='#5F1312' />}
         name={{ chevron: '영상 설정', iconOn: '비디오 끄기(ctrl + e)', iconOff: '비디오 켜기(ctrl + e)' }}
-        changeDevice={changeDevice}
         shortcutKey={['Control', 'e']}
       />
       {CONTROL_BUTTON.map((button) => (
@@ -148,7 +148,7 @@ export default function ControlBar({
       ))}
       <MenuButton />
       <CallEndButton onClick={handleLeavSession} />
-      <PermissionModal isOpenModal={isOpenModal} onClose={handleModalClose} onUpdateStream={changeDevice} />
+      <PermissionModal isOpenModal={isOpenModal} onClose={handleModalClose} />
       <Alert text='다른 사람이 화면 공유 중 입니다.' isOpen={isOpenAlert} onCloseAlert={handleAlertClose} />
     </div>
   );

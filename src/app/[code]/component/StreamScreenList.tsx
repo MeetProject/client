@@ -6,12 +6,14 @@ import { useUserInfoStore } from '@/store/UserInfoStore';
 import { EmojiResponseType } from '@/type/reactionType';
 import { MutableRefObject } from 'react';
 import { ParticipantDataType } from '@/type/signalType';
+import { DeviceEnableType } from '@/type/streamType';
 import { VideoStream, OtherAudioStream } from './part/Stream';
 
 interface StreamScreenListProps {
   screenSharingMediaStream: MediaStream | null;
   participantsMediaStream: Map<string, MediaStream>;
   participantsUserData: MutableRefObject<Map<string, ParticipantDataType>>;
+  participantsMediaOptions: Map<string, DeviceEnableType>;
   screenOwnerId: string;
   emojiList: EmojiResponseType[];
 }
@@ -22,6 +24,7 @@ export default function StreamScreenList({
   screenOwnerId,
   emojiList,
   participantsUserData,
+  participantsMediaOptions,
 }: StreamScreenListProps) {
   const { id, name, color } = useUserInfoStore(
     useShallow((state) => ({
@@ -80,8 +83,8 @@ export default function StreamScreenList({
               id: userId,
               name: participantsUserData.current.get(userId)?.userName,
               color: participantsUserData.current.get(userId)?.profileColor,
-              audio: true,
-              video: true,
+              audio: participantsMediaOptions.get(userId)?.audio ?? true,
+              video: participantsMediaOptions.get(userId)?.video ?? true,
             }}
             emojiList={emojiList}
             stream={mediaStream}

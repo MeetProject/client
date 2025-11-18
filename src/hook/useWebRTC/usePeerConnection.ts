@@ -4,10 +4,12 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { useShallow } from 'zustand/react/shallow';
 import { StreamType } from '@/type/signalType';
+import { DeviceEnableType } from '@/type/streamType';
 
 interface UsePeerConnectionProps {
   onTrack: (targetId: string, stream: MediaStream, type: 'SCREEN' | 'USER', isScreenSender: boolean) => void;
   onDisplayShareEnd: () => void;
+  onDeviceEnableChange: (id: string, value: DeviceEnableType) => void;
 }
 
 interface PeerConnectionData {
@@ -16,9 +18,10 @@ interface PeerConnectionData {
   remoteSet: boolean;
 }
 
-const usePeerConnection = ({ onTrack, onDisplayShareEnd }: UsePeerConnectionProps) => {
+const usePeerConnection = ({ onTrack, onDisplayShareEnd, onDeviceEnableChange }: UsePeerConnectionProps) => {
   const peerConnections = useRef<Map<string, PeerConnectionData>>(new Map());
   const screenPeerConnections = useRef<Map<string, PeerConnectionData>>(new Map());
+  const participantsMediaOptions = useRef<Map<string, Record<'video' | 'audio', boolean>>>(new Map());
   const { stream, deviceEnable } = useDeviceStore(
     useShallow((state) => ({
       stream: state.stream,
@@ -103,10 +106,20 @@ const usePeerConnection = ({ onTrack, onDisplayShareEnd }: UsePeerConnectionProp
   };
 
   const registerAnswerSdp = useCallback(
-    async (targetId: string, targetSdp: RTCSessionDescriptionInit, streamType: StreamType) => {
+    async (
+      targetId: string,
+      targetSdp: RTCSessionDescriptionInit,
+      streamType: StreamType,
+      mediaOption?: DeviceEnableType,
+    ) => {
       const peerConnection = streamType === 'USER' ? peerConnections.current : screenPeerConnections.current;
       const target = peerConnection.get(targetId);
       if (!target) return;
+
+      if (streamType === 'USER' && mediaOption) {
+        participantsMediaOptions.current.set(targetId, mediaOption);
+        onDeviceEnableChange(targetId, mediaOption);
+      }
 
       await target.pc.setRemoteDescription(targetSdp);
       target.remoteSet = true;
@@ -116,7 +129,7 @@ const usePeerConnection = ({ onTrack, onDisplayShareEnd }: UsePeerConnectionProp
       });
       target.iceQueue = [];
     },
-    [],
+    [onDeviceEnableChange],
   );
 
   const registerRemoteIce = useCallback(

@@ -14,6 +14,7 @@ import { timeDifferenceInMinutes } from '@/lib/getTimeDiff';
 import { ChatType, EmojiResponseType } from '@/type/reactionType';
 import { UserListType } from '@/type/participantType';
 import { useDevice2 } from '@/hook';
+import { DeviceEnableType } from '@/type/streamType';
 import {
   ControlBar,
   EmojiAnimation,
@@ -32,12 +33,14 @@ export default function Meetting() {
   const [emojiList, setEmojiList] = useState<EmojiResponseType[]>([]);
   const [chatList, setChatList] = useState<ChatType[]>([]);
 
+  const videoRef = useRef()
+
   const { updateStream } = useDevice2();
 
   const {
     joinSession,
     joinRoom,
-    leaveSession,
+    leaveRoom,
     participantsMediaStream,
     screenSharingMediaStream,
     participantsUserData,
@@ -46,6 +49,8 @@ export default function Meetting() {
     stopShareScreen,
     sendChat,
     sendEmoji,
+    sendDevice,
+    participantsMediaOptions,
   } = useWebRTC({
     onChat: (data) =>
       setChatList((prev) => {
@@ -89,13 +94,12 @@ export default function Meetting() {
     setEmojiList((prev) => prev.filter((emoji) => emoji.id !== emojiId));
   }, []);
 
-  /* useEffect(() => {
-    if (!isMyScreenShare && screenPublisher) {
-      handleToggleStatus('screen', 'disable');
-      return;
-    }
-    handleToggleStatus('screen', Boolean(screenPublisher));
-  }, [screenPublisher, isMyScreenShare, handleToggleStatus]); */
+  const handleDeviceEnable = useCallback(
+    (device: DeviceEnableType) => {
+      sendDevice(device);
+    },
+    [sendDevice],
+  );
 
   const userList: UserListType[] = Array.from(participantsMediaStream).map(([i, s]) => ({
     id: i,
@@ -113,81 +117,93 @@ export default function Meetting() {
       }
       isRender.current = true;
       const { client } = useClientStore.getState();
+      await updateStream();
       if (!client) {
         await joinSession();
-        await joinRoom(pathname.slice(1));
-        setIsPending(false);
       }
+      await joinRoom(pathname.slice(1));
+      setIsPending(false);
     };
     init();
-  }, [pathname, joinSession, joinRoom, leaveSession]);
+  }, [stream, pathname, joinSession, joinRoom, updateStream]);
 
   useEffect(() => {
     if (!screenStream && screenSharingMediaStream) {
       handleToggleStatus('screen', 'disable');
+      return;
     }
-    handleToggleStatus('screen', Boolean(screenSharingMediaStream));
-  }, [handleToggleStatus]);
+    handleToggleStatus('screen', Boolean(screenSharingMediaStream || screenStream));
+  }, [handleToggleStatus, screenSharingMediaStream, screenStream]);
 
   return (
     <div className='relative flex h-screen w-screen flex-col overflow-hidden bg-[#202124]'>
-      <div className='relative flex flex-1 p-4' style={{ height: `calc(100vh - ${barRef.current?.clientHeight}px)` }}>
-        <div ref={wrapperRef} className='relative flex-1 overflow-hidden'>
-          {screenSharingMediaStream || screenStream ? (
-            <StreamScreenList
-              screenSharingMediaStream={screenSharingMediaStream ?? screenStream}
-              participantsMediaStream={participantsMediaStream}
-              participantsUserData={participantsUserData}
-              screenOwnerId={screenOwnerId}
-              emojiList={emojiList}
+      {!isPending && (
+        <>
+          <div
+            className='relative flex flex-1 p-4'
+            style={{ height: `calc(100vh - ${barRef.current?.clientHeight}px)` }}
+          >
+            <div ref={wrapperRef} className='relative flex-1 overflow-hidden'>
+              {screenSharingMediaStream || screenStream ? (
+                <StreamScreenList
+                  screenSharingMediaStream={screenSharingMediaStream ?? screenStream}
+                  participantsMediaStream={participantsMediaStream}
+                  participantsUserData={participantsUserData}
+                  participantsMediaOptions={participantsMediaOptions}
+                  screenOwnerId={screenOwnerId}
+                  emojiList={emojiList}
+                />
+              ) : (
+                <StreamGridList
+                  participantsMediaStream={participantsMediaStream}
+                  participantsUserData={participantsUserData}
+                  participantsMediaOptions={participantsMediaOptions}
+                  emojiList={emojiList}
+                />
+              )}
+              {emojiList.map((emoji) => (
+                <EmojiAnimation
+                  key={emoji.id}
+                  emoji={emoji}
+                  maxWidth={wrapperRef.current?.clientWidth ?? 0}
+                  participantsUserData={participantsUserData}
+                  deleteEmoji={deleteEmoji}
+                />
+              ))}
+            </div>
+            <Panel
+              userList={[
+                {
+                  id,
+                  name,
+                  color,
+                  isMicOn: deviceEnable.audio,
+                  isVideoOn: deviceEnable.video,
+                  stream,
+                },
+                ...userList,
+              ]}
+              chatList={chatList}
+              onSendMessage={sendChat}
             />
-          ) : (
-            <StreamGridList
-              participantsMediaStream={participantsMediaStream}
-              participantsUserData={participantsUserData}
-              emojiList={emojiList}
-            />
-          )}
-          {emojiList.map((emoji) => (
-            <EmojiAnimation
-              key={emoji.id}
-              emoji={emoji}
-              maxWidth={wrapperRef.current?.clientWidth ?? 0}
-              participantsUserData={participantsUserData}
-              deleteEmoji={deleteEmoji}
-            />
-          ))}
-        </div>
-        <Panel
-          userList={[
-            {
-              id,
-              name,
-              color,
-              isMicOn: deviceEnable.audio,
-              isVideoOn: deviceEnable.video,
-              stream,
-            },
-            ...userList,
-          ]}
-          chatList={chatList}
-          onSendMessage={sendChat}
-        />
-      </div>
-      <div ref={barRef} className='relative w-full shrink-0 bg-[#202124] font-googleSans text-base text-white'>
-        <Toggle onClickEmojiButton={sendEmoji} />
-        <div className='relative flex shrink-0 justify-between bg-[#212121] p-4'>
-          <MeetInfoBar />
-          <ControlBar
-            handleScreenShare={shareScreen}
-            handleStopScreenShare={stopShareScreen}
-            handleLeavSession={leaveSession}
-            /* handleHandsUp={sendHandsUp} */
-            changeDevice={updateStream}
-          />
-          <InfoBar />
-        </div>
-      </div>
+          </div>
+          <div ref={barRef} className='relative w-full shrink-0 bg-[#202124] font-googleSans text-base text-white'>
+            <Toggle onClickEmojiButton={sendEmoji} />
+            <div className='relative flex shrink-0 justify-between bg-[#212121] p-4'>
+              <MeetInfoBar />
+              <ControlBar
+                handleScreenShare={shareScreen}
+                handleStopScreenShare={stopShareScreen}
+                handleLeavSession={leaveRoom}
+                /* handleHandsUp={sendHandsUp} */
+                handleDeviceEnable={handleDeviceEnable}
+              />
+              <InfoBar />
+            </div>
+          </div>
+        </>
+      )}
+
       <Loading isPending={isPending} />
     </div>
   );

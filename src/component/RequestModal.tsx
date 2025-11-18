@@ -1,19 +1,18 @@
 import Image from 'next/image';
 import { MouseEvent } from 'react';
 import { permission } from '@/asset/image';
+import { useDevice2 } from '@/hook';
 
 interface RequestModalProps {
-  onUpdateStream?: () => void;
   onSkipUpdateStream?: () => void;
   onRequstError?: () => void;
 }
 
-export default function RequestModal({ onSkipUpdateStream, onRequstError, onUpdateStream }: RequestModalProps) {
+export default function RequestModal({ onSkipUpdateStream, onRequstError }: RequestModalProps) {
+  const { updateStream } = useDevice2();
   const handleRequestPermissionButtonClick = async () => {
     try {
-      if (onUpdateStream) {
-        onUpdateStream();
-      }
+      updateStream();
     } catch {
       if (onRequstError) {
         onRequstError();

@@ -1,30 +1,27 @@
-import { RefObject } from 'react';
+import { useDeviceStore } from '@/store/DeviceStore';
 
 export const setTrackChage = async (
   stream: MediaStream | null | undefined,
-  mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement>,
   device: MediaDeviceInfo,
   type: 'audioInput' | 'videoInput' | 'audioOutput',
 ) => {
   if (type === 'audioOutput') {
-    if (mediaRef.current && mediaRef.current.setSinkId) {
-      mediaRef.current.setSinkId(device.deviceId);
-    }
+    const mediaElements = document.querySelectorAll('audio, video');
+
+    mediaElements.forEach((el) => {
+      const mediaEl = el as HTMLMediaElement;
+      if (mediaEl.setSinkId) {
+        mediaEl.setSinkId(device.deviceId);
+      }
+    });
     return;
   }
-  if (stream && mediaRef.current) {
+  if (stream) {
+    const { audioInput, videoInput, setStream } = useDeviceStore.getState();
     const newStream = await navigator.mediaDevices.getUserMedia({
-      audio: type === 'audioInput' ? { deviceId: device.deviceId } : false,
-      video: type === 'videoInput' ? { deviceId: device.deviceId } : false,
+      audio: type === 'audioInput' ? { deviceId: device.deviceId } : audioInput ? { deviceId: audioInput.id } : false,
+      video: type === 'videoInput' ? { deviceId: device.deviceId } : videoInput ? { deviceId: videoInput.id } : false,
     });
-
-    const newTrack = type === 'audioInput' ? newStream.getAudioTracks()[0] : newStream.getVideoTracks()[0];
-    const oldTrack = type === 'audioInput' ? stream.getAudioTracks()[0] : stream.getVideoTracks()[0];
-
-    if (oldTrack) {
-      stream.removeTrack(oldTrack);
-    }
-
-    stream.addTrack(newTrack);
+    setStream(newStream);
   }
 };

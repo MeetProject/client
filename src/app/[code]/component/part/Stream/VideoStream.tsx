@@ -23,15 +23,15 @@ interface VideoStreamProps {
 }
 
 const EMOJI_IMAGE: Record<EmojiType, StaticImageData> = {
-  clap: ImageSrc.clapEmoji,
-  curious: ImageSrc.curiousEmoji,
-  heart: ImageSrc.heartEmoji,
-  laughter: ImageSrc.laughterEmoji,
-  partyPoper: ImageSrc.partyPoperEmoji,
-  sad: ImageSrc.sadEmoji,
-  surprice: ImageSrc.surpriceEmoji,
-  thumbDown: ImageSrc.thumbDownEmoji,
-  thumbUp: ImageSrc.thumbUpEmoji,
+  CLAP: ImageSrc.clapEmoji,
+  CURIOUS: ImageSrc.curiousEmoji,
+  HEART: ImageSrc.heartEmoji,
+  LAUGHTER: ImageSrc.laughterEmoji,
+  PARTYPOPPER: ImageSrc.partyPoperEmoji,
+  SAD: ImageSrc.sadEmoji,
+  SURPRISE: ImageSrc.surpriceEmoji,
+  THUMBDOWN: ImageSrc.thumbDownEmoji,
+  THUMBUP: ImageSrc.thumbUpEmoji,
 };
 
 export default function VideoStream({

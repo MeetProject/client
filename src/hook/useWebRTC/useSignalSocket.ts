@@ -2,7 +2,7 @@
 
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import {
   IcePayloadType,
   JoinResponseType,
@@ -19,19 +19,28 @@ import {
   ErrorResponseType,
 } from '@/type/signalType';
 import { useUserInfoStore } from '@/store/UserInfoStore';
-import { ChatResponseType, EmojiResponseType } from '@/type/reactionType';
+import { ChatResponseType, DeviceResponseType, EmojiResponseType } from '@/type/reactionType';
 import { useClientStore } from '@/store/ClientStore';
 import { useShallow } from 'zustand/react/shallow';
 import { EmojiType } from '@/type/toggleType';
+import { useDeviceStore } from '@/store/DeviceStore';
+import { DeviceEnableType } from '@/type/streamType';
 
 interface UseSignalSocketProps {
   onAddParticipantData: (userId: string, user: ParticipantDataType) => void;
   onDeleteParticipant: (targetId: string, streamType: StreamType) => void;
   onChat: (data: ChatResponseType) => void;
   onEmoji: (data: EmojiResponseType) => void;
+  onDevice: (data: DeviceResponseType) => void;
 }
 
-const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, onEmoji }: UseSignalSocketProps) => {
+const useSignalSocket = ({
+  onAddParticipantData,
+  onDeleteParticipant,
+  onChat,
+  onEmoji,
+  onDevice,
+}: UseSignalSocketProps) => {
   const { addRoomSubscriptions, addSubscriptions } = useClientStore(
     useShallow((state) => ({
       setClient: state.setClient,
@@ -45,7 +54,6 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
 
   const parseMessage = <T>(msg: IMessage) => {
     const data = JSON.parse(msg.body) as T;
-    console.log(data);
     return data;
   };
 
@@ -84,9 +92,15 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
       });
       addRoomSubscriptions('emoji', emojuSub);
 
+      const deviceSub = client.subscribe(`/topic/room/${roomId}/device`, (msg: IMessage) => {
+        const response = parseMessage<DeviceResponseType>(msg);
+        onDevice(response);
+      });
+      addRoomSubscriptions('device', deviceSub);
+
       currentRoomId.current = roomId;
     },
-    [addRoomSubscriptions, onChat, onDeleteParticipant, onEmoji],
+    [addRoomSubscriptions, onChat, onDeleteParticipant, onEmoji, onDevice],
   );
 
   const sendSdp = useCallback(
@@ -100,6 +114,7 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
         toUserId: targetId,
         fromUserSDP: JSON.stringify(sdp),
         streamType,
+        mediaOption: streamType === 'USER' ? useDeviceStore.getState().deviceEnable : null,
       };
 
       client.publish({
@@ -146,6 +161,7 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
         targetId: string,
         targetSdp: RTCSessionDescriptionInit,
         streamType: 'SCREEN' | 'USER',
+        mediaOption?: Record<'audio' | 'video', boolean>,
       ) => Promise<void>,
       registerOfferSdp: (
         targetId: string,
@@ -163,6 +179,7 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
         webSocketFactory: () => new SockJS(`http://localhost:8080/ws?userId=${useUserInfoStore.getState().id}`),
         debug: (msg) => console.log(msg),
         onConnect: async () => {
+          useClientStore.getState().setIsClientReady(true);
           const joinSub = connectedClient.subscribe('/user/queue/signal/join', async (msg: IMessage) => {
             const { participants, screenId } = parseMessage<JoinResponseType>(msg);
             participants.forEach(async (participant) => {
@@ -183,11 +200,12 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
           addSubscriptions('join', joinSub);
 
           const offerSub = connectedClient.subscribe('/user/queue/signal/offer', async (msg: IMessage) => {
-            const { fromUserId, fromUserSDP, streamType, isScreenSender } = parseMessage<SdpResponseType>(msg);
+            const { fromUserId, fromUserSDP, streamType, mediaOption, isScreenSender } =
+              parseMessage<SdpResponseType>(msg);
             const fromSDP = JSON.parse(fromUserSDP) as RTCSessionDescriptionInit;
 
             await createPeerConnection(fromUserId, offerIceCandidate, streamType, isScreenSender);
-            await registerAnswerSdp(fromUserId, fromSDP, streamType);
+            await registerAnswerSdp(fromUserId, fromSDP, streamType, mediaOption);
             const sdp = await createAnswerSdp(fromUserId, streamType);
             await registerOfferSdp(fromUserId, sdp, streamType);
             sendSdp('/app/signal/answer', fromUserId, sdp, streamType);
@@ -227,6 +245,7 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
           addSubscriptions('error', errorSub);
 
           useClientStore.getState().setClient(connectedClient);
+          console.log(connectedClient);
 
           if (currentRoomId.current) {
             sendJoin(currentRoomId.current);
@@ -318,6 +337,27 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
     });
   }, []);
 
+  const sendDevice = useCallback((mediaOption: DeviceEnableType) => {
+    const { client } = useClientStore.getState();
+    const { id: userId } = useUserInfoStore.getState();
+
+    if (!client || !userId || !currentRoomId.current) {
+      return;
+    }
+    console.log('send', mediaOption);
+    const payload = {
+      roomId: currentRoomId.current,
+      userId,
+      mediaOption,
+    };
+
+    client.publish({
+      destination: '/app/device',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  }, []);
+
   const sendLeave = useCallback((streamType: StreamType) => {
     const { client, clearRoomSubscriptions } = useClientStore.getState();
     if (!client || !useUserInfoStore.getState().id || !currentRoomId.current) {
@@ -342,16 +382,17 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
   }, []);
 
   const disconnectSocket = useCallback(() => {
-    const { client, clearSubscriptions, setClient } = useClientStore.getState();
+    const { client, clearSubscriptions, setClient, setIsClientReady } = useClientStore.getState();
     if (!client) {
       return;
     }
     clearSubscriptions();
     client.deactivate();
     setClient(null);
+    setIsClientReady(null);
   }, []);
 
-  useEffect(() => {
+  /* useEffect(() => {
     const handler = () => {
       const userId = useUserInfoStore.getState().id;
       const roomId = currentRoomId.current;
@@ -366,7 +407,7 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
 
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
-  }, []);
+  }, []); */
 
   return {
     connectSocket,
@@ -374,6 +415,7 @@ const useSignalSocket = ({ onAddParticipantData, onDeleteParticipant, onChat, on
     sendLeave,
     sendChat,
     sendEmoji,
+    sendDevice,
     shareScreen,
     stopScreenShare,
     disconnectSocket,

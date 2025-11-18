@@ -7,11 +7,13 @@ import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { EmojiResponseType } from '@/type/reactionType';
 import { ParticipantDataType } from '@/type/signalType';
+import { DeviceEnableType } from '@/type/streamType';
 import { VideoStream, OtherAudioStream } from './part/Stream';
 
 interface StreamGridListProps {
   participantsMediaStream: Map<string, MediaStream>;
   participantsUserData: MutableRefObject<Map<string, ParticipantDataType>>;
+  participantsMediaOptions: Map<string, DeviceEnableType>;
   emojiList: EmojiResponseType[];
 }
 
@@ -19,6 +21,7 @@ export default function StreamGridList({
   participantsMediaStream,
   participantsUserData,
   emojiList,
+  participantsMediaOptions,
 }: StreamGridListProps) {
   const [maxRow, setMaxRow] = useState(Math.min(Math.floor((window.innerWidth - 400) / 166), 1));
 
@@ -85,8 +88,8 @@ export default function StreamGridList({
             id: userId,
             name: participantsUserData.current.get(userId)?.userName,
             color: participantsUserData.current.get(userId)?.profileColor,
-            audio: true,
-            video: true,
+            audio: participantsMediaOptions.get(userId)?.audio ?? true,
+            video: participantsMediaOptions.get(userId)?.video ?? true,
           }}
           stream={mediaStream}
           emojiList={emojiList}
@@ -99,8 +102,8 @@ export default function StreamGridList({
               id: otherSubscriber[0][0],
               name: participantsUserData.current.get(otherSubscriber[0][0])?.userName,
               color: participantsUserData.current.get(otherSubscriber[0][0])?.profileColor,
-              audio: true,
-              video: true,
+              audio: participantsMediaOptions.get(otherSubscriber[0][0])?.audio ?? true,
+              video: participantsMediaOptions.get(otherSubscriber[0][0])?.video ?? true,
             }}
             stream={otherSubscriber[0][1]}
             emojiList={emojiList}

@@ -2,8 +2,10 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { ParticipantDataType, StreamType } from '@/type/signalType';
-import { ChatResponseType, EmojiResponseType } from '@/type/reactionType';
+import { ChatResponseType, DeviceResponseType, EmojiResponseType } from '@/type/reactionType';
 import { useDeviceStore } from '@/store/DeviceStore';
+import { DeviceEnableType } from '@/type/streamType';
+import { useClientStore } from '@/store/ClientStore';
 import usePeerConnection from './usePeerConnection';
 import useSignalSocket from './useSignalSocket';
 import { useDevice2 } from '..';
@@ -19,6 +21,24 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
   const [screenSharingMediaStream, setScreenSharingMediaStream] = useState<MediaStream | null>(null);
   const participantsUserData = useRef<Map<string, ParticipantDataType>>(new Map());
   const [screenOwnerId, setScreenOwnerId] = useState<string | null>(null);
+  const [participantsMediaOptions, setParticipantsMediaOptions] = useState<Map<string, DeviceEnableType>>(new Map());
+
+  const onDeviceEnableChange = useCallback((id: string, value: DeviceEnableType) => {
+    setParticipantsMediaOptions((prev) => {
+      const newMap = new Map(prev);
+      newMap.set(id, value);
+      return newMap;
+    });
+  }, []);
+
+  const handleDevice = useCallback((data: DeviceResponseType) => {
+    setParticipantsMediaOptions((prev) => {
+      const { userId, mediaOption } = data;
+      const newMap = new Map(prev);
+      newMap.set(userId, mediaOption);
+      return newMap;
+    });
+  }, []);
 
   const { updateStream, stopStream, updateScreenStream, stopScreenStream } = useDevice2();
 
@@ -60,7 +80,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
     disconnectPeerConnection,
     disconnectAllPeerConnection,
     disconnectAllScreenPeerConnection,
-  } = usePeerConnection({ onTrack, onDisplayShareEnd });
+  } = usePeerConnection({ onTrack, onDisplayShareEnd, onDeviceEnableChange });
 
   const deleteParticipant = useCallback(
     (targetId: string, streamType: StreamType) => {
@@ -87,6 +107,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
     sendLeave,
     sendChat,
     sendEmoji,
+    sendDevice,
     disconnectSocket,
     shareScreen: sharingScreen,
   } = useSignalSocket({
@@ -94,6 +115,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
     onDeleteParticipant: deleteParticipant,
     onChat,
     onEmoji,
+    onDevice: handleDevice,
   });
 
   const stopShareScreen = useCallback(() => {
@@ -107,6 +129,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
   stopShareScreenRef.current = stopShareScreen;
 
   const joinSession = useCallback(async () => {
+    useClientStore.getState().setIsClientReady(false);
     connectSocket(
       (
         targetId: string,
@@ -136,9 +159,22 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
       if (!mediaStream) {
         await updateStream();
       }
+
+      if (useClientStore.getState().isClientReady === null) {
+        await joinSession();
+      }
+
+      await new Promise<void>((resolve) => {
+        const interval = setInterval(() => {
+          if (useClientStore.getState().isClientReady) {
+            clearInterval(interval);
+            resolve();
+          }
+        }, 100);
+      });
       sendJoin(targetRoomId);
     },
-    [sendJoin, updateStream],
+    [sendJoin, updateStream, joinSession],
   );
 
   const shareScreen = useCallback(async () => {
@@ -176,6 +212,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
     joinRoom,
     sendChat,
     sendEmoji,
+    sendDevice,
     leaveRoom,
     leaveSession,
     shareScreen,
@@ -184,6 +221,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
     screenSharingMediaStream,
     participantsUserData,
     screenOwnerId,
+    participantsMediaOptions,
   };
 };
 

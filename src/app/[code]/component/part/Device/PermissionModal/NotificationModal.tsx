@@ -1,19 +1,20 @@
+import { useDevice2 } from '@/hook';
 import { useState } from 'react';
 
 interface NotificationModalProps {
   onClose: () => void;
-  onUpdateStream: () => void;
 }
 
-export default function NotificationModal({ onClose, onUpdateStream }: NotificationModalProps) {
+export default function NotificationModal({ onClose }: NotificationModalProps) {
   const [isPending, setIsPending] = useState(false);
+  const { updateStream } = useDevice2();
   const handleRetryButtonClick = async () => {
     setIsPending(true);
     try {
       await navigator.mediaDevices.getUserMedia({ video: true });
       setIsPending(false);
       onClose();
-      onUpdateStream();
+      updateStream();
     } catch {
       setIsPending(false);
     }

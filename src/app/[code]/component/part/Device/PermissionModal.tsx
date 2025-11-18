@@ -11,12 +11,11 @@ import { NotificationModal, RequestInfoModal } from './PermissionModal/index';
 interface PermissionModalProps {
   isOpenModal: boolean;
   onClose: () => void;
-  onUpdateStream: () => void;
 }
 
 type ModalContentProps = Omit<PermissionModalProps, 'isOpenModal'>;
 
-function ModalContent({ onClose, onUpdateStream }: ModalContentProps) {
+function ModalContent({ onClose }: ModalContentProps) {
   const [isDenied, setIsDenied] = useState(false);
 
   const { permission: devicePermission, streamStatus } = useDeviceStore(
@@ -35,17 +34,17 @@ function ModalContent({ onClose, onUpdateStream }: ModalContentProps) {
   }
 
   if (streamStatus === 'failed') {
-    return <NotificationModal onClose={onClose} onUpdateStream={onUpdateStream} />;
+    return <NotificationModal onClose={onClose} />;
   }
 
   if (!isDenied) {
-    <RequestModal onSkipUpdateStream={onClose} onRequstError={handleRequseError} onUpdateStream={onUpdateStream} />;
+    <RequestModal onSkipUpdateStream={onClose} onRequstError={handleRequseError} />;
   }
 
   return <RequestInfoModal onClose={onClose} />;
 }
 
-export default function PermissionModal({ isOpenModal, onClose, onUpdateStream }: PermissionModalProps) {
+export default function PermissionModal({ isOpenModal, onClose }: PermissionModalProps) {
   const [isTimeOut, setIsTimeOut] = useState(false);
 
   const { permission: devicePermission } = useDeviceStore(
@@ -74,7 +73,7 @@ export default function PermissionModal({ isOpenModal, onClose, onUpdateStream }
 
   return (
     <Modal isOpen={isOpenModal || (!devicePermission && isTimeOut)} onCloseModal={handleOutsideModalClick}>
-      <ModalContent onClose={onClose} onUpdateStream={onUpdateStream} />
+      <ModalContent onClose={onClose} />
     </Modal>
   );
 }
