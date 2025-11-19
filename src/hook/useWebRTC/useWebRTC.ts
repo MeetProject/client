@@ -3,7 +3,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { ParticipantDataType, StreamType } from '@/type/signalType';
 import { ChatResponseType, DeviceResponseType, EmojiResponseType } from '@/type/reactionType';
-import { useDeviceStore } from '@/store/DeviceStore';
 import { DeviceEnableType } from '@/type/streamType';
 import { useClientStore } from '@/store/ClientStore';
 import usePeerConnection from './usePeerConnection';
@@ -19,7 +18,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
   const [isScreenShare, setIsScreenShare] = useState(false);
   const [participantsMediaStream, setParticipantsMediaStream] = useState<Map<string, MediaStream>>(new Map());
   const [screenSharingMediaStream, setScreenSharingMediaStream] = useState<MediaStream | null>(null);
-  const participantsUserData = useRef<Map<string, ParticipantDataType>>(new Map());
+  const [participantsUserData, setParticipantsUserData] = useState<Map<string, ParticipantDataType>>(new Map());
   const [screenOwnerId, setScreenOwnerId] = useState<string | null>(null);
   const [participantsMediaOptions, setParticipantsMediaOptions] = useState<Map<string, DeviceEnableType>>(new Map());
 
@@ -36,7 +35,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
       const { userId, mediaOption } = data;
       const newMap = new Map(prev);
       newMap.set(userId, mediaOption);
-      return newMap;
+      return new Map(newMap);
     });
   }, []);
 
@@ -45,7 +44,11 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
   const stopShareScreenRef = useRef<() => void>();
 
   const handleAddParticipantUserData = (userId: string, user: ParticipantDataType) => {
-    participantsUserData.current.set(userId, user);
+    setParticipantsUserData((prev) => {
+      const newMap = new Map(prev);
+      newMap.set(userId, user);
+      return newMap;
+    });
   };
 
   const onTrack = useCallback(
@@ -62,7 +65,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
         setScreenOwnerId(targetId);
       }
     },
-    [],
+    [setParticipantsMediaStream, setScreenSharingMediaStream, setScreenOwnerId],
   );
 
   const onDisplayShareEnd = useCallback(() => {
@@ -86,7 +89,11 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
     (targetId: string, streamType: StreamType) => {
       disconnectPeerConnection(targetId, streamType);
       if (streamType === 'USER') {
-        participantsUserData.current.delete(targetId);
+        setParticipantsUserData((prev) => {
+          const newMap = new Map(prev);
+          newMap.delete(targetId);
+          return newMap;
+        });
         setParticipantsMediaStream((prev) => {
           const newMap = new Map(prev);
           newMap.delete(targetId);
@@ -98,7 +105,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
       setScreenSharingMediaStream(null);
       setScreenOwnerId(null);
     },
-    [disconnectPeerConnection],
+    [setParticipantsUserData, setParticipantsMediaStream, disconnectPeerConnection],
   );
 
   const {
@@ -155,10 +162,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
 
   const joinRoom = useCallback(
     async (targetRoomId: string) => {
-      const { stream: mediaStream } = useDeviceStore.getState();
-      if (!mediaStream) {
-        await updateStream();
-      }
+      await updateStream();
 
       if (useClientStore.getState().isClientReady === null) {
         await joinSession();
@@ -187,7 +191,7 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
   const clearPeerConnection = useCallback(() => {
     disconnectAllPeerConnection();
     disconnectAllScreenPeerConnection();
-    participantsUserData.current.clear();
+    setParticipantsUserData(new Map());
     setParticipantsMediaStream(new Map());
     setScreenSharingMediaStream(null);
   }, [disconnectAllPeerConnection, disconnectAllScreenPeerConnection]);

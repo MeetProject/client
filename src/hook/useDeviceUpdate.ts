@@ -27,15 +27,6 @@ const useDevice = () => {
     setStreamStatus(null);
 
     stream.getTracks().forEach((device) => device.stop());
-
-    useDeviceStore.getState().setAudioInput(null);
-    useDeviceStore.getState().setAudioOutput(null);
-    useDeviceStore.getState().setVideoInput(null);
-
-    useDeviceStore.getState().setAudioInputList(null);
-    useDeviceStore.getState().setAudioOutputList(null);
-    useDeviceStore.getState().setVideoInputList(null);
-
     useDeviceStore.getState().setStream(null);
   }, []);
 
@@ -56,7 +47,9 @@ const useDevice = () => {
     useDeviceStore.getState().setVideoInputList(deviceInfo.currentVideoInputList);
 
     useDeviceStore.getState().setAudioInput(deviceInfo.currentAudioInput);
-    useDeviceStore.getState().setAudioOutput(deviceInfo.currentAudioOutput);
+    if (!useDeviceStore.getState().audioOutput.id) {
+      useDeviceStore.getState().setAudioOutput(deviceInfo.currentAudioOutput);
+    }
     useDeviceStore.getState().setVideoInput(deviceInfo.currentVideoInput);
 
     return deviceInfo;
@@ -90,7 +83,6 @@ const useDevice = () => {
           track.enabled = false;
         });
       }
-      console.log(newStream);
 
       useDeviceStore.getState().setStream(newStream);
       setStreamStatus('success');
@@ -171,7 +163,6 @@ const useDevice = () => {
       const isEnableCheckPermission = await checkPermissionOnchange('microphone');
       if (isEnableCheckPermission) {
         await addPermissionListener(async () => {
-          console.log('aa');
           stopStream();
           await updateStream();
         });

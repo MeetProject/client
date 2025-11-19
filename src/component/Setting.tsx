@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { useCheckPermission, useDevice2 } from '@/hook';
 import * as Icon from '@/asset/icon';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -59,6 +60,16 @@ function SettingModal({ onClose }: SettingModalProps) {
     onClose();
   };
 
+  useEffect(() => {
+    const mediaElements = document.querySelectorAll('audio, video');
+    mediaElements.forEach((el) => {
+      const mediaEl = el as HTMLMediaElement;
+      if (mediaEl.setSinkId) {
+        mediaEl.setSinkId(useDeviceStore.getState().audioOutput?.id);
+      }
+    });
+  }, []);
+
   return (
     <div
       className='relative flex h-[650px] w-[800px] overflow-hidden rounded-lg bg-white font-googleSans'
@@ -111,14 +122,71 @@ function SettingModal({ onClose }: SettingModalProps) {
 }
 
 export default function Setting({ isOpen, onClose }: SettingProps) {
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
   const [isTimeOut, setIsTimeOut] = useState(false);
+  const [isRequsetStream, setIsRequestStream] = useState(false);
   const [isRenderSetting, setIsRenderSetting] = useState(false);
 
-  const { permission } = useDeviceStore(
+  const [isPending, setIsPending] = useState(false);
+
+  const { stream, streamStatus } = useDeviceStore(
     useShallow((state) => ({
-      permission: state.permission,
+      stream: state.stream,
+      streamStatus: state.streamStatus,
     })),
   );
+
+  const { updateStream: handleUpdateStream, stopStream } = useDevice2();
+  const { checkPermissionQuery } = useCheckPermission();
+
+  const updateStream = useCallback(async () => {
+    setIsTimeOut(false);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    handleUpdateStream();
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    timerRef.current = setTimeout(() => {
+      setIsTimeOut(true);
+      timerRef.current = null;
+    }, 2000);
+  }, [handleUpdateStream]);
+
+  useEffect(() => {
+    const getPermission = async () => {
+      const value = await checkPermissionQuery();
+
+      if (value === false) {
+        setIsTimeOut(true);
+        return;
+      }
+
+      if (value === null) {
+        setIsRequestStream(true);
+      }
+
+      updateStream();
+    };
+
+    if (isOpen && !isPending) {
+      setIsPending(true);
+      getPermission();
+    }
+  }, [isOpen, isPending, checkPermissionQuery, updateStream]);
+
+  useEffect(() => {
+    if (stream || streamStatus === 'rejected' || streamStatus === 'failed') {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      setIsTimeOut(true);
+      setIsRenderSetting(true);
+    }
+  }, [stream, streamStatus]);
 
   const handleSkipUpdateStreamButtonClick = () => {
     setIsRenderSetting(true);
@@ -128,29 +196,23 @@ export default function Setting({ isOpen, onClose }: SettingProps) {
     if (!isRenderSetting) {
       return;
     }
+    setIsRequestStream(false);
     setIsRenderSetting(false);
     setIsTimeOut(false);
+    stopStream();
     onClose();
+    setIsPending(false);
   };
 
   return (
     <Modal isOpen={isOpen && isTimeOut} onCloseModal={handleModalClose}>
-      {
-        isRenderSetting &&
-          (permission === null ? (
-            <InitialRequestModal />
-          ) : permission.audio || permission.video ? (
-            <SettingModal onClose={handleModalClose} />
-          ) : (
-            <RequestModal onSkipUpdateStream={handleSkipUpdateStreamButtonClick} />
-          )) /* isRequsetStream ? (
+      {isRenderSetting ? (
+        <SettingModal onClose={handleModalClose} />
+      ) : isRequsetStream ? (
         <InitialRequestModal />
       ) : (
-        <RequestModal
-          onUpdateStream={handleUpdateStreamButtonClick}
-          onSkipUpdateStream={handleSkipUpdateStreamButtonClick}
-        /> */
-      }
+        <RequestModal onSkipUpdateStream={handleSkipUpdateStreamButtonClick} />
+      )}
     </Modal>
   );
 }

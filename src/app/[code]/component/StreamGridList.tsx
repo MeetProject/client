@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, MutableRefObject } from 'react';
+import { useState, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useUserInfoStore } from '@/store/UserInfoStore';
@@ -12,7 +12,7 @@ import { VideoStream, OtherAudioStream } from './part/Stream';
 
 interface StreamGridListProps {
   participantsMediaStream: Map<string, MediaStream>;
-  participantsUserData: MutableRefObject<Map<string, ParticipantDataType>>;
+  participantsUserData: Map<string, ParticipantDataType>;
   participantsMediaOptions: Map<string, DeviceEnableType>;
   emojiList: EmojiResponseType[];
 }
@@ -86,8 +86,8 @@ export default function StreamGridList({
           key={userId}
           user={{
             id: userId,
-            name: participantsUserData.current.get(userId)?.userName,
-            color: participantsUserData.current.get(userId)?.profileColor,
+            name: participantsUserData.get(userId)?.userName,
+            color: participantsUserData.get(userId)?.profileColor,
             audio: participantsMediaOptions.get(userId)?.audio ?? true,
             video: participantsMediaOptions.get(userId)?.video ?? true,
           }}
@@ -100,8 +100,8 @@ export default function StreamGridList({
           <VideoStream
             user={{
               id: otherSubscriber[0][0],
-              name: participantsUserData.current.get(otherSubscriber[0][0])?.userName,
-              color: participantsUserData.current.get(otherSubscriber[0][0])?.profileColor,
+              name: participantsUserData.get(otherSubscriber[0][0])?.userName,
+              color: participantsUserData.get(otherSubscriber[0][0])?.profileColor,
               audio: participantsMediaOptions.get(otherSubscriber[0][0])?.audio ?? true,
               video: participantsMediaOptions.get(otherSubscriber[0][0])?.video ?? true,
             }}
@@ -111,8 +111,8 @@ export default function StreamGridList({
         ) : (
           <OtherAudioStream
             otherStreams={otherSubscriber}
-            name={participantsUserData.current.get(otherSubscriber[0][0])?.userName}
-            color={participantsUserData.current.get(otherSubscriber[0][0])?.profileColor}
+            name={participantsUserData.get(otherSubscriber[0][0])?.userName}
+            color={participantsUserData.get(otherSubscriber[0][0])?.profileColor}
           />
         ))}
     </div>

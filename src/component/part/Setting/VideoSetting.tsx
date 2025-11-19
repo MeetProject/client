@@ -3,16 +3,14 @@ import { useDeviceStore } from '@/store/DeviceStore';
 import { useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import * as Icon from '@/asset/icon';
+import { useDevice2 } from '@/hook';
 
-interface VideoSettingProps {
-  stream: MediaStream | null | undefined;
-  onUpdateStream: () => void;
-}
-
-export default function VideoSetting({ stream, onUpdateStream }: VideoSettingProps) {
+export default function VideoSetting() {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { videoInput, videoInputList, setVideoInput, permission } = useDeviceStore(
+  const { updateStream } = useDevice2();
+  const { stream, videoInput, videoInputList, setVideoInput, permission } = useDeviceStore(
     useShallow((state) => ({
+      stream: state.stream,
       videoInput: state.videoInput,
       videoInputList: state.videoInputList,
       setVideoInput: state.setVideoInput,
@@ -26,7 +24,7 @@ export default function VideoSetting({ stream, onUpdateStream }: VideoSettingPro
       return;
     }
     setVideoInput({ name: newVideo.label, id: newVideo.deviceId });
-    onUpdateStream();
+    updateStream();
   };
 
   useEffect(() => {

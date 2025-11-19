@@ -22,7 +22,7 @@ export default function ParticipateMeetingForm() {
     }
     setIsPending(true);
     try {
-      const roomResponse = await fetch(`https://localhost:8080/api/room/validate?roomId=${value}`);
+      const roomResponse = await fetch(`http://localhost:8080/api/room/validate?roomId=${value}`);
       if (!roomResponse.ok) {
         alert('서버 오류. 다시 시도해주세요.');
         throw new Error('방 id 검사 api 오류');

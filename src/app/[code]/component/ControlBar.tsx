@@ -110,8 +110,6 @@ export default function ControlBar({
     (type: 'audio' | 'video') => {
       const { permission, deviceEnable } = useDeviceStore.getState();
       if (permission && permission[type]) {
-        const enable = { ...deviceEnable, [type]: !deviceEnable[type] };
-        console.log(enable);
         handleDeviceEnable({ ...deviceEnable, [type]: !deviceEnable[type] });
         if (type === 'audio') {
           toggleAudioInput();
@@ -122,7 +120,7 @@ export default function ControlBar({
       }
       setIsOpenModal(true);
     },
-    [handleDeviceEnable],
+    [handleDeviceEnable, toggleAudioInput, toggleVideoInput],
   );
 
   return (

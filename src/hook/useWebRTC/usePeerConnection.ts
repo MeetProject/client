@@ -21,7 +21,6 @@ interface PeerConnectionData {
 const usePeerConnection = ({ onTrack, onDisplayShareEnd, onDeviceEnableChange }: UsePeerConnectionProps) => {
   const peerConnections = useRef<Map<string, PeerConnectionData>>(new Map());
   const screenPeerConnections = useRef<Map<string, PeerConnectionData>>(new Map());
-  const participantsMediaOptions = useRef<Map<string, Record<'video' | 'audio', boolean>>>(new Map());
   const { stream, deviceEnable } = useDeviceStore(
     useShallow((state) => ({
       stream: state.stream,
@@ -36,8 +35,17 @@ const usePeerConnection = ({ onTrack, onDisplayShareEnd, onDeviceEnableChange }:
       streamType: 'SCREEN' | 'USER',
       isScreenSender = false,
     ) => {
+      console.log(`[PeerConnection] create start for user: ${targetId}`);
       const connections = streamType === 'SCREEN' ? screenPeerConnections : peerConnections;
-      if (connections.current.has(targetId)) return;
+
+      const existingPC = peerConnections.current.get(targetId);
+      console.log(`[PeerConnection] create start for user: ${targetId}, existing pc:`, existingPC);
+
+      if (existingPC) {
+        console.warn(`[PeerConnection] warning: existing peerConnection detected for ${targetId}, closing it.`);
+        existingPC.pc.close();
+        peerConnections.current.delete(targetId);
+      }
 
       const pc = new RTCPeerConnection({
         iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
@@ -51,16 +59,26 @@ const usePeerConnection = ({ onTrack, onDisplayShareEnd, onDeviceEnableChange }:
 
       pc.onicecandidate = async (event) => {
         if (event.candidate) {
+          console.log(`[PeerConnection] ICE candidate generated for ${targetId}`, event.candidate);
           await onIceCandidate(targetId, event.candidate, streamType);
         }
       };
 
       pc.ontrack = async (event) => {
         if (!isScreenSender) {
+          console.log(`[PeerConnection] ontrack event for ${targetId}`, event.streams);
+          event.streams.forEach((s) => {
+            s.getTracks().forEach((t) => {
+              console.log(`[ontrack] track received for ${targetId}`, t.kind, t.id);
+            });
+          });
           const remoteStream = event.streams[0];
+          console.log(remoteStream);
           onTrack(targetId, remoteStream, streamType, isScreenSender);
         }
       };
+
+      console.log(streamType, 'create');
 
       if (streamType === 'SCREEN' && isScreenSender) {
         const { screenStream: mediaStream } = useDeviceStore.getState();
@@ -76,10 +94,15 @@ const usePeerConnection = ({ onTrack, onDisplayShareEnd, onDeviceEnableChange }:
 
       const { stream: mediaStream } = useDeviceStore.getState();
 
+      console.log(mediaStream);
+      console.log(mediaStream?.getTracks());
+
       mediaStream?.getTracks().forEach((track) => {
+        console.log(`[attach] track id: ${track.id}`);
         pc.addTrack(track, mediaStream);
       });
       connections.current.set(targetId, data);
+      console.log(`[PeerConnection] create done for user: ${targetId}`);
     },
     [onDisplayShareEnd, onTrack],
   );
@@ -102,7 +125,10 @@ const usePeerConnection = ({ onTrack, onDisplayShareEnd, onDeviceEnableChange }:
     const peerConnection = streamType === 'USER' ? peerConnections.current : screenPeerConnections.current;
     const target = peerConnection.get(targetId);
     if (!target) return;
+    console.log(`[SDP] registerOfferSdp start for ${targetId}`, sdp.type);
+    console.log('[SDP] sdp content snippet:', sdp.sdp?.substring(0, 500));
     await target.pc.setLocalDescription(sdp);
+    console.log(`[SDP] registerOfferSdp done for ${targetId}`);
   };
 
   const registerAnswerSdp = useCallback(
@@ -116,12 +142,15 @@ const usePeerConnection = ({ onTrack, onDisplayShareEnd, onDeviceEnableChange }:
       const target = peerConnection.get(targetId);
       if (!target) return;
 
+      console.log(`[SDP] registerAnswerSdp start for ${targetId}`, targetSdp.type);
+      console.log('[SDP] sdp content snippet:', targetSdp.sdp?.substring(0, 500));
+
       if (streamType === 'USER' && mediaOption) {
-        participantsMediaOptions.current.set(targetId, mediaOption);
         onDeviceEnableChange(targetId, mediaOption);
       }
 
       await target.pc.setRemoteDescription(targetSdp);
+      console.log(`[SDP] registerAnswerSdp done for ${targetId}`);
       target.remoteSet = true;
 
       target.iceQueue.forEach(async (ice) => {
@@ -136,6 +165,7 @@ const usePeerConnection = ({ onTrack, onDisplayShareEnd, onDeviceEnableChange }:
     async (targetId: string, targetIce: RTCIceCandidateInit, streamType: StreamType) => {
       const peerConnection = streamType === 'USER' ? peerConnections.current : screenPeerConnections.current;
       const target = peerConnection.get(targetId);
+      console.log('registering ice');
       if (!target) return;
 
       if (!target.remoteSet) {
@@ -162,7 +192,10 @@ const usePeerConnection = ({ onTrack, onDisplayShareEnd, onDeviceEnableChange }:
   }, []);
 
   const disconnectAllScreenPeerConnection = useCallback(() => {
-    screenPeerConnections.current.forEach((data) => data.pc.close());
+    screenPeerConnections.current.forEach((data) => {
+      data.pc.close();
+      data.pc = null;
+    });
     screenPeerConnections.current.clear();
   }, []);
 

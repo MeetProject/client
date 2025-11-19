@@ -14,7 +14,6 @@ import { timeDifferenceInMinutes } from '@/lib/getTimeDiff';
 import { ChatType, EmojiResponseType } from '@/type/reactionType';
 import { UserListType } from '@/type/participantType';
 import { useDevice2 } from '@/hook';
-import { DeviceEnableType } from '@/type/streamType';
 import {
   ControlBar,
   EmojiAnimation,
@@ -30,10 +29,19 @@ export default function Meetting() {
   const pathname = usePathname();
   const isRender = useRef<boolean>(false);
   const [isPending, setIsPending] = useState(true);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+
   const [emojiList, setEmojiList] = useState<EmojiResponseType[]>([]);
   const [chatList, setChatList] = useState<ChatType[]>([]);
 
-  const videoRef = useRef()
+  const { id, name, color } = useUserInfoStore(
+    useShallow((state) => ({
+      id: state.id,
+      name: state.name,
+      color: state.color,
+    })),
+  );
 
   const { updateStream } = useDevice2();
 
@@ -41,33 +49,31 @@ export default function Meetting() {
     joinSession,
     joinRoom,
     leaveRoom,
-    participantsMediaStream,
-    screenSharingMediaStream,
-    participantsUserData,
-    screenOwnerId,
     shareScreen,
     stopShareScreen,
     sendChat,
     sendEmoji,
     sendDevice,
+    participantsMediaStream,
+    screenSharingMediaStream,
+    participantsUserData,
     participantsMediaOptions,
+    screenOwnerId,
   } = useWebRTC({
     onChat: (data) =>
       setChatList((prev) => {
         if (prev.length === 0) {
-          return [{ ...data, userName: participantsUserData.current.get(data.userId)?.userName, header: true }];
+          return [{ ...data, userName: participantsUserData.get(data.userId)?.userName, header: true }];
         }
         const lastChat = prev[prev.length - 1];
         if (timeDifferenceInMinutes(lastChat.timestamp, data.timestamp) > 2 || data.userId !== lastChat.userId) {
-          return [
-            ...prev,
-            { ...data, userName: participantsUserData.current.get(data.userId)?.userName, header: true },
-          ];
+          return [...prev, { ...data, userName: participantsUserData.get(data.userId)?.userName, header: true }];
         }
-        return [...prev, { ...data, userName: participantsUserData.current.get(data.userId)?.userName, header: false }];
+        return [...prev, { ...data, userName: participantsUserData.get(data.userId)?.userName, header: false }];
       }),
     onEmoji: (data) => setEmojiList((prev) => [...prev, data]),
   });
+
   const { stream, deviceEnable, screenStream } = useDeviceStore(
     useShallow((state) => ({
       stream: state.stream,
@@ -79,32 +85,14 @@ export default function Meetting() {
 
   const { handleToggleStatus } = useContext(ToggleContext);
 
-  const { id, name, color } = useUserInfoStore(
-    useShallow((state) => ({
-      id: state.id,
-      name: state.name,
-      color: state.color,
-    })),
-  );
-
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const barRef = useRef<HTMLDivElement>(null);
-
   const deleteEmoji = useCallback((emojiId: string) => {
     setEmojiList((prev) => prev.filter((emoji) => emoji.id !== emojiId));
   }, []);
 
-  const handleDeviceEnable = useCallback(
-    (device: DeviceEnableType) => {
-      sendDevice(device);
-    },
-    [sendDevice],
-  );
-
   const userList: UserListType[] = Array.from(participantsMediaStream).map(([i, s]) => ({
     id: i,
-    name: participantsUserData.current.get(i)?.userName,
-    color: participantsUserData.current.get(i)?.profileColor,
+    name: participantsUserData.get(i)?.userName,
+    color: participantsUserData.get(i)?.profileColor,
     isMicOn: true,
     isVideoOn: true,
     stream: s,
@@ -117,7 +105,6 @@ export default function Meetting() {
       }
       isRender.current = true;
       const { client } = useClientStore.getState();
-      await updateStream();
       if (!client) {
         await joinSession();
       }
@@ -134,6 +121,19 @@ export default function Meetting() {
     }
     handleToggleStatus('screen', Boolean(screenSharingMediaStream || screenStream));
   }, [handleToggleStatus, screenSharingMediaStream, screenStream]);
+
+  useEffect(() => {
+    if (!isPending) {
+      return;
+    }
+    const mediaElements = document.querySelectorAll('audio, video');
+    mediaElements.forEach((el) => {
+      const mediaEl = el as HTMLMediaElement;
+      if (mediaEl.setSinkId) {
+        mediaEl.setSinkId(useDeviceStore.getState().audioOutput?.id);
+      }
+    });
+  }, [isPending]);
 
   return (
     <div className='relative flex h-screen w-screen flex-col overflow-hidden bg-[#202124]'>
@@ -196,7 +196,7 @@ export default function Meetting() {
                 handleStopScreenShare={stopShareScreen}
                 handleLeavSession={leaveRoom}
                 /* handleHandsUp={sendHandsUp} */
-                handleDeviceEnable={handleDeviceEnable}
+                handleDeviceEnable={sendDevice}
               />
               <InfoBar />
             </div>

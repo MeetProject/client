@@ -96,6 +96,16 @@ export default function Device() {
       updateStream();
     }
   }, [updateStream]);
+
+  useEffect(() => {
+    const mediaElements = document.querySelectorAll('audio, video');
+    mediaElements.forEach((el) => {
+      const mediaEl = el as HTMLMediaElement;
+      if (mediaEl.setSinkId) {
+        mediaEl.setSinkId(useDeviceStore.getState().audioOutput?.id);
+      }
+    });
+  }, []);
   return (
     <div className='w-full max-w-[764px] p-4 pr-2 lg:h-[284px] lg:pr-4'>
       <div

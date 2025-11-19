@@ -1,7 +1,7 @@
 'use client';
 
 import { useUserInfoStore } from '@/store/UserInfoStore';
-import { memo, MutableRefObject, useEffect } from 'react';
+import { memo, useEffect } from 'react';
 import Image, { StaticImageData } from 'next/image';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -13,7 +13,7 @@ import { ParticipantDataType } from '@/type/signalType';
 interface EmojiAnimationProps {
   emoji: EmojiResponseType;
   maxWidth: number;
-  participantsUserData: MutableRefObject<Map<string, ParticipantDataType>>;
+  participantsUserData: Map<string, ParticipantDataType>;
   deleteEmoji: (emojiId: string) => void;
 }
 
@@ -49,7 +49,7 @@ function EmojiIcon({ emoji, maxWidth, participantsUserData, deleteEmoji }: Emoji
       <div
         className={`max-w-28 truncate rounded-full px-2 text-sm ${emoji.userId === id ? 'bg-[#8AB4F8] text-[#48525F]' : 'bg-[#202124] text-white'} `}
       >
-        {id === emoji.userId ? '나' : participantsUserData.current.get(emoji.userId)?.userName}
+        {id === emoji.userId ? '나' : participantsUserData.get(emoji.userId)?.userName}
       </div>
     </div>
   );

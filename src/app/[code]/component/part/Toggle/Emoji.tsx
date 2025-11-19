@@ -8,15 +8,15 @@ interface EmojiButtonType {
   src: StaticImageData;
 }
 const EMOJI_BUTTON: EmojiButtonType[] = [
-  { name: 'heart', src: image.heartEmoji },
-  { name: 'thumbUp', src: image.thumbUpEmoji },
-  { name: 'partyPoper', src: image.partyPoperEmoji },
-  { name: 'clap', src: image.clapEmoji },
-  { name: 'laughter', src: image.laughterEmoji },
-  { name: 'surprice', src: image.surpriceEmoji },
-  { name: 'sad', src: image.sadEmoji },
-  { name: 'curious', src: image.curiousEmoji },
-  { name: 'thumbDown', src: image.thumbDownEmoji },
+  { name: 'HEART', src: image.heartEmoji },
+  { name: 'THUMBUP', src: image.thumbUpEmoji },
+  { name: 'PARTYPOPPER', src: image.partyPoperEmoji },
+  { name: 'CLAP', src: image.clapEmoji },
+  { name: 'LAUGHTER', src: image.laughterEmoji },
+  { name: 'SURPRISE', src: image.surpriceEmoji },
+  { name: 'SAD', src: image.sadEmoji },
+  { name: 'CURIOUS', src: image.curiousEmoji },
+  { name: 'THUMBDOWN', src: image.thumbDownEmoji },
 ];
 
 interface EmojiProps {

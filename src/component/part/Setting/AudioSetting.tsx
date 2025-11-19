@@ -3,20 +3,19 @@ import { useShallow } from 'zustand/react/shallow';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { DeviceSelectBox, Visualizer } from '@/component';
 import * as Icon from '@/asset/icon';
+import { useDevice2 } from '@/hook';
 
-interface AudioSettingProps {
-  stream: MediaStream | null | undefined;
-  onUpdateStream: () => void;
-}
-
-export default function AudioSetting({ stream, onUpdateStream }: AudioSettingProps) {
+export default function AudioSetting() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [isPlay, setIsPlay] = useState(false);
 
-  const { audioInputList, audioOuputList, audioInput, audioOutput, setAudioInput, setAudioOutput, permission } =
+  const { updateStream } = useDevice2();
+
+  const { stream, audioInputList, audioOuputList, audioInput, audioOutput, setAudioInput, setAudioOutput, permission } =
     useDeviceStore(
       useShallow((state) => ({
+        stream: state.stream,
         audioInputList: state.audioInputList,
         audioOuputList: state.audioOuputList,
         audioInput: state.audioInput,
@@ -39,7 +38,7 @@ export default function AudioSetting({ stream, onUpdateStream }: AudioSettingPro
 
     if (type === 'input') {
       setAudioInput({ id: newValue.deviceId, name: newValue.label });
-      onUpdateStream();
+      updateStream();
       return;
     }
 

@@ -54,15 +54,19 @@ const useSignalSocket = ({
 
   const parseMessage = <T>(msg: IMessage) => {
     const data = JSON.parse(msg.body) as T;
+    console.log(data);
     return data;
   };
 
   const sendJoin = useCallback(
     (roomId: string) => {
       const { client } = useClientStore.getState();
+      console.log(client, useUserInfoStore.getState().id);
       if (!useClientStore.getState().client || !useUserInfoStore.getState().id) {
         return;
       }
+
+      console.log('joining');
 
       const payload: JoinPayloadType = {
         roomId,
@@ -203,12 +207,18 @@ const useSignalSocket = ({
             const { fromUserId, fromUserSDP, streamType, mediaOption, isScreenSender } =
               parseMessage<SdpResponseType>(msg);
             const fromSDP = JSON.parse(fromUserSDP) as RTCSessionDescriptionInit;
+            console.log(`[Offer] received from ${fromUserId}`, fromSDP.type);
 
             await createPeerConnection(fromUserId, offerIceCandidate, streamType, isScreenSender);
+            console.log(`[Offer] peerConnection created for ${fromUserId}`);
             await registerAnswerSdp(fromUserId, fromSDP, streamType, mediaOption);
+            console.log(`[Offer] answer SDP registered for ${fromUserId}`);
             const sdp = await createAnswerSdp(fromUserId, streamType);
+            console.log(`[Offer] answer SDP created for ${fromUserId}`, sdp.type);
             await registerOfferSdp(fromUserId, sdp, streamType);
+            console.log(`[Offer] local SDP registered for ${fromUserId}`);
             sendSdp('/app/signal/answer', fromUserId, sdp, streamType);
+            console.log(`[Offer] answer SDP sent to ${fromUserId}`);
           });
           addSubscriptions('offer', offerSub);
 

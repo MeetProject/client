@@ -4,7 +4,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { EmojiResponseType } from '@/type/reactionType';
-import { MutableRefObject } from 'react';
 import { ParticipantDataType } from '@/type/signalType';
 import { DeviceEnableType } from '@/type/streamType';
 import { VideoStream, OtherAudioStream } from './part/Stream';
@@ -12,7 +11,7 @@ import { VideoStream, OtherAudioStream } from './part/Stream';
 interface StreamScreenListProps {
   screenSharingMediaStream: MediaStream | null;
   participantsMediaStream: Map<string, MediaStream>;
-  participantsUserData: MutableRefObject<Map<string, ParticipantDataType>>;
+  participantsUserData: Map<string, ParticipantDataType>;
   participantsMediaOptions: Map<string, DeviceEnableType>;
   screenOwnerId: string;
   emojiList: EmojiResponseType[];
@@ -52,8 +51,8 @@ export default function StreamScreenList({
 
   const screenOwnerInfo = {
     id: screenOwnerId,
-    name: participantsUserData.current.get(screenOwnerId)?.userName ?? name,
-    color: participantsUserData.current.get(screenOwnerId)?.profileColor ?? color,
+    name: participantsUserData.get(screenOwnerId)?.userName ?? name,
+    color: participantsUserData.get(screenOwnerId)?.profileColor ?? color,
     audio: screenOwnerId ? true : Boolean(deviceEnable.audio && audioInput?.id),
     video: screenOwnerId ? true : Boolean(deviceEnable.video && videoInput?.id),
   };
@@ -81,8 +80,8 @@ export default function StreamScreenList({
             key={userId}
             user={{
               id: userId,
-              name: participantsUserData.current.get(userId)?.userName,
-              color: participantsUserData.current.get(userId)?.profileColor,
+              name: participantsUserData.get(userId)?.userName,
+              color: participantsUserData.get(userId)?.profileColor,
               audio: participantsMediaOptions.get(userId)?.audio ?? true,
               video: participantsMediaOptions.get(userId)?.video ?? true,
             }}
@@ -93,8 +92,8 @@ export default function StreamScreenList({
         {isOverflow && (
           <OtherAudioStream
             otherStreams={otherSubscriber}
-            name={participantsUserData.current.get(otherSubscriber[0][0])?.userName}
-            color={participantsUserData.current.get(otherSubscriber[0][0])?.profileColor}
+            name={participantsUserData.get(otherSubscriber[0][0])?.userName}
+            color={participantsUserData.get(otherSubscriber[0][0])?.profileColor}
           />
         )}
       </div>
