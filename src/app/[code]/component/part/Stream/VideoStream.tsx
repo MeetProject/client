@@ -7,6 +7,7 @@ import * as Icon from '@/asset/icon';
 import * as ImageSrc from '@/asset/image';
 import { EmojiType } from '@/type/toggleType';
 import { EmojiResponseType } from '@/type/reactionType';
+import { useWebRTCStore } from '@/store/WebRTCStore';
 
 interface UserInfo extends Record<'id' | 'name' | 'color', string> {
   audio: boolean;
@@ -19,7 +20,6 @@ interface VideoStreamProps {
   stream: MediaStream | null;
   muted?: boolean;
   emojiList?: EmojiResponseType[];
-  handsUpList?: Record<string, boolean>;
 }
 
 const EMOJI_IMAGE: Record<EmojiType, StaticImageData> = {
@@ -34,16 +34,11 @@ const EMOJI_IMAGE: Record<EmojiType, StaticImageData> = {
   THUMBUP: ImageSrc.thumbUpEmoji,
 };
 
-export default function VideoStream({
-  user,
-  isScreen = false,
-  stream,
-  muted = false,
-  emojiList,
-  handsUpList,
-}: VideoStreamProps) {
+export default function VideoStream({ user, isScreen = false, stream, muted = false, emojiList }: VideoStreamProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [emojiIcon, setEmojiIcon] = useState<EmojiResponseType | null>(null);
+
+  const { participantsHandUp } = useWebRTCStore();
 
   useEffect(() => {
     if (!videoRef.current || !stream) return;
@@ -105,7 +100,7 @@ export default function VideoStream({
           </div>
         )}
 
-        {handsUpList && handsUpList[user.id] ? (
+        {participantsHandUp && participantsHandUp.get(user.id) ? (
           <div className='absolute bottom-2 left-2 z-30 flex h-6 max-w-full items-center justify-center gap-2 rounded-full bg-white pl-2 pr-3 font-googleSans text-sm text-[#202124]'>
             <Icon.HandsUp width={14} height={14} fill='#202124' />
             <p className='truncate'>{user.name}</p>

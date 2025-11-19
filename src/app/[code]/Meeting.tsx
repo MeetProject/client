@@ -83,13 +83,21 @@ export default function Meetting() {
     [router],
   );
 
-  const { joinSession, joinRoom, leaveRoom, shareScreen, stopShareScreen, sendChat, sendEmoji, sendDevice } = useWebRTC(
-    {
-      onChat: handleChat,
-      onEmoji: handleEmoji,
-      onError: handleError,
-    },
-  );
+  const {
+    joinSession,
+    joinRoom,
+    leaveRoom,
+    shareScreen,
+    stopShareScreen,
+    sendChat,
+    sendEmoji,
+    sendHandUp,
+    sendDevice,
+  } = useWebRTC({
+    onChat: handleChat,
+    onEmoji: handleEmoji,
+    onError: handleError,
+  });
 
   const { stream, deviceEnable, screenStream } = useDeviceStore(
     useShallow((state) => ({
@@ -152,7 +160,6 @@ export default function Meetting() {
     });
   }, [isPending]);
 
-  console.log(participantsUserData);
   return (
     <div className='relative flex h-screen w-screen flex-col overflow-hidden bg-[#202124]'>
       {!isPending && (
@@ -200,7 +207,7 @@ export default function Meetting() {
                 handleScreenShare={shareScreen}
                 handleStopScreenShare={stopShareScreen}
                 handleLeavSession={leaveRoom}
-                /* handleHandsUp={sendHandsUp} */
+                handleHandUp={sendHandUp}
                 handleDeviceEnable={sendDevice}
               />
               <InfoBar />

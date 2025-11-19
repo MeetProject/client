@@ -1,18 +1,28 @@
 import { DeviceEnableType } from './streamType';
 import { EmojiType } from './toggleType';
 
-export interface ChatResponseType {
+type TopicType = 'LEAVE' | 'CHAT' | 'EMOJI' | 'DEVICE' | 'HANDUP';
+
+interface TopicResponsType {
+  type: TopicType;
   id: string;
+}
+
+export interface ChatResponseType extends TopicResponsType {
   userId: string;
   message: string;
   timestamp: string;
 }
 
-export interface EmojiResponseType {
-  id: string;
+export interface EmojiResponseType extends TopicResponsType {
   userId: string;
   emoji: EmojiType;
   timestamp: string;
+}
+
+export interface HandUpResponseType extends TopicResponsType {
+  userId: string;
+  value: boolean;
 }
 
 export interface ChatType extends ChatResponseType {
@@ -20,7 +30,7 @@ export interface ChatType extends ChatResponseType {
   header?: boolean;
 }
 
-export interface DeviceResponseType {
+export interface DeviceResponseType extends TopicResponsType {
   userId: string;
   mediaOption: DeviceEnableType;
 }

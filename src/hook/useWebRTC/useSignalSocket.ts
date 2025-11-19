@@ -8,7 +8,6 @@ import {
   JoinResponseType,
   SdpPayloadType,
   LeaveResponseType,
-  ParticipantDataType,
   JoinPayloadType,
   LeavePayloadType,
   IceResponseType,
@@ -20,30 +19,22 @@ import {
   AnswerResponseType,
 } from '@/type/signalType';
 import { useUserInfoStore } from '@/store/UserInfoStore';
-import { ChatResponseType, DeviceResponseType, EmojiResponseType } from '@/type/reactionType';
+import { ChatResponseType, DeviceResponseType, EmojiResponseType, HandUpResponseType } from '@/type/reactionType';
 import { useClientStore } from '@/store/ClientStore';
 import { useShallow } from 'zustand/react/shallow';
 import { EmojiType } from '@/type/toggleType';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { DeviceEnableType } from '@/type/streamType';
+import { useWebRTCStore } from '@/store/WebRTCStore';
 
 interface UseSignalSocketProps {
-  onAddParticipantData: (userId: string, user: ParticipantDataType) => void;
   onDeleteParticipant: (targetId: string, streamType: StreamType) => void;
   onChat: (data: ChatResponseType) => void;
   onEmoji: (data: EmojiResponseType) => void;
-  onDevice: (data: DeviceResponseType) => void;
   onError: (data: ErrorResponseType) => void;
 }
 
-const useSignalSocket = ({
-  onAddParticipantData,
-  onDeleteParticipant,
-  onChat,
-  onEmoji,
-  onDevice,
-  onError,
-}: UseSignalSocketProps) => {
+const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseSignalSocketProps) => {
   const { addRoomSubscriptions, addSubscriptions } = useClientStore(
     useShallow((state) => ({
       setClient: state.setClient,
@@ -64,12 +55,9 @@ const useSignalSocket = ({
   const sendJoin = useCallback(
     (roomId: string) => {
       const { client } = useClientStore.getState();
-      console.log(client, useUserInfoStore.getState().id);
       if (!useClientStore.getState().client || !useUserInfoStore.getState().id) {
         return;
       }
-
-      console.log('joining');
 
       const payload: JoinPayloadType = {
         roomId,
@@ -99,15 +87,23 @@ const useSignalSocket = ({
       });
       addRoomSubscriptions('emoji', emojuSub);
 
+      const handUpSub = client.subscribe(`/topic/room/${roomId}/handup`, (msg: IMessage) => {
+        const { userId, value } = parseMessage<HandUpResponseType>(msg);
+        const { updateParticipantsHandUp } = useWebRTCStore.getState();
+        updateParticipantsHandUp(userId, value);
+      });
+      addRoomSubscriptions('handUp', handUpSub);
+
       const deviceSub = client.subscribe(`/topic/room/${roomId}/device`, (msg: IMessage) => {
-        const response = parseMessage<DeviceResponseType>(msg);
-        onDevice(response);
+        const { userId, mediaOption } = parseMessage<DeviceResponseType>(msg);
+        const { updateParticipantsMediaOptions } = useWebRTCStore.getState();
+        updateParticipantsMediaOptions(userId, mediaOption);
       });
       addRoomSubscriptions('device', deviceSub);
 
       currentRoomId.current = roomId;
     },
-    [addRoomSubscriptions, onChat, onDeleteParticipant, onEmoji, onDevice],
+    [addRoomSubscriptions, onChat, onDeleteParticipant, onEmoji],
   );
 
   const sendSdp = useCallback(
@@ -138,8 +134,6 @@ const useSignalSocket = ({
     if (!client || !useUserInfoStore.getState().id) {
       return;
     }
-
-    console.log('sending ice');
 
     const payload: IcePayloadType = {
       toUserId: targetId,
@@ -188,9 +182,12 @@ const useSignalSocket = ({
         onConnect: async () => {
           useClientStore.getState().setIsClientReady(true);
           const joinSub = connectedClient.subscribe('/user/queue/signal/join', async (msg: IMessage) => {
+            const { updateParticipantsUserData, updateParticipantsHandUp } = useWebRTCStore.getState();
             const { participants, screenId } = parseMessage<JoinResponseType>(msg);
             participants.forEach(async (participant) => {
-              onAddParticipantData(participant.userId, participant);
+              const { isHandUp, ...userData } = participant;
+              updateParticipantsUserData(participant.userId, userData);
+              updateParticipantsHandUp(participant.userId, isHandUp);
               await createPeerConnection(participant.userId, offerIceCandidate, 'USER', false);
               const sdp = await createOfferSdp(participant.userId, 'USER');
               await registerOfferSdp(participant.userId, sdp, 'USER');
@@ -207,22 +204,21 @@ const useSignalSocket = ({
           addSubscriptions('join', joinSub);
 
           const offerSub = connectedClient.subscribe('/user/queue/signal/offer', async (msg: IMessage) => {
+            const { updateParticipantsUserData, updateParticipantsHandUp } = useWebRTCStore.getState();
             const { fromUserId, fromUserSDP, streamType, mediaOption, isScreenSender, user } =
               parseMessage<OfferResponseType>(msg);
+            const { isHandUp, ...userData } = user;
             const fromSDP = JSON.parse(fromUserSDP) as RTCSessionDescriptionInit;
-            console.log(`[Offer] received from ${fromUserId}`, fromSDP.type);
 
             await createPeerConnection(fromUserId, offerIceCandidate, streamType, isScreenSender);
-            onAddParticipantData(fromUserId, user);
-            console.log(`[Offer] peerConnection created for ${fromUserId}`);
+
+            updateParticipantsUserData(fromUserId, userData);
+            updateParticipantsHandUp(fromUserId, isHandUp);
+
             await registerAnswerSdp(fromUserId, fromSDP, streamType, mediaOption);
-            console.log(`[Offer] answer SDP registered for ${fromUserId}`);
             const sdp = await createAnswerSdp(fromUserId, streamType);
-            console.log(`[Offer] answer SDP created for ${fromUserId}`, sdp.type);
             await registerOfferSdp(fromUserId, sdp, streamType);
-            console.log(`[Offer] local SDP registered for ${fromUserId}`);
             sendSdp('/app/signal/answer', fromUserId, sdp, streamType);
-            console.log(`[Offer] answer SDP sent to ${fromUserId}`);
           });
           addSubscriptions('offer', offerSub);
 
@@ -267,7 +263,7 @@ const useSignalSocket = ({
       });
       connectedClient.activate();
     },
-    [onAddParticipantData, addSubscriptions, offerIceCandidate, sendJoin, sendSdp],
+    [addSubscriptions, offerIceCandidate, sendJoin, sendSdp, onError],
   );
 
   const shareScreen = useCallback(() => {
@@ -346,13 +342,31 @@ const useSignalSocket = ({
     });
   }, []);
 
+  const sendHandUp = useCallback((value: boolean) => {
+    const { client } = useClientStore.getState();
+
+    if (!client || !currentRoomId.current) {
+      return;
+    }
+
+    const payload = {
+      roomId: currentRoomId.current,
+      value,
+    };
+
+    client.publish({
+      destination: '/app/handUp',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  }, []);
+
   const sendDevice = useCallback((mediaOption: DeviceEnableType) => {
     const { client } = useClientStore.getState();
 
     if (!client || !currentRoomId.current) {
       return;
     }
-    console.log('send', mediaOption);
     const payload = {
       roomId: currentRoomId.current,
       mediaOption,
@@ -422,6 +436,7 @@ const useSignalSocket = ({
     sendLeave,
     sendChat,
     sendEmoji,
+    sendHandUp,
     sendDevice,
     shareScreen,
     stopScreenShare,

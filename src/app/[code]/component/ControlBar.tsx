@@ -16,7 +16,7 @@ interface ControlBarProps {
   handleStopScreenShare: () => void;
   handleLeavSession: () => void;
   handleDeviceEnable: (device: DeviceEnableType) => void;
-  /* handleHandsUp: (value: boolean) => void; */
+  handleHandUp: (value: boolean) => void;
 }
 
 interface ControlButtonType {
@@ -38,7 +38,7 @@ export default function ControlBar({
   handleStopScreenShare,
   handleLeavSession,
   handleDeviceEnable,
-  /* handleHandsUp, */
+  handleHandUp,
 }: ControlBarProps) {
   const [isOpenAlert, setIsOpenAlert] = useState(false);
   const handleScreenShareButtonClick = (value: boolean | 'disable') => {
@@ -57,8 +57,7 @@ export default function ControlBar({
     if (value === 'disable') {
       return;
     }
-    console.log('handsup', value);
-    /* handleHandsUp(value); */
+    handleHandUp(value);
   };
 
   const isSupportScreenShareBrowser = checkBrowser();

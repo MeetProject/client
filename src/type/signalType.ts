@@ -17,6 +17,11 @@ export interface ParticipantDataType {
   userId: string;
   userName: string;
   profileColor: string;
+  roomId: string;
+}
+
+export interface ParticipantResponseType extends ParticipantDataType {
+  isHandUp: boolean;
 }
 
 export interface RegisterResponseType extends SignalResponseType {
@@ -29,7 +34,7 @@ export interface JoinPayloadType {
 
 export interface JoinResponseType extends SignalResponseType {
   roomId: string;
-  participants: ParticipantDataType[];
+  participants: ParticipantResponseType[];
   screenId: string | null;
 }
 
@@ -43,7 +48,7 @@ export interface SdpPayloadType {
 export interface AnswerResponseType extends SdpResponseType {}
 
 export interface OfferResponseType extends SdpResponseType {
-  user: ParticipantDataType;
+  user: ParticipantResponseType;
 }
 
 export interface IcePayloadType {

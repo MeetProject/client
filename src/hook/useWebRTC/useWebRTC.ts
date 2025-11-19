@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useRef, useEffect } from 'react';
-import { ErrorResponseType, ParticipantDataType, StreamType } from '@/type/signalType';
-import { ChatResponseType, DeviceResponseType, EmojiResponseType } from '@/type/reactionType';
+import { ErrorResponseType, StreamType } from '@/type/signalType';
+import { ChatResponseType, EmojiResponseType } from '@/type/reactionType';
 import { DeviceEnableType } from '@/type/streamType';
 import { useClientStore } from '@/store/ClientStore';
 import { useWebRTCStore } from '@/store/WebRTCStore';
@@ -23,7 +23,6 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProps) => {
 
   const onTrack = useCallback(
     (targetId: string, targetStream: MediaStream, streamType: StreamType, isScreenSender: boolean) => {
-      console.log('onTrack', targetId, streamType, isScreenSender);
       const { updateParticipantsMediaStream, setScreenSharingMediaStream, setScreenOwnerId } =
         useWebRTCStore.getState();
 
@@ -51,17 +50,6 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProps) => {
   useEffect(() => {
     onDeviceEnableChangeRef.current = onDeviceEnableChange;
   }, [onDeviceEnableChange]);
-
-  const handleAddParticipantUserData = useCallback((userId: string, user: ParticipantDataType) => {
-    const { updateParticipantsUserData } = useWebRTCStore.getState();
-    updateParticipantsUserData(userId, user);
-  }, []);
-
-  const handleDevice = useCallback((data: DeviceResponseType) => {
-    const { userId, mediaOption } = data;
-    const { updateParticipantsMediaOptions } = useWebRTCStore.getState();
-    updateParticipantsMediaOptions(userId, mediaOption);
-  }, []);
 
   const { updateStream, stopStream, updateScreenStream, stopScreenStream } = useDevice2();
 
@@ -117,15 +105,14 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProps) => {
     sendLeave,
     sendChat,
     sendEmoji,
+    sendHandUp,
     sendDevice,
     disconnectSocket,
     shareScreen: sharingScreen,
   } = useSignalSocket({
-    onAddParticipantData: handleAddParticipantUserData,
     onDeleteParticipant: deleteParticipant,
     onChat,
     onEmoji,
-    onDevice: handleDevice,
     onError,
   });
 
@@ -220,6 +207,7 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProps) => {
     joinRoom,
     sendChat,
     sendEmoji,
+    sendHandUp,
     sendDevice,
     leaveRoom,
     leaveSession,

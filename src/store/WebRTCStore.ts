@@ -9,6 +9,7 @@ interface WebRTCState {
   participantsUserData: Map<string, ParticipantDataType>;
   screenOwnerId: string | null;
   participantsMediaOptions: Map<string, DeviceEnableType>;
+  participantsHandUp: Map<string, boolean>;
 
   setIsScreenShare: (value: boolean) => void;
   setParticipantsMediaStream: (map: Map<string, MediaStream>) => void;
@@ -16,10 +17,13 @@ interface WebRTCState {
   setParticipantsUserData: (map: Map<string, ParticipantDataType>) => void;
   setScreenOwnerId: (id: string | null) => void;
   setParticipantsMediaOptions: (map: Map<string, DeviceEnableType>) => void;
+  setParticipantsHandUp: (map: Map<string, boolean>) => void;
 
   updateParticipantsMediaStream: (userId: string, stream: MediaStream) => void;
   updateParticipantsUserData: (userId: string, data: ParticipantDataType) => void;
   updateParticipantsMediaOptions: (userId: string, option: DeviceEnableType) => void;
+
+  updateParticipantsHandUp: (userId: string, value: boolean) => void;
 
   deleteParticipantsMediaStream: (userId: string) => void;
   deleteParticipantsUserData: (userId: string) => void;
@@ -33,6 +37,7 @@ export const useWebRTCStore = create<WebRTCState>((set) => ({
   participantsUserData: new Map(),
   screenOwnerId: null,
   participantsMediaOptions: new Map(),
+  participantsHandUp: new Map(),
 
   setIsScreenShare: (value) => set({ isScreenShare: value }),
   setParticipantsMediaStream: (map) => set({ participantsMediaStream: map }),
@@ -40,6 +45,7 @@ export const useWebRTCStore = create<WebRTCState>((set) => ({
   setParticipantsUserData: (map) => set({ participantsUserData: map }),
   setScreenOwnerId: (id) => set({ screenOwnerId: id }),
   setParticipantsMediaOptions: (map) => set({ participantsMediaOptions: map }),
+  setParticipantsHandUp: (map) => set({ participantsHandUp: map }),
 
   updateParticipantsMediaStream: (userId, stream) =>
     set((state) => {
@@ -60,6 +66,13 @@ export const useWebRTCStore = create<WebRTCState>((set) => ({
       const newMap = new Map(state.participantsMediaOptions);
       newMap.set(userId, option);
       return { participantsMediaOptions: newMap };
+    }),
+
+  updateParticipantsHandUp: (userId, value) =>
+    set((state) => {
+      const newMap = new Map(state.participantsHandUp);
+      newMap.set(userId, value);
+      return { participantsHandUp: newMap };
     }),
 
   deleteParticipantsMediaStream: (userId) =>
