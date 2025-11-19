@@ -7,7 +7,6 @@ import {
   IcePayloadType,
   JoinResponseType,
   SdpPayloadType,
-  SdpResponseType,
   LeaveResponseType,
   ParticipantDataType,
   JoinPayloadType,
@@ -17,6 +16,8 @@ import {
   ScreenPayloadType,
   ScreenResponseType,
   ErrorResponseType,
+  OfferResponseType,
+  AnswerResponseType,
 } from '@/type/signalType';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { ChatResponseType, DeviceResponseType, EmojiResponseType } from '@/type/reactionType';
@@ -32,6 +33,7 @@ interface UseSignalSocketProps {
   onChat: (data: ChatResponseType) => void;
   onEmoji: (data: EmojiResponseType) => void;
   onDevice: (data: DeviceResponseType) => void;
+  onError: (data: ErrorResponseType) => void;
 }
 
 const useSignalSocket = ({
@@ -40,6 +42,7 @@ const useSignalSocket = ({
   onChat,
   onEmoji,
   onDevice,
+  onError,
 }: UseSignalSocketProps) => {
   const { addRoomSubscriptions, addSubscriptions } = useClientStore(
     useShallow((state) => ({
@@ -204,12 +207,13 @@ const useSignalSocket = ({
           addSubscriptions('join', joinSub);
 
           const offerSub = connectedClient.subscribe('/user/queue/signal/offer', async (msg: IMessage) => {
-            const { fromUserId, fromUserSDP, streamType, mediaOption, isScreenSender } =
-              parseMessage<SdpResponseType>(msg);
+            const { fromUserId, fromUserSDP, streamType, mediaOption, isScreenSender, user } =
+              parseMessage<OfferResponseType>(msg);
             const fromSDP = JSON.parse(fromUserSDP) as RTCSessionDescriptionInit;
             console.log(`[Offer] received from ${fromUserId}`, fromSDP.type);
 
             await createPeerConnection(fromUserId, offerIceCandidate, streamType, isScreenSender);
+            onAddParticipantData(fromUserId, user);
             console.log(`[Offer] peerConnection created for ${fromUserId}`);
             await registerAnswerSdp(fromUserId, fromSDP, streamType, mediaOption);
             console.log(`[Offer] answer SDP registered for ${fromUserId}`);
@@ -223,7 +227,7 @@ const useSignalSocket = ({
           addSubscriptions('offer', offerSub);
 
           const answerSub = connectedClient.subscribe('/user/queue/signal/answer', async (msg: IMessage) => {
-            const { fromUserId, fromUserSDP, streamType } = parseMessage<SdpResponseType>(msg);
+            const { fromUserId, fromUserSDP, streamType } = parseMessage<AnswerResponseType>(msg);
             const sdp = JSON.parse(fromUserSDP) as RTCSessionDescriptionInit;
             await registerAnswerSdp(fromUserId, sdp, streamType);
           });
@@ -248,9 +252,8 @@ const useSignalSocket = ({
           addSubscriptions('screen', screenSub);
 
           const errorSub = connectedClient.subscribe('/user/queue/signal/error', async (msg: IMessage) => {
-            const { code, message } = parseMessage<ErrorResponseType>(msg);
-            console.log(code, message);
-            alert(message);
+            const response = parseMessage<ErrorResponseType>(msg);
+            onError(response);
           });
           addSubscriptions('error', errorSub);
 
@@ -307,16 +310,14 @@ const useSignalSocket = ({
 
   const sendChat = useCallback((message: string) => {
     const { client } = useClientStore.getState();
-    const { id: userId } = useUserInfoStore.getState();
 
-    if (!client || !userId || !currentRoomId.current) {
+    if (!client || !currentRoomId.current) {
       return;
     }
 
     const payload = {
       roomId: currentRoomId.current,
       message,
-      userId,
     };
 
     client.publish({
@@ -328,16 +329,14 @@ const useSignalSocket = ({
 
   const sendEmoji = useCallback((emoji: EmojiType) => {
     const { client } = useClientStore.getState();
-    const { id: userId } = useUserInfoStore.getState();
 
-    if (!client || !userId || !currentRoomId.current) {
+    if (!client || !currentRoomId.current) {
       return;
     }
 
     const payload = {
       roomId: currentRoomId.current,
       emoji: emoji.toUpperCase(),
-      userId,
     };
 
     client.publish({
@@ -349,15 +348,13 @@ const useSignalSocket = ({
 
   const sendDevice = useCallback((mediaOption: DeviceEnableType) => {
     const { client } = useClientStore.getState();
-    const { id: userId } = useUserInfoStore.getState();
 
-    if (!client || !userId || !currentRoomId.current) {
+    if (!client || !currentRoomId.current) {
       return;
     }
     console.log('send', mediaOption);
     const payload = {
       roomId: currentRoomId.current,
-      userId,
       mediaOption,
     };
 

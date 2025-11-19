@@ -3,6 +3,7 @@ import { useCheckPermission, useDevice2 } from '@/hook';
 import * as Icon from '@/asset/icon';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { useShallow } from 'zustand/react/shallow';
+import { usePathname } from 'next/navigation';
 import Modal from './Modal';
 import RequestModal from './RequestModal';
 import InitialRequestModal from './InitialRequestModal';
@@ -123,12 +124,10 @@ function SettingModal({ onClose }: SettingModalProps) {
 
 export default function Setting({ isOpen, onClose }: SettingProps) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const pathname = usePathname();
 
-  const [isTimeOut, setIsTimeOut] = useState(false);
   const [isRequsetStream, setIsRequestStream] = useState(false);
   const [isRenderSetting, setIsRenderSetting] = useState(false);
-
-  const [isPending, setIsPending] = useState(false);
 
   const { stream, streamStatus } = useDeviceStore(
     useShallow((state) => ({
@@ -141,7 +140,6 @@ export default function Setting({ isOpen, onClose }: SettingProps) {
   const { checkPermissionQuery } = useCheckPermission();
 
   const updateStream = useCallback(async () => {
-    setIsTimeOut(false);
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
@@ -150,32 +148,32 @@ export default function Setting({ isOpen, onClose }: SettingProps) {
       clearTimeout(timerRef.current);
     }
     timerRef.current = setTimeout(() => {
-      setIsTimeOut(true);
       timerRef.current = null;
     }, 2000);
   }, [handleUpdateStream]);
 
   useEffect(() => {
     const getPermission = async () => {
+      const { stream: mediaStream } = useDeviceStore.getState();
       const value = await checkPermissionQuery();
 
-      if (value === false) {
-        setIsTimeOut(true);
+      if (mediaStream) {
+        setIsRenderSetting(true);
         return;
       }
 
       if (value === null) {
         setIsRequestStream(true);
+        return;
       }
 
       updateStream();
     };
 
-    if (isOpen && !isPending) {
-      setIsPending(true);
+    if (isOpen) {
       getPermission();
     }
-  }, [isOpen, isPending, checkPermissionQuery, updateStream]);
+  }, [isOpen, checkPermissionQuery, updateStream]);
 
   useEffect(() => {
     if (stream || streamStatus === 'rejected' || streamStatus === 'failed') {
@@ -183,7 +181,6 @@ export default function Setting({ isOpen, onClose }: SettingProps) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
-      setIsTimeOut(true);
       setIsRenderSetting(true);
     }
   }, [stream, streamStatus]);
@@ -193,19 +190,16 @@ export default function Setting({ isOpen, onClose }: SettingProps) {
   };
 
   const handleModalClose = () => {
-    if (!isRenderSetting) {
-      return;
-    }
     setIsRequestStream(false);
     setIsRenderSetting(false);
-    setIsTimeOut(false);
-    stopStream();
     onClose();
-    setIsPending(false);
+    if (pathname === '/landing') {
+      stopStream();
+    }
   };
 
   return (
-    <Modal isOpen={isOpen && isTimeOut} onCloseModal={handleModalClose}>
+    <Modal isOpen={isOpen} onCloseModal={handleModalClose}>
       {isRenderSetting ? (
         <SettingModal onClose={handleModalClose} />
       ) : isRequsetStream ? (

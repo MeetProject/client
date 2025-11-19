@@ -135,12 +135,6 @@ const useDevice = () => {
   }, [updateStream]);
 
   useEffect(() => {
-    return () => {
-      deviceStream?.getTracks().forEach((track) => track.stop());
-    };
-  }, [deviceStream]);
-
-  useEffect(() => {
     const handleDeviceChange = async () => {
       if (!deviceStream) {
         return;

@@ -7,6 +7,7 @@ import * as Icon from '@/asset/icon';
 import { ButtonTag } from '@/component';
 import { UserListType } from '@/type/participantType';
 import { ChatType } from '@/type/reactionType';
+import { useWebRTCStore } from '@/store/WebRTCStore';
 import { UserPanel, InfoPanel, ChatPanel } from './part/Panel';
 
 interface PanelProps {
@@ -55,6 +56,8 @@ export default function Panel({ userList, chatList, onSendMessage }: PanelProps)
       handleOpenStatus(false);
     }
   };
+
+  console.log(chatList, useWebRTCStore.getState().participantsUserData);
 
   return (
     <div className='h-full select-none'>

@@ -5,6 +5,14 @@ interface SignalResponseType {
   type: ResponseType;
 }
 
+interface SdpResponseType extends SignalResponseType {
+  fromUserId: string;
+  fromUserSDP: string;
+  mediaOption?: Record<'audio' | 'video', boolean> | null;
+  streamType: 'SCREEN' | 'USER';
+  isScreenSender: boolean;
+}
+
 export interface ParticipantDataType {
   userId: string;
   userName: string;
@@ -32,12 +40,10 @@ export interface SdpPayloadType {
   streamType: 'SCREEN' | 'USER';
 }
 
-export interface SdpResponseType extends SignalResponseType {
-  fromUserId: string;
-  fromUserSDP: string;
-  mediaOption?: Record<'audio' | 'video', boolean> | null;
-  streamType: 'SCREEN' | 'USER';
-  isScreenSender: boolean;
+export interface AnswerResponseType extends SdpResponseType {}
+
+export interface OfferResponseType extends SdpResponseType {
+  user: ParticipantDataType;
 }
 
 export interface IcePayloadType {

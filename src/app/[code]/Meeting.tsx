@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useContext, useState, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useDeviceStore } from '@/store/DeviceStore';
@@ -11,9 +11,11 @@ import { Loading } from '@/component';
 import useWebRTC from '@/hook/useWebRTC/useWebRTC';
 import { useClientStore } from '@/store/ClientStore';
 import { timeDifferenceInMinutes } from '@/lib/getTimeDiff';
-import { ChatType, EmojiResponseType } from '@/type/reactionType';
+import { ChatResponseType, ChatType, EmojiResponseType } from '@/type/reactionType';
 import { UserListType } from '@/type/participantType';
 import { useDevice2 } from '@/hook';
+import { useWebRTCStore } from '@/store/WebRTCStore';
+import { ErrorResponseType } from '@/type/signalType';
 import {
   ControlBar,
   EmojiAnimation,
@@ -27,6 +29,7 @@ import {
 
 export default function Meetting() {
   const pathname = usePathname();
+  const router = useRouter();
   const isRender = useRef<boolean>(false);
   const [isPending, setIsPending] = useState(true);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -43,36 +46,50 @@ export default function Meetting() {
     })),
   );
 
+  const { participantsUserData, participantsMediaStream, screenSharingMediaStream } = useWebRTCStore(
+    useShallow((state) => ({
+      participantsUserData: state.participantsUserData,
+      participantsMediaStream: state.participantsMediaStream,
+      screenSharingMediaStream: state.screenSharingMediaStream,
+    })),
+  );
+
   const { updateStream } = useDevice2();
 
-  const {
-    joinSession,
-    joinRoom,
-    leaveRoom,
-    shareScreen,
-    stopShareScreen,
-    sendChat,
-    sendEmoji,
-    sendDevice,
-    participantsMediaStream,
-    screenSharingMediaStream,
-    participantsUserData,
-    participantsMediaOptions,
-    screenOwnerId,
-  } = useWebRTC({
-    onChat: (data) =>
-      setChatList((prev) => {
-        if (prev.length === 0) {
-          return [{ ...data, userName: participantsUserData.get(data.userId)?.userName, header: true }];
-        }
-        const lastChat = prev[prev.length - 1];
-        if (timeDifferenceInMinutes(lastChat.timestamp, data.timestamp) > 2 || data.userId !== lastChat.userId) {
-          return [...prev, { ...data, userName: participantsUserData.get(data.userId)?.userName, header: true }];
-        }
-        return [...prev, { ...data, userName: participantsUserData.get(data.userId)?.userName, header: false }];
-      }),
-    onEmoji: (data) => setEmojiList((prev) => [...prev, data]),
-  });
+  const handleChat = useCallback((data: ChatResponseType) => {
+    const { participantsUserData: userData } = useWebRTCStore.getState();
+    setChatList((prev) => {
+      if (prev.length === 0) {
+        return [{ ...data, userName: userData.get(data.userId)?.userName, header: true }];
+      }
+      const lastChat = prev[prev.length - 1];
+      if (timeDifferenceInMinutes(lastChat.timestamp, data.timestamp) > 2 || data.userId !== lastChat.userId) {
+        return [...prev, { ...data, userName: userData.get(data.userId)?.userName, header: true }];
+      }
+      return [...prev, { ...data, userName: userData.get(data.userId)?.userName, header: false }];
+    });
+  }, []);
+
+  const handleEmoji = useCallback((data: EmojiResponseType) => {
+    setEmojiList((prev) => [...prev, data]);
+  }, []);
+
+  const handleError = useCallback(
+    (data: ErrorResponseType) => {
+      const { message } = data;
+      alert(message);
+      router.push('/landing');
+    },
+    [router],
+  );
+
+  const { joinSession, joinRoom, leaveRoom, shareScreen, stopShareScreen, sendChat, sendEmoji, sendDevice } = useWebRTC(
+    {
+      onChat: handleChat,
+      onEmoji: handleEmoji,
+      onError: handleError,
+    },
+  );
 
   const { stream, deviceEnable, screenStream } = useDeviceStore(
     useShallow((state) => ({
@@ -135,6 +152,7 @@ export default function Meetting() {
     });
   }, [isPending]);
 
+  console.log(participantsUserData);
   return (
     <div className='relative flex h-screen w-screen flex-col overflow-hidden bg-[#202124]'>
       {!isPending && (
@@ -145,28 +163,15 @@ export default function Meetting() {
           >
             <div ref={wrapperRef} className='relative flex-1 overflow-hidden'>
               {screenSharingMediaStream || screenStream ? (
-                <StreamScreenList
-                  screenSharingMediaStream={screenSharingMediaStream ?? screenStream}
-                  participantsMediaStream={participantsMediaStream}
-                  participantsUserData={participantsUserData}
-                  participantsMediaOptions={participantsMediaOptions}
-                  screenOwnerId={screenOwnerId}
-                  emojiList={emojiList}
-                />
+                <StreamScreenList emojiList={emojiList} />
               ) : (
-                <StreamGridList
-                  participantsMediaStream={participantsMediaStream}
-                  participantsUserData={participantsUserData}
-                  participantsMediaOptions={participantsMediaOptions}
-                  emojiList={emojiList}
-                />
+                <StreamGridList emojiList={emojiList} />
               )}
               {emojiList.map((emoji) => (
                 <EmojiAnimation
                   key={emoji.id}
                   emoji={emoji}
                   maxWidth={wrapperRef.current?.clientWidth ?? 0}
-                  participantsUserData={participantsUserData}
                   deleteEmoji={deleteEmoji}
                 />
               ))}

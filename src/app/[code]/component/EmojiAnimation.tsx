@@ -8,12 +8,11 @@ import { useShallow } from 'zustand/react/shallow';
 import * as webp from '@/asset/webp';
 import { EmojiType } from '@/type/toggleType';
 import { EmojiResponseType } from '@/type/reactionType';
-import { ParticipantDataType } from '@/type/signalType';
+import { useWebRTCStore } from '@/store/WebRTCStore';
 
 interface EmojiAnimationProps {
   emoji: EmojiResponseType;
   maxWidth: number;
-  participantsUserData: Map<string, ParticipantDataType>;
   deleteEmoji: (emojiId: string) => void;
 }
 
@@ -29,12 +28,19 @@ const EMOJI_IMAGE: Record<EmojiType, StaticImageData> = {
   THUMBUP: webp.thumbUpEmoji,
 };
 
-function EmojiIcon({ emoji, maxWidth, participantsUserData, deleteEmoji }: EmojiAnimationProps) {
+function EmojiIcon({ emoji, maxWidth, deleteEmoji }: EmojiAnimationProps) {
   const { id } = useUserInfoStore(
     useShallow((state) => ({
       id: state.id,
     })),
   );
+
+  const { participantsUserData } = useWebRTCStore(
+    useShallow((state) => ({
+      participantsUserData: state.participantsUserData,
+    })),
+  );
+
   useEffect(() => {
     setTimeout(() => {
       deleteEmoji(emoji.id);

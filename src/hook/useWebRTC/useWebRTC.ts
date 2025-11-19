@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
-import { ParticipantDataType, StreamType } from '@/type/signalType';
+import { useCallback, useRef, useEffect } from 'react';
+import { ErrorResponseType, ParticipantDataType, StreamType } from '@/type/signalType';
 import { ChatResponseType, DeviceResponseType, EmojiResponseType } from '@/type/reactionType';
 import { DeviceEnableType } from '@/type/streamType';
 import { useClientStore } from '@/store/ClientStore';
+import { useWebRTCStore } from '@/store/WebRTCStore';
 import usePeerConnection from './usePeerConnection';
 import useSignalSocket from './useSignalSocket';
 import { useDevice2 } from '..';
@@ -12,63 +13,62 @@ import { useDevice2 } from '..';
 interface UseWebRTCProps {
   onChat?: (data: ChatResponseType) => void;
   onEmoji?: (data: EmojiResponseType) => void;
+  onError?: (data: ErrorResponseType) => void;
 }
 
-const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
-  const [isScreenShare, setIsScreenShare] = useState(false);
-  const [participantsMediaStream, setParticipantsMediaStream] = useState<Map<string, MediaStream>>(new Map());
-  const [screenSharingMediaStream, setScreenSharingMediaStream] = useState<MediaStream | null>(null);
-  const [participantsUserData, setParticipantsUserData] = useState<Map<string, ParticipantDataType>>(new Map());
-  const [screenOwnerId, setScreenOwnerId] = useState<string | null>(null);
-  const [participantsMediaOptions, setParticipantsMediaOptions] = useState<Map<string, DeviceEnableType>>(new Map());
+const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProps) => {
+  const onTrackRef =
+    useRef<(targetId: string, targetStream: MediaStream, streamType: StreamType, isScreenSender: boolean) => void>();
+  const onDeviceEnableChangeRef = useRef<(id: string, value: DeviceEnableType) => void>();
+
+  const onTrack = useCallback(
+    (targetId: string, targetStream: MediaStream, streamType: StreamType, isScreenSender: boolean) => {
+      console.log('onTrack', targetId, streamType, isScreenSender);
+      const { updateParticipantsMediaStream, setScreenSharingMediaStream, setScreenOwnerId } =
+        useWebRTCStore.getState();
+
+      if (streamType === 'USER') {
+        updateParticipantsMediaStream(targetId, targetStream);
+      }
+
+      if (streamType === 'SCREEN' && !isScreenSender) {
+        setScreenSharingMediaStream(targetStream);
+        setScreenOwnerId(targetId);
+      }
+    },
+    [],
+  );
 
   const onDeviceEnableChange = useCallback((id: string, value: DeviceEnableType) => {
-    setParticipantsMediaOptions((prev) => {
-      const newMap = new Map(prev);
-      newMap.set(id, value);
-      return newMap;
-    });
+    const { updateParticipantsMediaOptions } = useWebRTCStore.getState();
+    updateParticipantsMediaOptions(id, value);
+  }, []);
+
+  useEffect(() => {
+    onTrackRef.current = onTrack;
+  }, [onTrack]);
+
+  useEffect(() => {
+    onDeviceEnableChangeRef.current = onDeviceEnableChange;
+  }, [onDeviceEnableChange]);
+
+  const handleAddParticipantUserData = useCallback((userId: string, user: ParticipantDataType) => {
+    const { updateParticipantsUserData } = useWebRTCStore.getState();
+    updateParticipantsUserData(userId, user);
   }, []);
 
   const handleDevice = useCallback((data: DeviceResponseType) => {
-    setParticipantsMediaOptions((prev) => {
-      const { userId, mediaOption } = data;
-      const newMap = new Map(prev);
-      newMap.set(userId, mediaOption);
-      return new Map(newMap);
-    });
+    const { userId, mediaOption } = data;
+    const { updateParticipantsMediaOptions } = useWebRTCStore.getState();
+    updateParticipantsMediaOptions(userId, mediaOption);
   }, []);
 
   const { updateStream, stopStream, updateScreenStream, stopScreenStream } = useDevice2();
 
   const stopShareScreenRef = useRef<() => void>();
 
-  const handleAddParticipantUserData = (userId: string, user: ParticipantDataType) => {
-    setParticipantsUserData((prev) => {
-      const newMap = new Map(prev);
-      newMap.set(userId, user);
-      return newMap;
-    });
-  };
-
-  const onTrack = useCallback(
-    async (targetId: string, targetStream: MediaStream, streamType: StreamType, isScreenSender: boolean) => {
-      if (streamType === 'USER') {
-        setParticipantsMediaStream((prev) => {
-          const map = new Map(prev);
-          map.set(targetId, targetStream);
-          return map;
-        });
-      }
-      if (streamType === 'SCREEN' && !isScreenSender) {
-        setScreenSharingMediaStream(targetStream);
-        setScreenOwnerId(targetId);
-      }
-    },
-    [setParticipantsMediaStream, setScreenSharingMediaStream, setScreenOwnerId],
-  );
-
   const onDisplayShareEnd = useCallback(() => {
+    const { setScreenOwnerId } = useWebRTCStore.getState();
     stopShareScreenRef.current?.();
     setScreenOwnerId(null);
   }, []);
@@ -83,29 +83,32 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
     disconnectPeerConnection,
     disconnectAllPeerConnection,
     disconnectAllScreenPeerConnection,
-  } = usePeerConnection({ onTrack, onDisplayShareEnd, onDeviceEnableChange });
+  } = usePeerConnection({
+    onTrack: (id, stream, type, isScreenSender) => onTrackRef.current?.(id, stream, type, isScreenSender),
+    onDisplayShareEnd,
+    onDeviceEnableChange: (id, value) => onDeviceEnableChangeRef.current?.(id, value),
+  });
 
   const deleteParticipant = useCallback(
     (targetId: string, streamType: StreamType) => {
+      const {
+        setScreenSharingMediaStream,
+        setScreenOwnerId,
+        deleteParticipantsMediaStream,
+        deleteParticipantsUserData,
+      } = useWebRTCStore.getState();
       disconnectPeerConnection(targetId, streamType);
+
       if (streamType === 'USER') {
-        setParticipantsUserData((prev) => {
-          const newMap = new Map(prev);
-          newMap.delete(targetId);
-          return newMap;
-        });
-        setParticipantsMediaStream((prev) => {
-          const newMap = new Map(prev);
-          newMap.delete(targetId);
-          return newMap;
-        });
+        deleteParticipantsUserData(targetId);
+        deleteParticipantsMediaStream(targetId);
         return;
       }
 
       setScreenSharingMediaStream(null);
       setScreenOwnerId(null);
     },
-    [setParticipantsUserData, setParticipantsMediaStream, disconnectPeerConnection],
+    [disconnectPeerConnection],
   );
 
   const {
@@ -123,9 +126,11 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
     onChat,
     onEmoji,
     onDevice: handleDevice,
+    onError,
   });
 
   const stopShareScreen = useCallback(() => {
+    const { setScreenSharingMediaStream, setIsScreenShare } = useWebRTCStore.getState();
     sendLeave('SCREEN');
     disconnectAllScreenPeerConnection();
     setScreenSharingMediaStream(null);
@@ -138,12 +143,8 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
   const joinSession = useCallback(async () => {
     useClientStore.getState().setIsClientReady(false);
     connectSocket(
-      (
-        targetId: string,
-        onIceCandidate: (targetId: string, candidate: RTCIceCandidate, streamType: StreamType) => void,
-        streamType: 'SCREEN' | 'USER',
-        isScreenSender = false,
-      ) => createPeerConnection(targetId, onIceCandidate, streamType, isScreenSender),
+      (targetId, onIceCandidate, streamType, isScreenSender = false) =>
+        createPeerConnection(targetId, onIceCandidate, streamType, isScreenSender),
       createOfferSdp,
       createAnswerSdp,
       registerAnswerSdp,
@@ -182,13 +183,16 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
   );
 
   const shareScreen = useCallback(async () => {
+    const { screenSharingMediaStream, setIsScreenShare } = useWebRTCStore.getState();
     if (screenSharingMediaStream) return;
     await updateScreenStream(true);
     sharingScreen();
     setIsScreenShare(true);
-  }, [screenSharingMediaStream, sharingScreen, updateScreenStream]);
+  }, [sharingScreen, updateScreenStream]);
 
   const clearPeerConnection = useCallback(() => {
+    const { setParticipantsUserData, setParticipantsMediaStream, setScreenSharingMediaStream } =
+      useWebRTCStore.getState();
     disconnectAllPeerConnection();
     disconnectAllScreenPeerConnection();
     setParticipantsUserData(new Map());
@@ -197,14 +201,14 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
   }, [disconnectAllPeerConnection, disconnectAllScreenPeerConnection]);
 
   const leaveRoom = useCallback(() => {
+    const { isScreenShare } = useWebRTCStore.getState();
     if (isScreenShare) {
       stopShareScreen();
     }
     sendLeave('USER');
-
     clearPeerConnection();
     stopStream();
-  }, [sendLeave, clearPeerConnection, stopStream, isScreenShare, stopShareScreen]);
+  }, [sendLeave, clearPeerConnection, stopStream, stopShareScreen]);
 
   const leaveSession = useCallback(() => {
     leaveRoom();
@@ -221,11 +225,6 @@ const useWebRTC = ({ onChat, onEmoji }: UseWebRTCProps) => {
     leaveSession,
     shareScreen,
     stopShareScreen,
-    participantsMediaStream,
-    screenSharingMediaStream,
-    participantsUserData,
-    screenOwnerId,
-    participantsMediaOptions,
   };
 };
 

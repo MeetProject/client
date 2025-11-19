@@ -6,23 +6,14 @@ import { useShallow } from 'zustand/react/shallow';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { EmojiResponseType } from '@/type/reactionType';
-import { ParticipantDataType } from '@/type/signalType';
-import { DeviceEnableType } from '@/type/streamType';
+import { useWebRTCStore } from '@/store/WebRTCStore';
 import { VideoStream, OtherAudioStream } from './part/Stream';
 
 interface StreamGridListProps {
-  participantsMediaStream: Map<string, MediaStream>;
-  participantsUserData: Map<string, ParticipantDataType>;
-  participantsMediaOptions: Map<string, DeviceEnableType>;
   emojiList: EmojiResponseType[];
 }
 
-export default function StreamGridList({
-  participantsMediaStream,
-  participantsUserData,
-  emojiList,
-  participantsMediaOptions,
-}: StreamGridListProps) {
+export default function StreamGridList({ emojiList }: StreamGridListProps) {
   const [maxRow, setMaxRow] = useState(Math.min(Math.floor((window.innerWidth - 400) / 166), 1));
 
   const { id, name, color } = useUserInfoStore(
@@ -39,6 +30,14 @@ export default function StreamGridList({
       deviceEnable: state.deviceEnable,
       audioInput: state.audioInput,
       videoInput: state.videoInput,
+    })),
+  );
+
+  const { participantsMediaStream, participantsUserData, participantsMediaOptions } = useWebRTCStore(
+    useShallow((state) => ({
+      participantsMediaStream: state.participantsMediaStream,
+      participantsUserData: state.participantsUserData,
+      participantsMediaOptions: state.participantsMediaOptions,
     })),
   );
 
