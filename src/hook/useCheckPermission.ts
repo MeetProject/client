@@ -81,7 +81,7 @@ const useCheckPermission = () => {
     }
   }, []);
 
-  const updatePermission = useCallback(async () => {
+  const getStream = useCallback(async () => {
     if (isSupportedPermission === null || isSupportedPermission === true) {
       const newPermission = await checkPermissionQuery();
       if (newPermission) {
@@ -96,7 +96,7 @@ const useCheckPermission = () => {
     if (ATVT) {
       if (ATVT !== 'failed') {
         setPermission({ audio: true, video: true });
-        return { audio: true, video: true, isFailed };
+        throw new Error('stream rejected!');
       }
       isFailed = true;
     }
@@ -128,7 +128,7 @@ const useCheckPermission = () => {
 
   return {
     isSupportedPermission,
-    updatePermission,
+    getStream,
     addPermissionListener,
     checkPermissionQuery,
   };

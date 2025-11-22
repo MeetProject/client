@@ -9,7 +9,7 @@ import { checkPermissionOnchange } from '@/lib/checkBrowser';
 import useCheckPermission from './useCheckPermission';
 
 const useDevice = () => {
-  const { updatePermission, checkPermissionQuery, addPermissionListener } = useCheckPermission();
+  const { checkPermissionQuery, addPermissionListener } = useCheckPermission();
 
   const { deviceStream } = useDeviceStore(
     useShallow((state) => ({
@@ -55,28 +55,97 @@ const useDevice = () => {
     return deviceInfo;
   }, []);
 
-  const updateDeviceEnable = useCallback(() => {
-    const { permission, deviceEnable } = useDeviceStore.getState();
-    const audioDeviceId = (permission.audio && useDeviceStore.getState().audioInputList?.[0]?.deviceId) || undefined;
-    const videoDeviceId = (permission.video && useDeviceStore.getState().videoInputList?.[0]?.deviceId) || undefined;
+  const checkPermission = useCallback(async () => {
+    if (!navigator.permissions) {
+      return false;
+    }
 
-    useDeviceStore.getState().setDeviceEnable({
-      audio: deviceEnable.audio && !!audioDeviceId,
-      video: deviceEnable.video && !!videoDeviceId,
-    });
+    try {
+      const videoPermission = await navigator.permissions.query({
+        name: 'camera' as PermissionName,
+      });
+      const audioPermission = await navigator.permissions.query({
+        name: 'microphone' as PermissionName,
+      });
+
+      if (audioPermission.state === 'prompt' || videoPermission.state === 'prompt') {
+        return false;
+      }
+
+      const newPermission = {
+        audio: Boolean(audioPermission.state === 'granted'),
+        video: Boolean(videoPermission.state === 'granted'),
+        isFailed: false,
+      };
+      useDeviceStore.getState().setPermission(newPermission);
+      return newPermission;
+    } catch {
+      return false;
+    }
   }, []);
+
+  const getStream = useCallback(async (audio: boolean | string, video: boolean | string) => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: typeof audio === 'string' ? { deviceId: audio } : audio,
+        video: typeof video === 'string' ? { deviceId: video } : video,
+      });
+
+      return stream;
+    } catch (e) {
+      const err = e as DOMException;
+      if (err.name === 'NotAllowdError') {
+        return false;
+      }
+      return 'failed';
+    }
+  }, []);
+
+  const getUnsupprtedPermissionStream = useCallback(
+    async (audio?: string, video?: string) => {
+      const { setPermission } = useDeviceStore.getState();
+      const ATVT = await getStream(audio ?? true, video ?? true);
+
+      if (ATVT !== 'failed') {
+        setPermission({ audio: true, video: true });
+        return ATVT;
+      }
+
+      const ATVF = await getStream(audio ?? true, video ?? false);
+      if (ATVF !== 'failed') {
+        setPermission({ audio: true, video: false });
+        return ATVF;
+      }
+
+      const AFVT = await getStream(audio ?? false, video ?? true);
+      if (AFVT !== 'failed') {
+        setPermission({ audio: false, video: true });
+        return AFVT;
+      }
+
+      setPermission({ audio: false, video: false });
+      return false;
+    },
+    [getStream],
+  );
 
   const updateStream = useCallback(async () => {
     const { setStreamStatus, deviceEnable, audioInput, videoInput } = useDeviceStore.getState();
     stopStream();
     setStreamStatus('pending');
-    const permission = await updatePermission();
 
+    const isPermissionUpdate = await checkPermission();
     try {
-      const con = getStreamConstraint(permission, deviceEnable, { audio: audioInput?.id, video: videoInput?.id });
-      const newStream = await navigator.mediaDevices.getUserMedia(con);
-      await updateDeviceStatus(newStream);
-      updateDeviceEnable();
+      const constraints = isPermissionUpdate
+        ? getStreamConstraint(isPermissionUpdate, { audio: audioInput?.id, video: videoInput?.id })
+        : undefined;
+      const newStream = isPermissionUpdate
+        ? await navigator.mediaDevices.getUserMedia(constraints)
+        : await getUnsupprtedPermissionStream(audioInput?.id, videoInput?.id);
+
+      if (!newStream) {
+        throw new Error('권한 없음');
+      }
 
       if (!deviceEnable.audio) {
         newStream.getAudioTracks().forEach((track) => {
@@ -84,6 +153,13 @@ const useDevice = () => {
         });
       }
 
+      if (!deviceEnable.video) {
+        newStream.getVideoTracks().forEach((track) => {
+          track.stop();
+        });
+      }
+
+      updateDeviceStatus(newStream);
       useDeviceStore.getState().setStream(newStream);
       setStreamStatus('success');
       return newStream;
@@ -93,7 +169,7 @@ const useDevice = () => {
       useDeviceStore.getState().setDeviceEnable({ audio: false, video: false });
       return null;
     }
-  }, [updateDeviceStatus, updatePermission, stopStream, updateDeviceEnable]);
+  }, [stopStream, checkPermission, getUnsupprtedPermissionStream, updateDeviceStatus]);
 
   const updateScreenStream = useCallback(async (audio: boolean) => {
     try {
