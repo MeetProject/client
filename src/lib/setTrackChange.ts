@@ -19,8 +19,18 @@ export const setTrackChage = async (
   if (stream) {
     const { audioInput, videoInput, setStream } = useDeviceStore.getState();
     const newStream = await navigator.mediaDevices.getUserMedia({
-      audio: type === 'audioInput' ? { deviceId: device.deviceId } : audioInput ? { deviceId: audioInput.id } : false,
-      video: type === 'videoInput' ? { deviceId: device.deviceId } : videoInput ? { deviceId: videoInput.id } : false,
+      audio:
+        type === 'audioInput'
+          ? { deviceId: { exact: device.deviceId } }
+          : audioInput
+            ? { deviceId: { exact: audioInput.id } }
+            : false,
+      video:
+        type === 'videoInput'
+          ? { deviceId: { exact: device.deviceId } }
+          : videoInput
+            ? { deviceId: { exact: videoInput.id } }
+            : false,
     });
     setStream(newStream);
   }

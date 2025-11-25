@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { getStreamConstraint } from '@/lib/getStreamConstraint';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { getCurrentDeviceInfo } from '@/lib/getCurrentDeviceInfo';
@@ -10,6 +10,7 @@ import useCheckPermission from './useCheckPermission';
 
 const useDevice = () => {
   const { checkPermissionQuery, addPermissionListener } = useCheckPermission();
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const { deviceStream } = useDeviceStore(
     useShallow((state) => ({
@@ -87,8 +88,8 @@ const useDevice = () => {
   const getStream = useCallback(async (audio: boolean | string, video: boolean | string) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: typeof audio === 'string' ? { deviceId: audio } : audio,
-        video: typeof video === 'string' ? { deviceId: video } : video,
+        audio: typeof audio === 'string' ? { deviceId: { exact: audio } } : audio,
+        video: typeof video === 'string' ? { deviceId: { exact: video } } : video,
       });
 
       return stream;
@@ -236,10 +237,25 @@ const useDevice = () => {
           stopStream();
           await updateStream();
         });
+      } else {
+        timerRef.current = setInterval(async () => {
+          const tracks = deviceStream.getTracks();
+          const isDeny = tracks.some((track) => track.muted);
+          if (isDeny) {
+            stopStream();
+            await updateStream();
+          }
+        }, 1000);
       }
     };
 
     checkDevicePermission();
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
   }, [deviceStream, addPermissionListener, checkPermissionQuery, updateStream, stopStream]);
 
   useEffect(() => {
