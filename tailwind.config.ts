@@ -2,40 +2,63 @@ import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
+  plugins: [],
   theme: {
     extend: {
-      screens: {
-        sm: { max: '480px' },
-        'sm-md': { max: '600px' },
-        md: { max: '800px' },
-        lg: { max: '1023px' },
-        xl: { max: '1279px' },
-        '2xl': { max: '1535px' },
+      animation: {
+        'move-bottom-up': 'move-bottom-up 3s linear forwards',
+        'slide-in-bottom': 'slide-in-bottom 0.3s ease forwards',
+        'slide-in-left': 'slide-in-left 0.3s ease forwards',
+        'slide-out-left': 'slide-out-left 0.3s ease forwards',
       },
-      fontSize: {
-        '1.5xl': ['22px', '30px'],
-        '4.5xl': ['44px', '1'],
-      },
-      fontFamily: {
-        googleSans: ['Google Sans', 'Google Sans Text', 'Roboto', 'Arial', 'sans-serif'],
+      backgroundColor: {
+        'black-75': 'rgba(0, 0, 0, 0.75)',
       },
       backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
       },
       colors: {
         'black-87': 'rgba(0, 0, 0, 0.87)',
         'custom-gray': '#1F1F1F',
       },
-      backgroundColor: {
-        'black-75': 'rgba(0, 0, 0, 0.75)',
+      fontFamily: {
+        googleSans: ['Google Sans', 'Google Sans Text', 'Roboto', 'Arial', 'sans-serif'],
       },
-      width: {
-        'settingContent-md': 'calc(100vw - 112px)',
-        'deviceSelectBox-sm': 'calc(100vw - 160px) !important',
-        'deviceSelectBox-sm-md': 'calc(100vw - 320px)',
+      fontSize: {
+        '1.5xl': ['22px', '30px'],
+        '4.5xl': ['44px', '1'],
       },
       keyframes: {
+        'move-bottom-up': {
+          '0%': {
+            opacity: '1',
+            transform: 'translateY(100%)',
+          },
+
+          '100%': {
+            opacity: '0',
+            transform: 'translateY(-520%)',
+          },
+          '70%': {
+            opacity: '1',
+            transform: 'translateY(-355%)',
+          },
+          '80%': {
+            opacity: '0.8',
+            transform: 'translateY(-420%)',
+          },
+        },
+
+        'slide-in-bottom': {
+          '0%': {
+            transform: 'scaleY(0)',
+          },
+          '100%': {
+            transform: 'scaleY(1)',
+          },
+        },
+
         'slide-in-left': {
           '0%': {
             transform: 'scaleX(0)',
@@ -53,47 +76,24 @@ const config: Config = {
             transform: 'scaleX(0)',
           },
         },
-
-        'slide-in-bottom': {
-          '0%': {
-            transform: 'scaleY(0)',
-          },
-          '100%': {
-            transform: 'scaleY(1)',
-          },
-        },
-
-        'move-bottom-up': {
-          '0%': {
-            transform: 'translateY(100%)',
-            opacity: '1',
-          },
-
-          '70%': {
-            transform: 'translateY(-355%)',
-            opacity: '1',
-          },
-          '80%': {
-            transform: 'translateY(-420%)',
-            opacity: '0.8',
-          },
-          '100%': {
-            transform: 'translateY(-520%)',
-            opacity: '0',
-          },
-        },
       },
-      animation: {
-        'slide-in-left': 'slide-in-left 0.3s ease forwards',
-        'slide-out-left': 'slide-out-left 0.3s ease forwards',
-        'slide-in-bottom': 'slide-in-bottom 0.3s ease forwards',
-        'move-bottom-up': 'move-bottom-up 3s linear forwards',
+      screens: {
+        '2xl': { max: '1535px' },
+        lg: { max: '1023px' },
+        md: { max: '800px' },
+        sm: { max: '480px' }, 
+        'sm-md': { max: '600px' }, 
+        xl: { max: '1279px' },
       },
       transformOrigin: {
         'top-right': '100% 0%',
       },
+      width: {
+        'deviceSelectBox-sm': 'calc(100vw - 160px) !important',
+        'deviceSelectBox-sm-md': 'calc(100vw - 320px)',
+        'settingContent-md': 'calc(100vw - 112px)',
+      },
     },
   },
-  plugins: [],
 };
 export default config;

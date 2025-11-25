@@ -1,35 +1,36 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+
 import * as Icon from '@/asset/icon';
 import { useDeviceStore } from '@/store/DeviceStore';
 
-interface DeviceSubButtonProps {
+interface DeviceSubButtonProperties {
   type: 'audioInput' | 'audioOutput' | 'videoInput';
   volume?: number;
   color: 'black' | 'white';
 }
 
-export default function DeviceSubButton({ type, volume, color }: DeviceSubButtonProps) {
-  const audioRef = useRef<HTMLAudioElement>(null);
+export default function DeviceSubButton({ color, type, volume }: DeviceSubButtonProperties) {
+  const audioReference = useRef<HTMLAudioElement>(null);
   const deviceEnable = useDeviceStore((state) => state.deviceEnable);
   const { audioOutput } = useDeviceStore();
 
   const handleAudioButtonClick = () => {
-    if (audioRef.current) {
-      if (audioRef.current.setSinkId) {
-        audioRef.current.setSinkId(audioOutput?.id);
+    if (audioReference.current) {
+      if (audioReference.current.setSinkId) {
+        audioReference.current.setSinkId(audioOutput?.id);
       }
 
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current.play();
+      audioReference.current.pause();
+      audioReference.current.currentTime = 0;
+      audioReference.current.play();
     }
   };
 
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
+    if (audioReference.current) {
+      audioReference.current.pause();
     }
   }, [audioOutput]);
 
@@ -72,7 +73,7 @@ export default function DeviceSubButton({ type, volume, color }: DeviceSubButton
           <div className={`text-sm ${color === 'black' && 'text-white'}`}>스피커 테스트</div>
         </button>
       )}
-      <audio ref={audioRef} src='/audio/soundTest.mp3' />
+      <audio ref={audioReference} src='/audio/soundTest.mp3' />
     </>
   );
 }

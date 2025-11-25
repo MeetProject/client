@@ -1,10 +1,10 @@
 import { useVolume } from '@/hook';
 
-interface VisualizerProps {
+interface VisualizerProperties {
   stream: MediaStream | null | undefined;
 }
 
-export default function Visualizer({ stream }: VisualizerProps) {
+export default function Visualizer({ stream }: VisualizerProperties) {
   const { volume } = useVolume(stream);
   const convertValue = (value: number) => {
     if (value >= 20) {

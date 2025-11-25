@@ -1,20 +1,21 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import Image, { StaticImageData } from 'next/image';
-import { Visualizer } from '@/component';
+import { useEffect, useRef, useState } from 'react';
+
 import * as Icon from '@/asset/icon';
 import * as ImageSrc from '@/asset/image';
-import { EmojiType } from '@/type/toggleType';
-import { EmojiResponseType } from '@/type/reactionType';
+import { Visualizer } from '@/component';
 import { useWebRTCStore } from '@/store/WebRTCStore';
+import { EmojiResponseType } from '@/type/reactionType';
+import { EmojiType } from '@/type/toggleType';
 
 interface UserInfo extends Record<'id' | 'name' | 'color', string> {
   audio: boolean;
   video: boolean;
 }
 
-interface VideoStreamProps {
+interface VideoStreamProperties {
   user: UserInfo;
   isScreen?: boolean;
   stream: MediaStream | null;
@@ -34,27 +35,27 @@ const EMOJI_IMAGE: Record<EmojiType, StaticImageData> = {
   THUMBUP: ImageSrc.thumbUpEmoji,
 };
 
-export default function VideoStream({ user, isScreen = false, stream, muted = false, emojiList }: VideoStreamProps) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+export default function VideoStream({ emojiList, isScreen = false, muted = false, stream, user }: VideoStreamProperties) {
+  const videoReference = useRef<HTMLVideoElement | null>(null);
   const [emojiIcon, setEmojiIcon] = useState<EmojiResponseType | null>(null);
 
   const { participantsHandUp } = useWebRTCStore();
 
   useEffect(() => {
-    if (!videoRef.current || !stream) return;
+    if (!videoReference.current || !stream) return;
 
     const liveTracks = stream.getTracks().filter((t): t is MediaStreamTrack => t.readyState === 'live');
 
     if (liveTracks.length === 0) {
       // live track이 없으면 빈 스트림 대신 null 설정
-      videoRef.current.srcObject = null;
+      videoReference.current.srcObject = null;
       return;
     }
 
     const safeStream = new MediaStream(liveTracks);
-    videoRef.current.srcObject = safeStream;
+    videoReference.current.srcObject = safeStream;
 
-    videoRef.current.play().catch(() => {});
+    videoReference.current.play().catch(() => {});
   }, [stream, isScreen]);
 
   useEffect(() => {
@@ -69,7 +70,7 @@ export default function VideoStream({ user, isScreen = false, stream, muted = fa
     <div className='relative flex size-full items-center'>
       <div className=' relative flex size-full items-center justify-center overflow-hidden rounded-lg bg-[#3C4043]'>
         <video
-          ref={videoRef}
+          ref={videoReference}
           autoPlay
           muted={muted}
           className={`absolute left-0 top-0 size-full ${isScreen ? 'object-contain' : 'object-cover'}`}

@@ -12,12 +12,12 @@ interface UserInfoStoreType {
 }
 
 export const useUserInfoStore = create<UserInfoStoreType>((set) => ({
+  color: '',
   id: '',
   name: '',
-  color: '',
   screenId: null,
+  setColor: (value: string) => set(() => ({ color: value })),
   setId: (value: string) => set(() => ({ id: value })),
   setName: (value: string) => set(() => ({ name: value })),
-  setColor: (value: string) => set(() => ({ color: value })),
   setScreenId: (value: string | null) => set(() => ({ screenId: value })),
 }));

@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { MongoClient } from 'mongodb';
 
 declare global {

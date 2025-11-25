@@ -1,20 +1,21 @@
-import { DeviceSelectBox } from '@/component';
-import { useDeviceStore } from '@/store/DeviceStore';
 import { useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+
 import * as Icon from '@/asset/icon';
+import { DeviceSelectBox } from '@/component';
 import { useDevice2 } from '@/hook';
+import { useDeviceStore } from '@/store/DeviceStore';
 
 export default function VideoSetting() {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoReference = useRef<HTMLVideoElement>(null);
   const { updateStream } = useDevice2();
-  const { stream, videoInput, videoInputList, setVideoInput, permission } = useDeviceStore(
+  const { permission, setVideoInput, stream, videoInput, videoInputList } = useDeviceStore(
     useShallow((state) => ({
+      permission: state.permission,
+      setVideoInput: state.setVideoInput,
       stream: state.stream,
       videoInput: state.videoInput,
       videoInputList: state.videoInputList,
-      setVideoInput: state.setVideoInput,
-      permission: state.permission,
     })),
   );
 
@@ -23,13 +24,13 @@ export default function VideoSetting() {
     if (!newVideo) {
       return;
     }
-    setVideoInput({ name: newVideo.label, id: newVideo.deviceId });
+    setVideoInput({ id: newVideo.deviceId, name: newVideo.label });
     updateStream();
   };
 
   useEffect(() => {
-    if (stream && videoRef.current) {
-      videoRef.current.srcObject = stream;
+    if (stream && videoReference.current) {
+      videoReference.current.srcObject = stream;
     }
   }, [stream]);
 
@@ -52,7 +53,7 @@ export default function VideoSetting() {
           <video
             autoPlay
             muted
-            ref={videoRef}
+            ref={videoReference}
             className='aspect-video h-[58px] object-cover'
             style={{ transform: 'rotateY(180deg)' }}
           />

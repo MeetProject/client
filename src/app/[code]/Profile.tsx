@@ -1,5 +1,7 @@
 import Link from 'next/link';
+
 import * as Icon from '@/asset/icon';
+
 import { Device, NameForm } from './component';
 
 export default function Profile() {

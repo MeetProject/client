@@ -1,17 +1,19 @@
 import { useState, useEffect, useRef, ChangeEvent } from 'react';
-import ButtonTag from '@/component/ButtonTag';
+
 import * as Icon from '@/asset/icon';
+import ButtonTag from '@/component/ButtonTag';
+
 import { CaptureButton, StyleLink } from './index';
 
-interface SuggestProps {
+interface SuggestProperties {
   onComplete: (value: boolean) => void;
   onVisible: (value: boolean) => void;
 }
 
-export default function Suggest({ onComplete, onVisible }: SuggestProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+export default function Suggest({ onComplete, onVisible }: SuggestProperties) {
+  const textareaReference = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState<string>('');
-  const [imgSrc, setImgSrc] = useState<string | null>(null);
+  const [imgSource, setImgSource] = useState<string | null>(null);
   const [isChecked, setIsChecked] = useState(false);
 
   const handleTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -24,19 +26,19 @@ export default function Suggest({ onComplete, onVisible }: SuggestProps) {
   };
 
   const handleImageChange = (value: null | string) => {
-    setImgSrc(value);
+    setImgSource(value);
   };
 
   const handleCheckButtonClick = () => {
-    setIsChecked((prev) => !prev);
+    setIsChecked((previous) => !previous);
   };
 
   useEffect(() => {
-    if (!textareaRef.current) {
+    if (!textareaReference.current) {
       return;
     }
-    textareaRef.current.style.height = 'auto';
-    textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    textareaReference.current.style.height = 'auto';
+    textareaReference.current.style.height = `${textareaReference.current.scrollHeight}px`;
   }, [text]);
 
   return (
@@ -46,7 +48,7 @@ export default function Suggest({ onComplete, onVisible }: SuggestProps) {
         <textarea
           value={text}
           onChange={handleTextChange}
-          ref={textareaRef}
+          ref={textareaReference}
           placeholder='제품을 개선하는 데 도움이 될 만한 의견을 알려주세요'
           className='min-h-[122px] resize-none overflow-hidden rounded border border-solid border-[#444746] p-[15px] text-custom-gray outline-none placeholder:text-custom-gray'
         />
@@ -54,11 +56,11 @@ export default function Suggest({ onComplete, onVisible }: SuggestProps) {
           <p className='text-xs text-[#444746]'>민간함 정보는 포함하지 마세요.</p>
           <ButtonTag
             style={{
-              width: '294px',
               height: '64px',
-              top: '100%',
-              padding: '8px',
               left: '-30px',
+              padding: '8px',
+              top: '100%',
+              width: '294px',
             }}
             instant
             name='민감한 정보는 보호되어야 하는 모든 데이터를 의미합니다. 예를 들어 비밀번호, 신용카드 번호, 세부적인 개인 정보를 포함하지 마세요.'
@@ -67,7 +69,7 @@ export default function Suggest({ onComplete, onVisible }: SuggestProps) {
           </ButtonTag>
         </div>
       </div>
-      <CaptureButton imgSrc={imgSrc} onVisible={onVisible} onImageChange={handleImageChange} />
+      <CaptureButton imgSrc={imgSource} onVisible={onVisible} onImageChange={handleImageChange} />
       <div className='flex items-center gap-4 px-[6px] pt-[10px]'>
         <button
           type='button'

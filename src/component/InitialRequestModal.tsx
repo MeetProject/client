@@ -1,4 +1,5 @@
 import Image from 'next/image';
+
 import { permissionRequest } from '@/asset/image';
 
 export default function InitialRequestModal() {

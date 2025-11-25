@@ -1,22 +1,24 @@
 'use client';
 
 import { useContext } from 'react';
-import { PanelContext } from '@/context/PanelContext';
-import { PanelType } from '@/type/panelType';
+
 import * as Icon from '@/asset/icon';
 import { ButtonTag } from '@/component';
+import { PanelContext } from '@/context/PanelContext';
+import { useWebRTCStore } from '@/store/WebRTCStore';
+import { PanelType } from '@/type/panelType';
 import { UserListType } from '@/type/participantType';
 import { ChatType } from '@/type/reactionType';
-import { useWebRTCStore } from '@/store/WebRTCStore';
+
 import { UserPanel, InfoPanel, ChatPanel } from './part/Panel';
 
-interface PanelProps {
+interface PanelProperties {
   userList: UserListType[];
   chatList: ChatType[];
   onSendMessage: (value: string) => void;
 }
 
-interface CurrentPanelProps {
+interface CurrentPanelProperties {
   type: PanelType;
   userList: UserListType[];
   chatList: ChatType[];
@@ -24,14 +26,14 @@ interface CurrentPanelProps {
 }
 
 const PANEL_TITLE = {
-  USER: '사용자',
-  INFO: '회의 세부정보',
-  CHAT: '회의 중 메시지',
   ACTIVE: '활동',
+  CHAT: '회의 중 메시지',
   HOST: '호스트 제어 기능',
+  INFO: '회의 세부정보',
+  USER: '사용자',
 };
 
-function CurrentPanel({ type, userList, chatList, onSendMessage }: CurrentPanelProps) {
+function CurrentPanel({ chatList, onSendMessage, type, userList }: CurrentPanelProperties) {
   if (type === 'USER') {
     return <UserPanel userList={userList} />;
   }
@@ -44,8 +46,8 @@ function CurrentPanel({ type, userList, chatList, onSendMessage }: CurrentPanelP
   return <div>{type}</div>;
 }
 
-export default function Panel({ userList, chatList, onSendMessage }: PanelProps) {
-  const { panelType, isOpen, handlePanelType, handleOpenStatus } = useContext(PanelContext);
+export default function Panel({ chatList, onSendMessage, userList }: PanelProperties) {
+  const { handleOpenStatus, handlePanelType, isOpen, panelType } = useContext(PanelContext);
 
   const handleClickDeleteButton = () => {
     handlePanelType(null);

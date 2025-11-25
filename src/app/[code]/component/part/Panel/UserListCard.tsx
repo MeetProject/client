@@ -1,7 +1,7 @@
 import * as Icon from '@/asset/icon';
 import { ButtonTag, Visualizer } from '@/component';
 
-interface UserListCardProps {
+interface UserListCardProperties {
   name: string;
   color: string;
   host?: boolean;
@@ -9,7 +9,7 @@ interface UserListCardProps {
   stream: MediaStream | null;
 }
 
-export default function UserListCard({ name, color, host, isMicOn, stream }: UserListCardProps) {
+export default function UserListCard({ color, host, isMicOn, name, stream }: UserListCardProperties) {
   return (
     <div className='flex h-14 flex-1 items-center justify-between'>
       <div className='flex select-none items-center gap-4 bg-white font-googleSans text-[#202124]'>

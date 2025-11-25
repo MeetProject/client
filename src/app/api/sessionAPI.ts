@@ -5,13 +5,13 @@ const SERVER_SECRET = process.env.NEXT_PUBLIC_OPENVIDU_SECRET as string;
 
 export const postCreateSession = async (sessionId: string) => {
   const response = await fetch(`${SERVER_URL}/openvidu/api/sessions`, {
-    method: 'POST',
+    body: JSON.stringify({ customSessionId: sessionId }),
     cache: 'no-cache',
     headers: {
       Authorization: `Basic ${btoa(`OPENVIDUAPP:${SERVER_SECRET}`)}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ customSessionId: sessionId }),
+    method: 'POST',
   });
 
   if (response.status === 409) {
@@ -28,13 +28,13 @@ export const postCreateSession = async (sessionId: string) => {
 
 export const postToken = async (sessionId: string, name: string, color: string) => {
   const response = await fetch(`${SERVER_URL}/openvidu/api/sessions/${sessionId}/connection`, {
-    method: 'POST',
+    body: JSON.stringify({ color, name }),
     cache: 'no-cache',
     headers: {
       Authorization: `Basic ${btoa(`OPENVIDUAPP:${SERVER_SECRET}`)}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ name, color }),
+    method: 'POST',
   });
 
   if (!response.ok) {

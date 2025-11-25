@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 
 const useCurrentDate = () => {
   const [time, setTime] = useState<Date | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timerReference = useRef<NodeJS.Timeout | null>(null);
+  const intervalReference = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const currenTime = new Date();
@@ -15,21 +15,21 @@ const useCurrentDate = () => {
       setTime(new Date());
     };
 
-    timerRef.current = setTimeout(
+    timerReference.current = setTimeout(
       () => {
         updateTime();
-        intervalRef.current = setInterval(updateTime, 60000);
+        intervalReference.current = setInterval(updateTime, 60000);
       },
       60000 - (currenTime.getTime() % 60000),
     );
 
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
+      if (timerReference.current) {
+        clearTimeout(timerReference.current);
       }
 
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      if (intervalReference.current) {
+        clearInterval(intervalReference.current);
       }
     };
   }, []);

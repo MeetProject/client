@@ -3,9 +3,10 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { ChangeEvent, FormEvent, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+
+import { Alert, Loading } from '@/component';
 import { getRandomHexColor } from '@/lib/getRandomColor';
 import { useUserInfoStore } from '@/store/UserInfoStore';
-import { Alert, Loading } from '@/component';
 
 const MAX_SIZE = 60;
 
@@ -14,14 +15,14 @@ export default function NameForm() {
   const [name, setName] = useState('');
   const [isFailed, setIsFailed] = useState(false);
   const {
-    setName: setUserName,
     setColor: setUserColor,
     setId,
+    setName: setUserName,
   } = useUserInfoStore(
     useShallow((state) => ({
-      setName: state.setName,
       setColor: state.setColor,
       setId: state.setId,
+      setName: state.setName,
     })),
   );
   const sessionId = usePathname().slice(1);
@@ -44,16 +45,16 @@ export default function NameForm() {
 
     try {
       const payload = {
-        userName: name,
         userColor: randomColor,
+        userName: name,
       };
 
       const response = await fetch('http://localhost:8080/api/user/register', {
-        method: 'POST',
+        body: JSON.stringify(payload),
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        method: 'POST',
       });
 
       if (!response.ok) {

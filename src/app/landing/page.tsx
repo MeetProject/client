@@ -1,4 +1,5 @@
 import Link from 'next/link';
+
 import { AddNewMeetingButton, ParticipateMeetingForm, Header } from './component';
 
 export default function Page() {

@@ -1,13 +1,14 @@
 import { ReactNode } from 'react';
+
 import { ButtonTag } from '@/component';
 
-interface IconButtonProps {
+interface IconButtonProperties {
   children: ReactNode;
   name: string;
   onClick?: () => void;
 }
 
-export default function IconButton({ children, name, onClick }: IconButtonProps) {
+export default function IconButton({ children, name, onClick }: IconButtonProperties) {
   const handleButtonClick = () => {
     if (onClick) {
       onClick();

@@ -1,6 +1,8 @@
+import { StaticImageData } from 'next/image';
+
 import * as image from '@/asset/image';
 import { EmojiType } from '@/type/toggleType';
-import { StaticImageData } from 'next/image';
+
 import EmojiButton from './EmojiButton';
 
 interface EmojiButtonType {
@@ -19,11 +21,11 @@ const EMOJI_BUTTON: EmojiButtonType[] = [
   { name: 'THUMBDOWN', src: image.thumbDownEmoji },
 ];
 
-interface EmojiProps {
+interface EmojiProperties {
   onClickEmojiButton: (value: EmojiType) => void;
 }
 
-export default function Emoji({ onClickEmojiButton }: EmojiProps) {
+export default function Emoji({ onClickEmojiButton }: EmojiProperties) {
   return (
     <div className='flex h-[52px] w-full items-end justify-center'>
       <div className='flex h-10 w-[360px] rounded-full bg-[#2C2C2C]'>

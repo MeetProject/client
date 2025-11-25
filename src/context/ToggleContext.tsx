@@ -1,5 +1,6 @@
-import { ToggleStatusType, ToggleType } from '@/type/toggleType';
 import { createContext, PropsWithChildren, useCallback, useMemo, useState } from 'react';
+
+import { ToggleStatusType, ToggleType } from '@/type/toggleType';
 
 interface ToggleContextType {
   toggleStatus: ToggleStatusType;
@@ -9,10 +10,10 @@ interface ToggleContextType {
 }
 
 export const ToggleContext = createContext<ToggleContextType>({
-  toggleStatus: { caption: false, emoji: false, handsUp: false, screen: false },
-  isVisibleToggle: true,
   handleToggleStatus: () => {},
   handleVisibleToggle: () => {},
+  isVisibleToggle: true,
+  toggleStatus: { caption: false, emoji: false, handsUp: false, screen: false },
 });
 
 export function ToggleContextProvider({ children }: PropsWithChildren) {
@@ -25,19 +26,19 @@ export function ToggleContextProvider({ children }: PropsWithChildren) {
   const [isVisibleToggle, setIsVisibleTogle] = useState<boolean>(true);
 
   const handleToggleStatus = useCallback((key: ToggleType, value?: boolean | 'disable') => {
-    setToggleStatus((prev) => ({ ...prev, [key]: value ?? !prev[key] }));
+    setToggleStatus((previous) => ({ ...previous, [key]: value ?? !previous[key] }));
   }, []);
 
   const handleVisibleToggle = useCallback(() => {
-    setIsVisibleTogle((prev) => !prev);
+    setIsVisibleTogle((previous) => !previous);
   }, []);
 
   const value = useMemo(
     () => ({
-      toggleStatus,
-      isVisibleToggle,
       handleToggleStatus,
       handleVisibleToggle,
+      isVisibleToggle,
+      toggleStatus,
     }),
     [toggleStatus, isVisibleToggle, handleToggleStatus, handleVisibleToggle],
   );

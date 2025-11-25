@@ -3,60 +3,73 @@
 import { useState, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
-import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useDeviceStore } from '@/store/DeviceStore';
-import { EmojiResponseType } from '@/type/reactionType';
+import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useWebRTCStore } from '@/store/WebRTCStore';
+import { EmojiResponseType } from '@/type/reactionType';
+
 import { VideoStream, OtherAudioStream } from './part/Stream';
 
-interface StreamGridListProps {
+interface StreamGridListProperties {
   emojiList: EmojiResponseType[];
 }
 
-export default function StreamGridList({ emojiList }: StreamGridListProps) {
+export default function StreamGridList({ emojiList }: StreamGridListProperties) {
   const [maxRow, setMaxRow] = useState(Math.min(Math.floor((window.innerWidth - 400) / 166), 1));
 
-  const { id, name, color } = useUserInfoStore(
+  const { color, id, name } = useUserInfoStore(
     useShallow((state) => ({
+      color: state.color,
       id: state.id,
       name: state.name,
-      color: state.color,
     })),
   );
 
-  const { stream, deviceEnable, audioInput, videoInput } = useDeviceStore(
+  const { audioInput, deviceEnable, stream, videoInput } = useDeviceStore(
     useShallow((state) => ({
-      stream: state.stream,
-      deviceEnable: state.deviceEnable,
       audioInput: state.audioInput,
+      deviceEnable: state.deviceEnable,
+      stream: state.stream,
       videoInput: state.videoInput,
     })),
   );
 
-  const { participantsMediaStream, participantsUserData, participantsMediaOptions } = useWebRTCStore(
+  const { participantsMediaOptions, participantsMediaStream, participantsUserData } = useWebRTCStore(
     useShallow((state) => ({
+      participantsMediaOptions: state.participantsMediaOptions,
       participantsMediaStream: state.participantsMediaStream,
       participantsUserData: state.participantsUserData,
-      participantsMediaOptions: state.participantsMediaOptions,
     })),
   );
 
-  const maxNum = maxRow <= 1 ? 1 : maxRow === 2 ? 4 : maxRow * (maxRow - 1);
-  const currentPageSubscribers = maxNum === 1 ? [] : Array.from(participantsMediaStream).slice(0, maxNum - 2);
-  const otherSubscriber =
-    maxNum === 1 ? Array.from(participantsMediaStream) : Array.from(participantsMediaStream).slice(maxNum - 2);
+  const calculateMaxNumber = (maxRow: number) => {
+    if (maxRow <= 1) {
+      return 1;
+    }
 
-  const rowNum = currentPageSubscribers.length + 1 < maxRow ? currentPageSubscribers.length + 1 : maxRow;
+    if (maxRow === 2) {
+      return 4;
+    }
+
+    return maxRow * (maxRow - 1);
+  }
+
+  const maxNumber = calculateMaxNumber(maxRow);
+  const currentPageSubscribers = maxNumber === 1 ? [] : Array.from(participantsMediaStream).slice(0, maxNumber - 2);
+  const otherSubscriber =
+    maxNumber === 1 ? Array.from(participantsMediaStream) : Array.from(participantsMediaStream).slice(maxNumber - 2);
+
+  const rowNumber = currentPageSubscribers.length + 1 < maxRow ? currentPageSubscribers.length + 1 : maxRow;
 
   useEffect(() => {
-    const handleMaxNumUpdate = () => {
+    const handleMaxNumberUpdate = () => {
       const row = Math.max(Math.floor((window.innerWidth - 400) / 166), 2);
       setMaxRow(row);
     };
-    window.addEventListener('resize', handleMaxNumUpdate);
+    window.addEventListener('resize', handleMaxNumberUpdate);
 
     return () => {
-      window.removeEventListener('resize', handleMaxNumUpdate);
+      window.removeEventListener('resize', handleMaxNumberUpdate);
     };
   }, []);
 
@@ -64,15 +77,15 @@ export default function StreamGridList({ emojiList }: StreamGridListProps) {
     <div
       className='relative grid size-full gap-4 border border-solid border-black'
       style={{
-        gridTemplateColumns: `repeat(${currentPageSubscribers.length === 0 ? '1' : Math.min(rowNum, Math.ceil(Math.sqrt(1 + 4 * currentPageSubscribers.length) / 2))}, 1fr)`,
+        gridTemplateColumns: `repeat(${currentPageSubscribers.length === 0 ? '1' : Math.min(rowNumber, Math.ceil(Math.sqrt(1 + 4 * currentPageSubscribers.length) / 2))}, 1fr)`,
       }}
     >
       <VideoStream
         user={{
+          audio: Boolean(deviceEnable.audio && audioInput?.id),
+          color,
           id,
           name,
-          color,
-          audio: Boolean(deviceEnable.audio && audioInput?.id),
           video: Boolean(deviceEnable.video && videoInput?.id),
         }}
         muted
@@ -82,12 +95,11 @@ export default function StreamGridList({ emojiList }: StreamGridListProps) {
 
       {currentPageSubscribers.map(([userId, mediaStream]) => (
         <VideoStream
-          key={userId}
           user={{
+            audio: participantsMediaOptions.get(userId)?.audio ?? true,
+            color: participantsUserData.get(userId)?.profileColor,
             id: userId,
             name: participantsUserData.get(userId)?.userName,
-            color: participantsUserData.get(userId)?.profileColor,
-            audio: participantsMediaOptions.get(userId)?.audio ?? true,
             video: participantsMediaOptions.get(userId)?.video ?? true,
           }}
           stream={mediaStream}
@@ -98,10 +110,10 @@ export default function StreamGridList({ emojiList }: StreamGridListProps) {
         (otherSubscriber.length === 1 ? (
           <VideoStream
             user={{
+              audio: participantsMediaOptions.get(otherSubscriber[0][0])?.audio ?? true,
+              color: participantsUserData.get(otherSubscriber[0][0])?.profileColor,
               id: otherSubscriber[0][0],
               name: participantsUserData.get(otherSubscriber[0][0])?.userName,
-              color: participantsUserData.get(otherSubscriber[0][0])?.profileColor,
-              audio: participantsMediaOptions.get(otherSubscriber[0][0])?.audio ?? true,
               video: participantsMediaOptions.get(otherSubscriber[0][0])?.video ?? true,
             }}
             stream={otherSubscriber[0][1]}

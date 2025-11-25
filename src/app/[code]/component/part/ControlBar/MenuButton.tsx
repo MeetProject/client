@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+
 import * as Icon from '@/asset/icon';
 import { ButtonTag, Feedback, Setting } from '@/component';
 import { useOutsideClick } from '@/hook';
+
 import MenuCard from './MenuCard';
 
 export default function MenuButton() {
@@ -18,9 +20,9 @@ export default function MenuButton() {
   };
 
   const enterFullscreen = () => {
-    const elem = document.documentElement;
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen();
+    const element = document.documentElement;
+    if (element.requestFullscreen) {
+      element.requestFullscreen();
     }
   };
 
@@ -54,11 +56,11 @@ export default function MenuButton() {
     } else {
       enterFullscreen();
     }
-    setIsClickedButton((prev) => !prev);
+    setIsClickedButton((previous) => !previous);
   };
 
   const handleButtonClick = () => {
-    setIsClickedButton((prev) => !prev);
+    setIsClickedButton((previous) => !previous);
   };
 
   const handleFeebackButtonClick = () => {

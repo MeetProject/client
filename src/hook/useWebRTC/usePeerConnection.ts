@@ -1,12 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
-import { useDeviceStore } from '@/store/DeviceStore';
 import { useShallow } from 'zustand/react/shallow';
+
+import { useDeviceStore } from '@/store/DeviceStore';
 import { StreamType } from '@/type/signalType';
 import { DeviceEnableType } from '@/type/streamType';
 
-interface UsePeerConnectionProps {
+interface UsePeerConnectionProperties {
   onTrack: (targetId: string, stream: MediaStream, type: 'SCREEN' | 'USER', isScreenSender: boolean) => void;
   onDisplayShareEnd: () => void;
   onDeviceEnableChange: (id: string, value: DeviceEnableType) => void;
@@ -18,13 +19,13 @@ interface PeerConnectionData {
   remoteSet: boolean;
 }
 
-const usePeerConnection = ({ onTrack, onDisplayShareEnd, onDeviceEnableChange }: UsePeerConnectionProps) => {
+const usePeerConnection = ({ onDeviceEnableChange, onDisplayShareEnd, onTrack }: UsePeerConnectionProperties) => {
   const peerConnections = useRef<Map<string, PeerConnectionData>>(new Map());
   const screenPeerConnections = useRef<Map<string, PeerConnectionData>>(new Map());
-  const { stream, deviceEnable } = useDeviceStore(
+  const { deviceEnable, stream } = useDeviceStore(
     useShallow((state) => ({
-      stream: state.stream,
       deviceEnable: state.deviceEnable,
+      stream: state.stream,
     })),
   );
 
@@ -52,8 +53,8 @@ const usePeerConnection = ({ onTrack, onDisplayShareEnd, onDeviceEnableChange }:
       });
 
       const data: PeerConnectionData = {
-        pc,
         iceQueue: [],
+        pc,
         remoteSet: false,
       };
 
@@ -228,16 +229,16 @@ const usePeerConnection = ({ onTrack, onDisplayShareEnd, onDeviceEnableChange }:
   }, [stream]);
 
   return {
-    createPeerConnection,
-    createOfferSdp,
     createAnswerSdp,
-    registerOfferSdp,
-    registerAnswerSdp,
-    registerRemoteIce,
-    peerConnections,
-    disconnectPeerConnection,
+    createOfferSdp,
+    createPeerConnection,
     disconnectAllPeerConnection,
     disconnectAllScreenPeerConnection,
+    disconnectPeerConnection,
+    peerConnections,
+    registerAnswerSdp,
+    registerOfferSdp,
+    registerRemoteIce,
   };
 };
 

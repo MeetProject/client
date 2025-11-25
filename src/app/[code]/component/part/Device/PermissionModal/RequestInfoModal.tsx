@@ -1,14 +1,14 @@
 import Image from 'next/image';
 
-import { ButtonTag } from '@/component';
 import * as Icon from '@/asset/icon';
 import { permissionCommon } from '@/asset/image';
+import { ButtonTag } from '@/component';
 
-interface RequestInfoModalProps {
+interface RequestInfoModalProperties {
   onClose: () => void;
 }
 
-export default function RequestInfoModal({ onClose }: RequestInfoModalProps) {
+export default function RequestInfoModal({ onClose }: RequestInfoModalProperties) {
   return (
     <div className='relative flex w-full max-w-[789px] items-center rounded-[28px] bg-white px-8 pb-10 pt-[30px] lg:flex-col'>
       <div className='absolute right-2 top-2 rounded-full hover:bg-[#F0F1F1] active:bg-[#DEDFDF]'>

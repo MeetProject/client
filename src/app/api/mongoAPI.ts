@@ -2,8 +2,8 @@ import { ParticipantDataType } from '@/type/participantType';
 
 export const postSessionId = async (sessionId: string) => {
   const response = await fetch('/api/sessionId', {
-    method: 'POST',
     body: JSON.stringify({ sessionId }),
+    method: 'POST',
   });
   if (!response.ok) {
     const result = await response.json();
@@ -23,8 +23,8 @@ export const deleteSessionId = async (sessionId: string) => {
 
 export const getParticipant = async (sessionId: string): Promise<ParticipantDataType[]> => {
   const response = await fetch(`/api/participant?sessionId=${sessionId}`, {
-    method: 'GET',
     cache: 'no-cache',
+    method: 'GET',
   });
   if (!response.ok) {
     const result = await response.json();
@@ -36,8 +36,8 @@ export const getParticipant = async (sessionId: string): Promise<ParticipantData
 
 export const postParticipant = async (sessionId: string, userId: string, userName: string, color: string) => {
   const response = await fetch('/api/participant', {
+    body: JSON.stringify({ color, sessionId, userId, userName }),
     method: 'POST',
-    body: JSON.stringify({ sessionId, userId, userName, color }),
   });
   if (!response.ok) {
     const result = await response.json();
@@ -47,8 +47,8 @@ export const postParticipant = async (sessionId: string, userId: string, userNam
 
 export const deleteParticipant = async (sessionId: string, userId: string) => {
   const response = await fetch('/api/participant/delete', {
-    method: 'POST',
     body: JSON.stringify({ sessionId, userId }),
+    method: 'POST',
   });
   if (!response.ok) {
     const result = await response.json();
@@ -58,8 +58,8 @@ export const deleteParticipant = async (sessionId: string, userId: string) => {
 
 export const postCheckSessionId = async (sessionId: string) => {
   const response = await fetch(`/api/sessionId/check?sessionId=${sessionId}`, {
-    method: 'POST',
     cache: 'no-cache',
+    method: 'POST',
   });
   const result = await response.json();
   return result.data;

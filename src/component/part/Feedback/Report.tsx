@@ -1,10 +1,12 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
+
 import * as Icon from '@/asset/icon';
 import ButtonTag from '@/component/ButtonTag';
 import { useOutsideClick } from '@/hook';
+
 import { CaptureButton, StyleLink } from './index';
 
-interface ReportProps {
+interface ReportProperties {
   onComplete: (value: boolean) => void;
   onVisible: (value: boolean) => void;
 }
@@ -18,16 +20,16 @@ const BUTTON = [
   { name: '기타' },
 ];
 
-export default function Report({ onComplete, onVisible }: ReportProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+export default function Report({ onComplete, onVisible }: ReportProperties) {
+  const textareaReference = useRef<HTMLTextAreaElement>(null);
   const [isClicked, setIsClicked] = useState(false);
   const [option, setOption] = useState<null | string>(null);
   const [text, setText] = useState<string>('');
-  const [imgSrc, setImgSrc] = useState<string | null>(null);
+  const [imgSource, setImgSource] = useState<string | null>(null);
   const [isChecked, setIsChecked] = useState(false);
 
   const handleButtonClick = () => {
-    setIsClicked((prev) => !prev);
+    setIsClicked((previous) => !previous);
   };
 
   const { targetRef } = useOutsideClick<HTMLButtonElement>(() => {
@@ -53,19 +55,19 @@ export default function Report({ onComplete, onVisible }: ReportProps) {
   };
 
   const handleImageChange = (value: null | string) => {
-    setImgSrc(value);
+    setImgSource(value);
   };
 
   const handleCheckButtonClick = () => {
-    setIsChecked((prev) => !prev);
+    setIsChecked((previous) => !previous);
   };
 
   useEffect(() => {
-    if (!textareaRef.current) {
+    if (!textareaReference.current) {
       return;
     }
-    textareaRef.current.style.height = 'auto';
-    textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    textareaReference.current.style.height = 'auto';
+    textareaReference.current.style.height = `${textareaReference.current.scrollHeight}px`;
   }, [text]);
 
   return (
@@ -113,7 +115,7 @@ export default function Report({ onComplete, onVisible }: ReportProps) {
         <textarea
           value={text}
           onChange={handleTextChange}
-          ref={textareaRef}
+          ref={textareaReference}
           placeholder='어떤 문제가 발생했고 작동자히 않는 기능은 무엇인지 알려주세요.'
           className='min-h-[122px] resize-none overflow-hidden rounded border border-solid border-[#444746] p-[15px] text-custom-gray outline-none placeholder:text-custom-gray'
         />
@@ -121,11 +123,11 @@ export default function Report({ onComplete, onVisible }: ReportProps) {
           <p className='text-xs text-[#444746]'>민간함 정보는 포함하지 마세요.</p>
           <ButtonTag
             style={{
-              width: '294px',
               height: '64px',
-              top: '100%',
-              padding: '8px',
               left: '-30px',
+              padding: '8px',
+              top: '100%',
+              width: '294px',
             }}
             instant
             name='민감한 정보는 보호되어야 하는 모든 데이터를 의미합니다. 예를 들어 비밀번호, 신용카드 번호, 세부적인 개인 정보를 포함하지 마세요.'
@@ -134,7 +136,7 @@ export default function Report({ onComplete, onVisible }: ReportProps) {
           </ButtonTag>
         </div>
       </div>
-      <CaptureButton imgSrc={imgSrc} onVisible={onVisible} onImageChange={handleImageChange} />
+      <CaptureButton imgSrc={imgSource} onVisible={onVisible} onImageChange={handleImageChange} />
       <div className='flex items-center gap-4 px-[6px] pt-[10px]'>
         <button
           type='button'

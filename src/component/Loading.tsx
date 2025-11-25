@@ -1,11 +1,12 @@
 import Image from 'next/image';
+
 import * as image from '@/asset/image';
 
-interface LoadingProps {
+interface LoadingProperties {
   isPending: boolean;
 }
 
-export default function Loading({ isPending }: LoadingProps) {
+export default function Loading({ isPending }: LoadingProperties) {
   if (!isPending) {
     return null;
   }

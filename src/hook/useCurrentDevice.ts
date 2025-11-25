@@ -1,26 +1,27 @@
 import { useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+
 import { getCurrentDeviceInfo } from '@/lib/getCurrentDeviceInfo';
 import { useDeviceStore } from '@/store/DeviceStore';
 
 const useCurrentDevice = () => {
   const {
-    setAudioInput,
-    setAudioOutput,
-    setVideoInput,
-    setAudioInputList,
-    setAudioOutputList,
-    setVideoInputList,
     permission,
+    setAudioInput,
+    setAudioInputList,
+    setAudioOutput,
+    setAudioOutputList,
+    setVideoInput,
+    setVideoInputList,
   } = useDeviceStore(
     useShallow((state) => ({
-      setAudioInput: state.setAudioInput,
-      setAudioOutput: state.setAudioOutput,
-      setVideoInput: state.setVideoInput,
-      setAudioInputList: state.setAudioInputList,
-      setAudioOutputList: state.setAudioOutputList,
-      setVideoInputList: state.setVideoInputList,
       permission: state.permission,
+      setAudioInput: state.setAudioInput,
+      setAudioInputList: state.setAudioInputList,
+      setAudioOutput: state.setAudioOutput,
+      setAudioOutputList: state.setAudioOutputList,
+      setVideoInput: state.setVideoInput,
+      setVideoInputList: state.setVideoInputList,
     })),
   );
 
@@ -40,7 +41,7 @@ const useCurrentDevice = () => {
 
       const currentAudioOutput =
         deviceInfo.currentAudioOutput ??
-        (permission?.audio ? { name: '시스템 오디오', id: '0' } : { id: '', name: '' });
+        (permission?.audio ? { id: '0', name: '시스템 오디오' } : { id: '', name: '' });
 
       setAudioOutput(currentAudioOutput);
       setAudioOutputList(deviceInfo.currentAudioOutputList);

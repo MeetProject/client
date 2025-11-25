@@ -1,11 +1,11 @@
 export const AUDIO_CONSTRAINT = {
-  echoCancellation: true,
-  noiseSuppression: true,
   autoGainControl: true,
-  googEchoCancellation: true,
+  echoCancellation: true,
   googAutoGainControl: true,
-  googNoiseSuppression: true,
+  googEchoCancellation: true,
   googHighpassFilter: true,
-  googTypingNoiseDetection: true,
   googNoiseReduction: true,
+  googNoiseSuppression: true,
+  googTypingNoiseDetection: true,
+  noiseSuppression: true,
 };

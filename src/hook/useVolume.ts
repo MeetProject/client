@@ -3,10 +3,10 @@
 import { useEffect, useState, useRef } from 'react';
 
 const useVolume = (stream: MediaStream | null | undefined) => {
-  const animationRef = useRef<number | null>(null);
+  const animationReference = useRef<number | null>(null);
   const [volume, setVolume] = useState(0);
   const [isExpand, setIsExpand] = useState(false);
-  const dataArrayRef = useRef<Uint8Array | null>(null);
+  const dataArrayReference = useRef<Uint8Array | null>(null);
 
   useEffect(() => {
     if (!stream || stream.getAudioTracks().length === 0) {
@@ -22,20 +22,20 @@ const useVolume = (stream: MediaStream | null | undefined) => {
 
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
-    dataArrayRef.current = dataArray;
+    dataArrayReference.current = dataArray;
 
     const updateVolume = () => {
-      animationRef.current = requestAnimationFrame(updateVolume);
-      if (!dataArrayRef.current) {
+      animationReference.current = requestAnimationFrame(updateVolume);
+      if (!dataArrayReference.current) {
         return;
       }
-      analyser.getByteFrequencyData(dataArrayRef.current);
+      analyser.getByteFrequencyData(dataArrayReference.current);
 
-      const sum = dataArrayRef.current.reduce((a, b) => a + b, 0);
+      const sum = dataArrayReference.current.reduce((a, b) => a + b, 0);
       const avg = sum / dataArray.length;
 
-      setVolume((prev) => {
-        setIsExpand(avg > prev);
+      setVolume((previous) => {
+        setIsExpand(avg > previous);
         return avg;
       });
     };
@@ -44,13 +44,13 @@ const useVolume = (stream: MediaStream | null | undefined) => {
 
     return () => {
       audioContext.close();
-      if (animationRef.current !== null) {
-        cancelAnimationFrame(animationRef.current);
+      if (animationReference.current !== null) {
+        cancelAnimationFrame(animationReference.current);
       }
     };
   }, [stream]);
 
-  return { volume, isExpand };
+  return { isExpand, volume };
 };
 
 export default useVolume;

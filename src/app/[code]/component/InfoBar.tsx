@@ -3,8 +3,9 @@
 import { ReactNode, useState } from 'react';
 
 import * as Icon from '@/asset/icon';
-import { PanelType } from '@/type/panelType';
 import { useOutsideClick } from '@/hook';
+import { PanelType } from '@/type/panelType';
+
 import { IconButton } from './part/InfoBar';
 
 interface ButtonType {
@@ -16,35 +17,35 @@ interface ButtonType {
 }
 
 const ICON_OFF_PROPS = {
-  width: 24,
-  height: 24,
   fill: '#ffffff',
+  height: 24,
+  width: 24,
 };
 
 const ICON_ON_PROPS = {
-  width: 24,
-  height: 24,
   fill: '#A8C7FA',
+  height: 24,
+  width: 24,
 };
 
 const BUTTON_LIST: ButtonType[] = [
   {
-    type: 'INFO',
-    icon: <Icon.InfoOff {...ICON_OFF_PROPS} />,
     clickedIcon: <Icon.InfoOn {...ICON_ON_PROPS} />,
+    icon: <Icon.InfoOff {...ICON_OFF_PROPS} />,
     name: '회의 세부정보',
+    type: 'INFO',
   },
   {
-    type: 'USER',
-    icon: <Icon.UserOff {...ICON_OFF_PROPS} />,
     clickedIcon: <Icon.UserOn {...ICON_ON_PROPS} />,
+    icon: <Icon.UserOff {...ICON_OFF_PROPS} />,
     name: '사용자',
+    type: 'USER',
   },
   {
-    type: 'CHAT',
-    icon: <Icon.ChatOff {...ICON_OFF_PROPS} />,
     clickedIcon: <Icon.ChatOn {...ICON_ON_PROPS} />,
+    icon: <Icon.ChatOff {...ICON_OFF_PROPS} />,
     name: '모든 사용자와 채팅',
+    type: 'CHAT',
   },
   /* {
     type: 'ACTIVE',
@@ -65,13 +66,13 @@ export default function InfoBar() {
   const [isClicked, setIsClicked] = useState(false);
   const { targetRef } = useOutsideClick<HTMLDivElement>(() => setIsClicked(false));
   const handleClickButton = () => {
-    setIsClicked((prev) => !prev);
+    setIsClicked((previous) => !previous);
   };
   return (
     <>
       <div className='flex items-center justify-end md:hidden'>
-        {BUTTON_LIST.map((button, i) => (
-          <IconButton key={button.type} align={i === BUTTON_LIST.length - 1 ? 'right' : 'center'} {...button} />
+        {BUTTON_LIST.map((button, index) => (
+          <IconButton key={button.type} align={index === BUTTON_LIST.length - 1 ? 'right' : 'center'} {...button} />
         ))}
       </div>
       <div className='relative right-4 hidden size-12 justify-self-end md:block' ref={targetRef}>
@@ -86,12 +87,12 @@ export default function InfoBar() {
           <div
             className='absolute -right-6 top-0 z-40 rounded-lg bg-[#202124] p-2'
             style={{
-              transform: 'translateY(calc(-100% - 20px))',
               boxShadow: '0 2px 2px 0 rgba(0,0,0,.14),0 3px 1px -2px rgba(0,0,0,.12),0 1px 5px 0 rgba(0,0,0,.2)',
+              transform: 'translateY(calc(-100% - 20px))',
             }}
           >
-            {BUTTON_LIST.map((button, i) => (
-              <IconButton key={button.type} align={i === BUTTON_LIST.length - 1 ? 'right' : 'center'} {...button} />
+            {BUTTON_LIST.map((button, index) => (
+              <IconButton key={button.type} align={index === BUTTON_LIST.length - 1 ? 'right' : 'center'} {...button} />
             ))}
           </div>
         )}

@@ -2,9 +2,11 @@
 
 import { ReactNode, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { useDeviceStore } from '@/store/DeviceStore';
+
 import * as Icon from '@/asset/icon';
 import { useOutsideClick, useVolume } from '@/hook';
+import { useDeviceStore } from '@/store/DeviceStore';
+
 import DeviceCard from './DeviceCard';
 import DeviceSubButton from './DeviceSubButton';
 
@@ -19,17 +21,17 @@ interface DeviceButtonIcon {
 }
 
 export default function DeviceButton({
-  icon,
+  color = 'white',
   currentDevice,
   deviceList,
-  type,
+  icon,
   onTrackChange,
-  color = 'white',
+  type,
   width,
 }: DeviceButtonIcon) {
   const [isOpen, setIsOpen] = useState(false);
-  const { stream, permission, streamStatus } = useDeviceStore(
-    useShallow((state) => ({ stream: state.stream, permission: state.permission, streamStatus: state.streamStatus })),
+  const { permission, stream, streamStatus } = useDeviceStore(
+    useShallow((state) => ({ permission: state.permission, stream: state.stream, streamStatus: state.streamStatus })),
   );
 
   const getDisabledStatus = () => {
@@ -78,7 +80,7 @@ export default function DeviceButton({
   );
 
   const handleButtonClick = () => {
-    setIsOpen((prev) => !prev);
+    setIsOpen((previous) => !previous);
   };
 
   const handleCardClick = async (device: MediaDeviceInfo) => {
@@ -87,14 +89,14 @@ export default function DeviceButton({
     }
 
     if (type === 'audioInput') {
-      setAudioInput({ name: device.label, id: device.deviceId });
+      setAudioInput({ id: device.deviceId, name: device.label });
     }
 
     if (type === 'videoInput') {
-      setVideoInput({ name: device.label, id: device.deviceId });
+      setVideoInput({ id: device.deviceId, name: device.label });
     }
     if (type === 'audioOutput') {
-      setAudioOutput({ name: device.label, id: device.deviceId });
+      setAudioOutput({ id: device.deviceId, name: device.label });
     }
 
     if (onTrackChange) {

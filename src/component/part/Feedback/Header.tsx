@@ -1,17 +1,18 @@
 'use client';
 
+import { MouseEvent } from 'react';
+
 import * as Icon from '@/asset/icon';
 import ButtonTag from '@/component/ButtonTag';
 import { CategoryType } from '@/type/feedbackType';
-import { MouseEvent } from 'react';
 
-interface HeaderProps {
+interface HeaderProperties {
   type: CategoryType;
   onClick: (value: CategoryType) => void;
   onClose: () => void;
 }
 
-export default function Header({ type, onClick, onClose }: HeaderProps) {
+export default function Header({ onClick, onClose, type }: HeaderProperties) {
   const handleBackButtonClick = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     onClick(null);

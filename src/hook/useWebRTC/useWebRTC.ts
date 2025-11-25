@@ -1,29 +1,31 @@
 'use client';
 
 import { useCallback, useRef, useEffect } from 'react';
-import { ErrorResponseType, StreamType } from '@/type/signalType';
-import { ChatResponseType, EmojiResponseType } from '@/type/reactionType';
-import { DeviceEnableType } from '@/type/streamType';
+
 import { useClientStore } from '@/store/ClientStore';
 import { useWebRTCStore } from '@/store/WebRTCStore';
+import { ChatResponseType, EmojiResponseType } from '@/type/reactionType';
+import { ErrorResponseType, StreamType } from '@/type/signalType';
+import { DeviceEnableType } from '@/type/streamType';
+
+import { useDevice2 } from '..';
 import usePeerConnection from './usePeerConnection';
 import useSignalSocket from './useSignalSocket';
-import { useDevice2 } from '..';
 
-interface UseWebRTCProps {
+interface UseWebRTCProperties {
   onChat?: (data: ChatResponseType) => void;
   onEmoji?: (data: EmojiResponseType) => void;
   onError?: (data: ErrorResponseType) => void;
 }
 
-const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProps) => {
-  const onTrackRef =
+const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
+  const onTrackReference =
     useRef<(targetId: string, targetStream: MediaStream, streamType: StreamType, isScreenSender: boolean) => void>();
-  const onDeviceEnableChangeRef = useRef<(id: string, value: DeviceEnableType) => void>();
+  const onDeviceEnableChangeReference = useRef<(id: string, value: DeviceEnableType) => void>();
 
   const onTrack = useCallback(
     (targetId: string, targetStream: MediaStream, streamType: StreamType, isScreenSender: boolean) => {
-      const { updateParticipantsMediaStream, setScreenSharingMediaStream, setScreenOwnerId } =
+      const { setScreenOwnerId, setScreenSharingMediaStream, updateParticipantsMediaStream } =
         useWebRTCStore.getState();
 
       if (streamType === 'USER') {
@@ -44,46 +46,46 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProps) => {
   }, []);
 
   useEffect(() => {
-    onTrackRef.current = onTrack;
+    onTrackReference.current = onTrack;
   }, [onTrack]);
 
   useEffect(() => {
-    onDeviceEnableChangeRef.current = onDeviceEnableChange;
+    onDeviceEnableChangeReference.current = onDeviceEnableChange;
   }, [onDeviceEnableChange]);
 
-  const { updateStream, stopStream, updateScreenStream, stopScreenStream } = useDevice2();
+  const { stopScreenStream, stopStream, updateScreenStream, updateStream } = useDevice2();
 
-  const stopShareScreenRef = useRef<() => void>();
+  const stopShareScreenReference = useRef<() => void>();
 
   const onDisplayShareEnd = useCallback(() => {
     const { setScreenOwnerId } = useWebRTCStore.getState();
-    stopShareScreenRef.current?.();
+    stopShareScreenReference.current?.();
     setScreenOwnerId(null);
   }, []);
 
   const {
-    createPeerConnection,
-    createOfferSdp,
     createAnswerSdp,
+    createOfferSdp,
+    createPeerConnection,
+    disconnectAllPeerConnection,
+    disconnectAllScreenPeerConnection,
+    disconnectPeerConnection,
     registerAnswerSdp,
     registerOfferSdp,
     registerRemoteIce,
-    disconnectPeerConnection,
-    disconnectAllPeerConnection,
-    disconnectAllScreenPeerConnection,
   } = usePeerConnection({
-    onTrack: (id, stream, type, isScreenSender) => onTrackRef.current?.(id, stream, type, isScreenSender),
+    onDeviceEnableChange: (id, value) => onDeviceEnableChangeReference.current?.(id, value),
     onDisplayShareEnd,
-    onDeviceEnableChange: (id, value) => onDeviceEnableChangeRef.current?.(id, value),
+    onTrack: (id, stream, type, isScreenSender) => onTrackReference.current?.(id, stream, type, isScreenSender),
   });
 
   const deleteParticipant = useCallback(
     (targetId: string, streamType: StreamType) => {
       const {
-        setScreenSharingMediaStream,
-        setScreenOwnerId,
         deleteParticipantsMediaStream,
         deleteParticipantsUserData,
+        setScreenOwnerId,
+        setScreenSharingMediaStream,
       } = useWebRTCStore.getState();
       disconnectPeerConnection(targetId, streamType);
 
@@ -101,23 +103,23 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProps) => {
 
   const {
     connectSocket,
-    sendJoin,
-    sendLeave,
+    disconnectSocket,
     sendChat,
+    sendDevice,
     sendEmoji,
     sendHandUp,
-    sendDevice,
-    disconnectSocket,
+    sendJoin,
+    sendLeave,
     shareScreen: sharingScreen,
   } = useSignalSocket({
-    onDeleteParticipant: deleteParticipant,
     onChat,
+    onDeleteParticipant: deleteParticipant,
     onEmoji,
     onError,
   });
 
   const stopShareScreen = useCallback(() => {
-    const { setScreenSharingMediaStream, setIsScreenShare } = useWebRTCStore.getState();
+    const { setIsScreenShare, setScreenSharingMediaStream } = useWebRTCStore.getState();
     sendLeave('SCREEN');
     disconnectAllScreenPeerConnection();
     setScreenSharingMediaStream(null);
@@ -125,7 +127,7 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProps) => {
     setIsScreenShare(false);
   }, [sendLeave, disconnectAllScreenPeerConnection, stopScreenStream]);
 
-  stopShareScreenRef.current = stopShareScreen;
+  stopShareScreenReference.current = stopShareScreen;
 
   const joinSession = useCallback(async () => {
     useClientStore.getState().setIsClientReady(false);
@@ -178,7 +180,7 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProps) => {
   }, [sharingScreen, updateScreenStream]);
 
   const clearPeerConnection = useCallback(() => {
-    const { setParticipantsUserData, setParticipantsMediaStream, setScreenSharingMediaStream } =
+    const { setParticipantsMediaStream, setParticipantsUserData, setScreenSharingMediaStream } =
       useWebRTCStore.getState();
     disconnectAllPeerConnection();
     disconnectAllScreenPeerConnection();
@@ -203,14 +205,14 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProps) => {
   }, [leaveRoom, disconnectSocket]);
 
   return {
-    joinSession,
     joinRoom,
-    sendChat,
-    sendEmoji,
-    sendHandUp,
-    sendDevice,
+    joinSession,
     leaveRoom,
     leaveSession,
+    sendChat,
+    sendDevice,
+    sendEmoji,
+    sendHandUp,
     shareScreen,
     stopShareScreen,
   };

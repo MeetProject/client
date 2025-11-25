@@ -1,11 +1,12 @@
 'use client';
 
 import { ReactNode, useContext } from 'react';
+
+import { ButtonTag } from '@/component';
 import { PanelContext } from '@/context/PanelContext';
 import { PanelType } from '@/type/panelType';
-import { ButtonTag } from '@/component';
 
-interface IconButtonProps {
+interface IconButtonProperties {
   icon: ReactNode;
   clickedIcon: ReactNode;
   type: PanelType;
@@ -13,8 +14,8 @@ interface IconButtonProps {
   align?: 'left' | 'center' | 'right';
 }
 
-export default function IconButton({ icon, clickedIcon, type, name, align = 'center' }: IconButtonProps) {
-  const { panelType, handlePanelType, handleOpenStatus } = useContext(PanelContext);
+export default function IconButton({ align = 'center', clickedIcon, icon, name, type }: IconButtonProperties) {
+  const { handleOpenStatus, handlePanelType, panelType } = useContext(PanelContext);
   const handleButtonClick = () => {
     if (panelType === type) {
       handlePanelType(null);

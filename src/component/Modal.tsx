@@ -1,10 +1,11 @@
 'use client';
 
-import { useOutsideClick } from '@/hook';
 import { PropsWithChildren, useState, useEffect, ReactNode } from 'react';
 import ReactDOM from 'react-dom';
 
-interface ModalProps {
+import { useOutsideClick } from '@/hook';
+
+interface ModalProperties {
   children: ReactNode;
   isOpen: boolean;
   onCloseModal: () => void;
@@ -24,7 +25,7 @@ function ModalPortal({ children }: PropsWithChildren) {
   return ReactDOM.createPortal(children, portalElement) as JSX.Element;
 }
 
-export default function Modal({ isOpen, onCloseModal, children }: ModalProps) {
+export default function Modal({ children, isOpen, onCloseModal }: ModalProperties) {
   const { targetRef } = useOutsideClick<HTMLDivElement>(onCloseModal);
   if (!isOpen) {
     return null;

@@ -1,39 +1,41 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+
 import * as Icon from '@/asset/icon';
-import { UserListType } from '@/type/participantType';
 import { charMatcher } from '@/lib/filterKeyword';
+import { UserListType } from '@/type/participantType';
+
 import UserListCard from './UserListCard';
 
-interface UserPanelProps {
+interface UserPanelProperties {
   filterValue?: string;
   userList: UserListType[];
 }
 
-export default function UserPanel({ filterValue, userList }: UserPanelProps) {
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+export default function UserPanel({ filterValue, userList }: UserPanelProperties) {
+  const timerReference = useRef<NodeJS.Timeout | null>(null);
   const [isOpen, setIsOpen] = useState(true);
   const [currentUser, setCurrentUser] = useState<UserListType[]>(userList);
 
   const handleClickButton = () => {
-    setIsOpen((prev) => !prev);
+    setIsOpen((previous) => !previous);
   };
 
   useEffect(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
+    if (timerReference.current) {
+      clearTimeout(timerReference.current);
     }
-    timerRef.current = setTimeout(() => {
+    timerReference.current = setTimeout(() => {
       if (filterValue) {
         const matcher = charMatcher(filterValue.toLowerCase());
         const filteredUser = userList.filter((user) => matcher.test(user.name.toLocaleLowerCase()));
         setCurrentUser(filteredUser);
-        timerRef.current = null;
+        timerReference.current = null;
         return;
       }
       setCurrentUser(userList);
-      timerRef.current = null;
+      timerReference.current = null;
     }, 300);
   }, [filterValue, userList]);
   return (

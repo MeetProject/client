@@ -1,26 +1,28 @@
 'use client';
 
 import { ChangeEvent, FormEvent, useRef, useState } from 'react';
+
 import * as Icon from '@/asset/icon';
 import { ChatType } from '@/type/reactionType';
+
 import { ChatMessage } from './ChatMessage';
 
-interface ChatPanelProps {
+interface ChatPanelProperties {
   chatList: ChatType[];
   onSendMessage: (value: string) => void;
 }
 
-export default function ChatPanel({ chatList, onSendMessage }: ChatPanelProps) {
-  const textRef = useRef<HTMLTextAreaElement>(null);
+export default function ChatPanel({ chatList, onSendMessage }: ChatPanelProperties) {
+  const textReference = useRef<HTMLTextAreaElement>(null);
   const [chat, setChat] = useState('');
   const handleInputChage = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setChat(e.target.value);
 
-    if (!textRef.current) {
+    if (!textReference.current) {
       return;
     }
-    textRef.current.style.height = 'auto';
-    textRef.current.style.height = `${textRef.current.scrollHeight}px`;
+    textReference.current.style.height = 'auto';
+    textReference.current.style.height = `${textReference.current.scrollHeight}px`;
   };
 
   const handleFormSubmt = (e: FormEvent<HTMLFormElement>) => {
@@ -45,7 +47,7 @@ export default function ChatPanel({ chatList, onSendMessage }: ChatPanelProps) {
       </div>
       <form className='relative m-[15px] flex items-center rounded-[25px] bg-[#F1F3F4] py-1' onSubmit={handleFormSubmt}>
         <textarea
-          ref={textRef}
+          ref={textReference}
           placeholder='메세지 보내기'
           onChange={handleInputChage}
           value={chat}

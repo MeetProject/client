@@ -18,16 +18,28 @@ interface ClientStoreType {
 }
 
 export const useClientStore = create<ClientStoreType>((set, get) => ({
-  client: null,
-  isClientReady: null,
-  subscriptions: new Map(),
-  roomSubscriptions: new Map(),
-
-  setClient: (value) => set(() => ({ client: value })),
-  setIsClientReady: (value: boolean) => set({ isClientReady: value }),
-
+  addRoomSubscriptions: (id, sub) => {
+    get().roomSubscriptions.set(id, sub);
+  },
   addSubscriptions: (id, sub) => {
     get().subscriptions.set(id, sub);
+  },
+  clearRoomSubscriptions: () => {
+    get().roomSubscriptions.forEach((sub) => sub.unsubscribe());
+    get().roomSubscriptions.clear();
+  },
+  clearSubscriptions: () => {
+    get().subscriptions.forEach((sub) => sub.unsubscribe());
+    get().subscriptions.clear();
+  },
+
+  client: null,
+  isClientReady: null,
+
+  removeRoomSubscriptions: (id) => {
+    const sub = get().roomSubscriptions.get(id);
+    sub?.unsubscribe();
+    get().roomSubscriptions.delete(id);
   },
 
   removeSubscriptions: (id) => {
@@ -36,23 +48,11 @@ export const useClientStore = create<ClientStoreType>((set, get) => ({
     get().subscriptions.delete(id);
   },
 
-  addRoomSubscriptions: (id, sub) => {
-    get().roomSubscriptions.set(id, sub);
-  },
+  roomSubscriptions: new Map(),
 
-  removeRoomSubscriptions: (id) => {
-    const sub = get().roomSubscriptions.get(id);
-    sub?.unsubscribe();
-    get().roomSubscriptions.delete(id);
-  },
+  setClient: (value) => set(() => ({ client: value })),
 
-  clearSubscriptions: () => {
-    get().subscriptions.forEach((sub) => sub.unsubscribe());
-    get().subscriptions.clear();
-  },
+  setIsClientReady: (value: boolean) => set({ isClientReady: value }),
 
-  clearRoomSubscriptions: () => {
-    get().roomSubscriptions.forEach((sub) => sub.unsubscribe());
-    get().roomSubscriptions.clear();
-  },
+  subscriptions: new Map(),
 }));

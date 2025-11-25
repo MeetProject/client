@@ -1,14 +1,17 @@
 'use client';
 
 import { ReactNode, useState, MouseEvent, useCallback } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+
 import * as Icon from '@/asset/icon';
 import { ButtonTag } from '@/component';
 import { useOutsideClick, useShortcutKey } from '@/hook';
 import { useDeviceStore } from '@/store/DeviceStore';
-import { useShallow } from 'zustand/react/shallow';
+
 import DeviceList from './DeviceList';
 
-interface OptionButtonProps {
+
+interface OptionButtonProperties {
   type: 'audio' | 'video';
   onClickButton?: (type: 'audio' | 'video') => void;
   onClickChevron?: (isClicked: boolean) => void;
@@ -19,20 +22,20 @@ interface OptionButtonProps {
 }
 
 export default function OptionButton({
-  type,
-  onClickChevron,
-  onClickButton,
   clickedIcon,
   icon,
   name,
+  onClickButton,
+  onClickChevron,
   shortcutKey,
-}: OptionButtonProps) {
-  const { streamStatus, deviceEnable, permission, audioInput, videoInput } = useDeviceStore(
+  type,
+}: OptionButtonProperties) {
+  const { audioInput, deviceEnable, permission, streamStatus, videoInput } = useDeviceStore(
     useShallow((state) => ({
-      streamStatus: state.streamStatus,
+      audioInput: state.audioInput,
       deviceEnable: state.deviceEnable,
       permission: state.permission,
-      audioInput: state.audioInput,
+      streamStatus: state.streamStatus,
       videoInput: state.videoInput,
     })),
   );
@@ -58,11 +61,11 @@ export default function OptionButton({
   }, [onClickButton, type]);
 
   const handleChevronClick = () => {
-    setIsClickedChevron((prev) => {
+    setIsClickedChevron((previous) => {
       if (onClickChevron) {
-        onClickChevron(!prev);
+        onClickChevron(!previous);
       }
-      return !prev;
+      return !previous;
     });
   };
 

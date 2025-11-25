@@ -1,9 +1,10 @@
 'use client';
 
-import { useLayoutEffect, useState } from 'react';
-import { ParticipantDataType } from '@/type/participantType';
-import { getParticipant } from '@/app/api/mongoAPI';
 import { usePathname } from 'next/navigation';
+import { useLayoutEffect, useState } from 'react';
+
+import { getParticipant } from '@/app/api/mongoAPI';
+import { ParticipantDataType } from '@/type/participantType';
 
 const MAX_NUM = 4;
 
@@ -27,9 +28,8 @@ export default function EntirePeople() {
         className='relative flex items-center'
         style={{ width: data.length ? `${24 + 12 * (Math.min(data.length, 4) - 1)}px` : '0px' }}
       >
-        {data.slice(0, MAX_NUM).map((user, i) => (
-          // eslint-disable-next-line no-underscore-dangle
-          <div key={user._id} className='relative' style={{ left: i === 0 ? '0px' : `${-12 * i}px` }}>
+        {data.slice(0, MAX_NUM).map((user, index) => (
+          <div key={user._id} className='relative' style={{ left: index === 0 ? '0px' : `${-12 * index}px` }}>
             <div
               className='flex size-6 items-center justify-center truncate rounded-full text-sm font-bold text-white'
               style={{ backgroundColor: user.color }}

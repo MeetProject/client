@@ -1,19 +1,20 @@
 'use client';
 
 import { useShallow } from 'zustand/react/shallow';
+
 import { useDeviceStore } from '@/store/DeviceStore';
 
-interface VideoNotificationProps {
+interface VideoNotificationProperties {
   onClickButton: () => void;
 }
 
-export default function VideoNotification({ onClickButton }: VideoNotificationProps) {
-  const { permission, deviceEnable, videoInput, streamStatus } = useDeviceStore(
+export default function VideoNotification({ onClickButton }: VideoNotificationProperties) {
+  const { deviceEnable, permission, streamStatus, videoInput } = useDeviceStore(
     useShallow((state) => ({
-      permission: state.permission,
       deviceEnable: state.deviceEnable,
-      videoInput: state.videoInput,
+      permission: state.permission,
       streamStatus: state.streamStatus,
+      videoInput: state.videoInput,
     })),
   );
 

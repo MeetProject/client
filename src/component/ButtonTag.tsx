@@ -1,9 +1,10 @@
 'use client';
 
 import { CSSProperties, ReactNode, useRef, useState } from 'react';
+
 import { getAlignStyle } from '@/lib/getAlignStyle';
 
-interface ButtonTagProps {
+interface ButtonTagProperties {
   children: ReactNode;
   name: string;
   position?: 'top' | 'bottom';
@@ -14,16 +15,16 @@ interface ButtonTagProps {
 }
 
 export default function ButtonTag({
+  align = 'center',
   children,
+  gap = 4,
+  instant,
   name,
   position = 'top',
-  gap = 4,
   style,
-  align = 'center',
-  instant,
-}: ButtonTagProps) {
+}: ButtonTagProperties) {
   const [isDrag, setIsDrag] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerReference = useRef<NodeJS.Timeout | null>(null);
 
   const positionStyle = position === 'top' ? { top: `calc(-50% - ${gap}px)` } : { bottom: `calc(-50% - ${gap}px)` };
 
@@ -32,16 +33,16 @@ export default function ButtonTag({
       setIsDrag(true);
       return;
     }
-    timerRef.current = setTimeout(() => {
+    timerReference.current = setTimeout(() => {
       setIsDrag(true);
-      timerRef.current = null;
+      timerReference.current = null;
     }, 500);
   };
 
   const handleButtonMouseLeave = () => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
+    if (timerReference.current) {
+      clearTimeout(timerReference.current);
+      timerReference.current = null;
     }
     setIsDrag(false);
   };

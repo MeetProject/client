@@ -3,7 +3,7 @@
 import { PropsWithChildren, useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 
-interface AlertProps {
+interface AlertProperties {
   text: string;
   isOpen: boolean;
   onCloseAlert: () => void;
@@ -24,17 +24,17 @@ function AlertPortal({ children }: PropsWithChildren) {
   return ReactDOM.createPortal(children, portalElement) as JSX.Element;
 }
 
-export default function Alert({ text, isOpen, onCloseAlert, interval = 4000 }: AlertProps) {
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+export default function Alert({ interval = 4000, isOpen, onCloseAlert, text }: AlertProperties) {
+  const timerReference = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
+      if (timerReference.current) {
+        clearTimeout(timerReference.current);
       }
-      timerRef.current = setTimeout(() => {
+      timerReference.current = setTimeout(() => {
         onCloseAlert();
-        timerRef.current = null;
+        timerReference.current = null;
       }, interval);
     }
   }, [isOpen, interval, onCloseAlert]);

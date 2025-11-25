@@ -1,15 +1,17 @@
 'use client';
 
 import { ChangeEvent, useState } from 'react';
+
 import * as Icon from '@/asset/icon';
 import { UserListType } from '@/type/participantType';
+
 import UserList from './UserList';
 
-interface UserPanelProps {
+interface UserPanelProperties {
   userList: UserListType[];
 }
 
-export default function UserPanel({ userList }: UserPanelProps) {
+export default function UserPanel({ userList }: UserPanelProperties) {
   const [filterName, setFilterName] = useState('');
 
   const handleFilterNameChange = (e: ChangeEvent<HTMLInputElement>) => {

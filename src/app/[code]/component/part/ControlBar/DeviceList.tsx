@@ -1,27 +1,28 @@
 'use client';
 
 import { useShallow } from 'zustand/react/shallow';
-import { useDeviceStore } from '@/store/DeviceStore';
 
 import * as Icon from '@/asset/icon';
 import { setTrackChage } from '@/lib/setTrackChange';
+import { useDeviceStore } from '@/store/DeviceStore';
+
 import { DeviceButton } from '../Device';
 
-interface DeviceListProps {
+interface DeviceListProperties {
   type: 'audio' | 'video';
 }
 
-export default function DeviceList({ type }: DeviceListProps) {
-  const { stream, audioInput, audioOutput, videoInput, audioInputList, audioOutputList, videoInputList } =
+export default function DeviceList({ type }: DeviceListProperties) {
+  const { audioInput, audioInputList, audioOutput, audioOutputList, stream, videoInput, videoInputList } =
     useDeviceStore(
       useShallow((state) => ({
+        audioInput: state.audioInput,
+        audioInputList: state.audioInputList,
+        audioOutput: state.audioOutput,
+        audioOutputList: state.audioOuputList,
         stream: state.stream,
         streamStatus: state.streamStatus,
-        audioInput: state.audioInput,
-        audioOutput: state.audioOutput,
         videoInput: state.videoInput,
-        audioInputList: state.audioInputList,
-        audioOutputList: state.audioOuputList,
         videoInputList: state.videoInputList,
       })),
     );

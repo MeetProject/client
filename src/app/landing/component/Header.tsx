@@ -1,37 +1,38 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
+import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import * as Icon from '@/asset/icon';
-import { useUserInfoStore } from '@/store/UserInfoStore';
-import { useOutsideClick } from '@/hook';
 import { Feedback, Setting } from '@/component';
+import { useOutsideClick } from '@/hook';
+import { useUserInfoStore } from '@/store/UserInfoStore';
+
 import { CurrentDate, IconButton } from './part/Header';
 
 const ICON_PROPS = {
-  width: 24,
-  height: 24,
   fill: '#5f6368',
+  height: 24,
+  width: 24,
 };
 
 const HELP_BUTTON = [
-  { name: '도움말', href: 'https://github.com/armd482/meetproejct' },
-  { name: '교육', href: 'https://github.com/armd482/meetproejct' },
-  { name: '서비스 약관', href: 'https://github.com/armd482/meetproejct' },
-  { name: '개인정보처리방침', href: 'https://github.com/armd482/meetproejct' },
-  { name: '약관 요약', href: 'https://github.com/armd482/meetproejct' },
+  { href: 'https://github.com/armd482/meetproejct', name: '도움말' },
+  { href: 'https://github.com/armd482/meetproejct', name: '교육' },
+  { href: 'https://github.com/armd482/meetproejct', name: '서비스 약관' },
+  { href: 'https://github.com/armd482/meetproejct', name: '개인정보처리방침' },
+  { href: 'https://github.com/armd482/meetproejct', name: '약관 요약' },
 ];
 
 export default function Header() {
-  const { name, color, setName, setColor, setId } = useUserInfoStore(
+  const { color, name, setColor, setId, setName } = useUserInfoStore(
     useShallow((state) => ({
-      name: state.name,
       color: state.color,
-      setName: state.setName,
+      name: state.name,
       setColor: state.setColor,
       setId: state.setId,
+      setName: state.setName,
     })),
   );
 
@@ -56,10 +57,10 @@ export default function Header() {
   };
 
   const { targetRef } = useOutsideClick<HTMLDivElement>(handleCloseInfo);
-  const { targetRef: helpRef } = useOutsideClick<HTMLDivElement>(handleHelpClose);
+  const { targetRef: helpReference } = useOutsideClick<HTMLDivElement>(handleHelpClose);
 
   const handleSettingClick = () => {
-    setIsClickedSetting((prev) => !prev);
+    setIsClickedSetting((previous) => !previous);
   };
 
   const handleSettingClose = () => {
@@ -75,7 +76,7 @@ export default function Header() {
   };
 
   const handleHelpClick = () => {
-    setIsClickedHelp((prev) => !prev);
+    setIsClickedHelp((previous) => !previous);
   };
 
   const handleHelpButtonClick = (href: string) => {
@@ -85,18 +86,18 @@ export default function Header() {
 
   const BUTTON_LIST = [
     {
-      name: '지원',
       icon: <Icon.Help {...ICON_PROPS} />,
+      name: '지원',
       onClick: handleHelpClick,
     },
     {
-      name: '문제 신고',
       icon: <Icon.Feedback {...ICON_PROPS} />,
+      name: '문제 신고',
       onClick: handleFeedbackClick,
     },
     {
-      name: '설정',
       icon: <Icon.Setting {...ICON_PROPS} />,
+      name: '설정',
       onClick: handleSettingClick,
     },
   ];
@@ -124,7 +125,7 @@ export default function Header() {
 
         {isClickedHelp && (
           <div
-            ref={helpRef}
+            ref={helpReference}
             className={`absolute top-12 ${name && color ? 'right-[155px]' : 'right-[100px]'} z-[5] w-[280px] rounded bg-white py-2`}
             style={{
               boxShadow: '0 3px 5px -1px rgba(0,0,0,.2),0 6px 10px 0 rgba(0,0,0,.14),0 1px 18px 0 rgba(0,0,0,.12)',
@@ -148,7 +149,7 @@ export default function Header() {
               type='button'
               className='mx-3 flex size-8 items-center justify-end truncate rounded-full font-bold text-white'
               style={{ backgroundColor: color }}
-              onClick={() => setIsClickedName((prev) => !prev)}
+              onClick={() => setIsClickedName((previous) => !previous)}
             >
               {name}
             </button>

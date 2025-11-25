@@ -1,10 +1,12 @@
 import React, { useState, MouseEvent, ReactNode } from 'react';
+
 import * as Icon from '@/asset/icon';
-import { DeviceType } from '@/type/streamType';
 import { useOutsideClick } from '@/hook';
+import { DeviceType } from '@/type/streamType';
+
 import ButtonTag from './ButtonTag';
 
-interface DeviceSelectBoxProps {
+interface DeviceSelectBoxProperties {
   currentValue: DeviceType;
   deviceList: MediaDeviceInfo[];
   onChange: (id: string) => void;
@@ -12,12 +14,12 @@ interface DeviceSelectBoxProps {
   disabled?: boolean | '권한' | '시스템';
 }
 
-interface BoxWrapperProps {
+interface BoxWrapperProperties {
   children: ReactNode;
   disabled: boolean | '권한' | '시스템';
 }
 
-function BoxWrapper({ children, disabled }: BoxWrapperProps) {
+function BoxWrapper({ children, disabled }: BoxWrapperProperties) {
   return disabled === '권한' ? (
     <ButtonTag name='권한 필요' position='bottom'>
       {children}
@@ -29,18 +31,18 @@ function BoxWrapper({ children, disabled }: BoxWrapperProps) {
 
 export default function DeviceSelectBox({
   currentValue,
-  deviceList,
-  onChange,
   DeviceIcon,
+  deviceList,
   disabled = false,
-}: DeviceSelectBoxProps) {
+  onChange,
+}: DeviceSelectBoxProperties) {
   const [isClicked, setIsClicked] = useState(false);
   const { targetRef } = useOutsideClick<HTMLDivElement>(() => {
     setIsClicked(false);
   });
 
   const handleSelectButtonClick = () => {
-    setIsClicked((prev) => !prev);
+    setIsClicked((previous) => !previous);
   };
 
   const handleDeviceButtonClick = (e: MouseEvent<HTMLButtonElement>, id: string) => {

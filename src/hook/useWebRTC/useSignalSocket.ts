@@ -1,8 +1,15 @@
 'use client';
 
 import { Client, IMessage } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 import { useCallback, useRef } from 'react';
+import SockJS from 'sockjs-client';
+import { useShallow } from 'zustand/react/shallow';
+
+import { useClientStore } from '@/store/ClientStore';
+import { useDeviceStore } from '@/store/DeviceStore';
+import { useUserInfoStore } from '@/store/UserInfoStore';
+import { useWebRTCStore } from '@/store/WebRTCStore';
+import { ChatResponseType, DeviceResponseType, EmojiResponseType, HandUpResponseType } from '@/type/reactionType';
 import {
   IcePayloadType,
   JoinResponseType,
@@ -18,36 +25,30 @@ import {
   OfferResponseType,
   AnswerResponseType,
 } from '@/type/signalType';
-import { useUserInfoStore } from '@/store/UserInfoStore';
-import { ChatResponseType, DeviceResponseType, EmojiResponseType, HandUpResponseType } from '@/type/reactionType';
-import { useClientStore } from '@/store/ClientStore';
-import { useShallow } from 'zustand/react/shallow';
-import { EmojiType } from '@/type/toggleType';
-import { useDeviceStore } from '@/store/DeviceStore';
 import { DeviceEnableType } from '@/type/streamType';
-import { useWebRTCStore } from '@/store/WebRTCStore';
+import { EmojiType } from '@/type/toggleType';
 
-interface UseSignalSocketProps {
+interface UseSignalSocketProperties {
   onDeleteParticipant: (targetId: string, streamType: StreamType) => void;
   onChat: (data: ChatResponseType) => void;
   onEmoji: (data: EmojiResponseType) => void;
   onError: (data: ErrorResponseType) => void;
 }
 
-const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseSignalSocketProps) => {
+const useSignalSocket = ({ onChat, onDeleteParticipant, onEmoji, onError }: UseSignalSocketProperties) => {
   const { addRoomSubscriptions, addSubscriptions } = useClientStore(
     useShallow((state) => ({
+      addRoomSubscriptions: state.addRoomSubscriptions,
+      addSubscriptions: state.addSubscriptions,
+      roomSubscriptions: state.roomSubscriptions,
       setClient: state.setClient,
       subscriptions: state.subscriptions,
-      roomSubscriptions: state.roomSubscriptions,
-      addSubscriptions: state.addSubscriptions,
-      addRoomSubscriptions: state.addRoomSubscriptions,
     })),
   );
   const currentRoomId = useRef<string | null>(null);
 
-  const parseMessage = <T>(msg: IMessage) => {
-    const data = JSON.parse(msg.body) as T;
+  const parseMessage = <T>(message: IMessage) => {
+    const data = JSON.parse(message.body) as T;
     console.log(data);
     return data;
   };
@@ -64,38 +65,38 @@ const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseS
       };
 
       client.publish({
+        body: JSON.stringify(payload),
         destination: '/app/signal/join',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(payload),
       });
 
-      const leaveSub = client.subscribe(`/topic/room/${roomId}/leave`, (msg: IMessage) => {
-        const { fromUserId, streamType } = parseMessage<LeaveResponseType>(msg);
+      const leaveSub = client.subscribe(`/topic/room/${roomId}/leave`, (message: IMessage) => {
+        const { fromUserId, streamType } = parseMessage<LeaveResponseType>(message);
         onDeleteParticipant(fromUserId, streamType);
       });
       addRoomSubscriptions('leave', leaveSub);
 
-      const chatSub = client.subscribe(`/topic/room/${roomId}/chat`, (msg: IMessage) => {
-        const response = parseMessage<ChatResponseType>(msg);
+      const chatSub = client.subscribe(`/topic/room/${roomId}/chat`, (message: IMessage) => {
+        const response = parseMessage<ChatResponseType>(message);
         onChat(response);
       });
       addRoomSubscriptions('chat', chatSub);
 
-      const emojuSub = client.subscribe(`/topic/room/${roomId}/emoji`, (msg: IMessage) => {
-        const response = parseMessage<EmojiResponseType>(msg);
+      const emojuSub = client.subscribe(`/topic/room/${roomId}/emoji`, (message: IMessage) => {
+        const response = parseMessage<EmojiResponseType>(message);
         onEmoji(response);
       });
       addRoomSubscriptions('emoji', emojuSub);
 
-      const handUpSub = client.subscribe(`/topic/room/${roomId}/handup`, (msg: IMessage) => {
-        const { userId, value } = parseMessage<HandUpResponseType>(msg);
+      const handUpSub = client.subscribe(`/topic/room/${roomId}/handup`, (message: IMessage) => {
+        const { userId, value } = parseMessage<HandUpResponseType>(message);
         const { updateParticipantsHandUp } = useWebRTCStore.getState();
         updateParticipantsHandUp(userId, value);
       });
       addRoomSubscriptions('handUp', handUpSub);
 
-      const deviceSub = client.subscribe(`/topic/room/${roomId}/device`, (msg: IMessage) => {
-        const { userId, mediaOption } = parseMessage<DeviceResponseType>(msg);
+      const deviceSub = client.subscribe(`/topic/room/${roomId}/device`, (message: IMessage) => {
+        const { mediaOption, userId } = parseMessage<DeviceResponseType>(message);
         const { updateParticipantsMediaOptions } = useWebRTCStore.getState();
         updateParticipantsMediaOptions(userId, mediaOption);
       });
@@ -114,16 +115,16 @@ const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseS
       }
 
       const payload: SdpPayloadType = {
-        toUserId: targetId,
         fromUserSDP: JSON.stringify(sdp),
-        streamType,
         mediaOption: streamType === 'USER' ? useDeviceStore.getState().deviceEnable : null,
+        streamType,
+        toUserId: targetId,
       };
 
       client.publish({
+        body: JSON.stringify(payload),
         destination,
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(payload),
       });
     },
     [],
@@ -136,15 +137,15 @@ const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseS
     }
 
     const payload: IcePayloadType = {
-      toUserId: targetId,
       fromCandidate: JSON.stringify(candidate),
       streamType,
+      toUserId: targetId,
     };
 
     client.publish({
+      body: JSON.stringify(payload),
       destination: '/app/signal/ice',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
     });
   }, []);
 
@@ -177,13 +178,12 @@ const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseS
     ) => {
       const connectedClient = new Client({
         brokerURL: undefined,
-        webSocketFactory: () => new SockJS(`http://localhost:8080/ws?userId=${useUserInfoStore.getState().id}`),
-        debug: (msg) => console.log(msg),
+        debug: (message) => console.log(message),
         onConnect: async () => {
           useClientStore.getState().setIsClientReady(true);
-          const joinSub = connectedClient.subscribe('/user/queue/signal/join', async (msg: IMessage) => {
-            const { updateParticipantsUserData, updateParticipantsHandUp } = useWebRTCStore.getState();
-            const { participants, screenId } = parseMessage<JoinResponseType>(msg);
+          const joinSub = connectedClient.subscribe('/user/queue/signal/join', async (message: IMessage) => {
+            const { updateParticipantsHandUp, updateParticipantsUserData } = useWebRTCStore.getState();
+            const { participants, screenId } = parseMessage<JoinResponseType>(message);
             participants.forEach(async (participant) => {
               const { isHandUp, ...userData } = participant;
               updateParticipantsUserData(participant.userId, userData);
@@ -203,10 +203,10 @@ const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseS
           });
           addSubscriptions('join', joinSub);
 
-          const offerSub = connectedClient.subscribe('/user/queue/signal/offer', async (msg: IMessage) => {
-            const { updateParticipantsUserData, updateParticipantsHandUp } = useWebRTCStore.getState();
-            const { fromUserId, fromUserSDP, streamType, mediaOption, isScreenSender, user } =
-              parseMessage<OfferResponseType>(msg);
+          const offerSub = connectedClient.subscribe('/user/queue/signal/offer', async (message: IMessage) => {
+            const { updateParticipantsHandUp, updateParticipantsUserData } = useWebRTCStore.getState();
+            const { fromUserId, fromUserSDP, isScreenSender, mediaOption, streamType, user } =
+              parseMessage<OfferResponseType>(message);
             const { isHandUp, ...userData } = user;
             const fromSDP = JSON.parse(fromUserSDP) as RTCSessionDescriptionInit;
 
@@ -222,22 +222,22 @@ const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseS
           });
           addSubscriptions('offer', offerSub);
 
-          const answerSub = connectedClient.subscribe('/user/queue/signal/answer', async (msg: IMessage) => {
-            const { fromUserId, fromUserSDP, streamType } = parseMessage<AnswerResponseType>(msg);
+          const answerSub = connectedClient.subscribe('/user/queue/signal/answer', async (message: IMessage) => {
+            const { fromUserId, fromUserSDP, streamType } = parseMessage<AnswerResponseType>(message);
             const sdp = JSON.parse(fromUserSDP) as RTCSessionDescriptionInit;
             await registerAnswerSdp(fromUserId, sdp, streamType);
           });
           addSubscriptions('answer', answerSub);
 
-          const iceSub = connectedClient.subscribe('/user/queue/signal/ice', async (msg: IMessage) => {
-            const { fromUserId, fromUserIce, streamType } = parseMessage<IceResponseType>(msg);
+          const iceSub = connectedClient.subscribe('/user/queue/signal/ice', async (message: IMessage) => {
+            const { fromUserIce, fromUserId, streamType } = parseMessage<IceResponseType>(message);
             const candidate = JSON.parse(fromUserIce) as RTCLocalIceCandidateInit;
             await registerRemoteIce(fromUserId, candidate, streamType);
           });
           addSubscriptions('ice', iceSub);
 
-          const screenSub = connectedClient.subscribe('/user/queue/signal/screen', async (msg: IMessage) => {
-            const { participants } = parseMessage<ScreenResponseType>(msg);
+          const screenSub = connectedClient.subscribe('/user/queue/signal/screen', async (message: IMessage) => {
+            const { participants } = parseMessage<ScreenResponseType>(message);
             participants.forEach(async (participant) => {
               await createPeerConnection(participant, offerIceCandidate, 'SCREEN', true);
               const sdp = await createOfferSdp(participant, 'SCREEN');
@@ -247,8 +247,8 @@ const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseS
           });
           addSubscriptions('screen', screenSub);
 
-          const errorSub = connectedClient.subscribe('/user/queue/signal/error', async (msg: IMessage) => {
-            const response = parseMessage<ErrorResponseType>(msg);
+          const errorSub = connectedClient.subscribe('/user/queue/signal/error', async (message: IMessage) => {
+            const response = parseMessage<ErrorResponseType>(message);
             onError(response);
           });
           addSubscriptions('error', errorSub);
@@ -260,6 +260,7 @@ const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseS
             sendJoin(currentRoomId.current);
           }
         },
+        webSocketFactory: () => new SockJS(`http://localhost:8080/ws?userId=${useUserInfoStore.getState().id}`),
       });
       connectedClient.activate();
     },
@@ -278,9 +279,9 @@ const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseS
     };
 
     client.publish({
+      body: JSON.stringify(payload),
       destination: '/app/signal/screen',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
     });
   }, []);
 
@@ -293,14 +294,14 @@ const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseS
     }
 
     const payload = {
-      roomId: currentRoomId.current,
       ownerId: userId,
+      roomId: currentRoomId.current,
     };
 
     client.publish({
+      body: JSON.stringify(payload),
       destination: '/app/signal/leave',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
     });
   }, []);
 
@@ -312,14 +313,14 @@ const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseS
     }
 
     const payload = {
-      roomId: currentRoomId.current,
       message,
+      roomId: currentRoomId.current,
     };
 
     client.publish({
+      body: JSON.stringify(payload),
       destination: '/app/chat/send',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
     });
   }, []);
 
@@ -331,14 +332,14 @@ const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseS
     }
 
     const payload = {
-      roomId: currentRoomId.current,
       emoji: emoji.toUpperCase(),
+      roomId: currentRoomId.current,
     };
 
     client.publish({
+      body: JSON.stringify(payload),
       destination: '/app/emoji',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
     });
   }, []);
 
@@ -355,9 +356,9 @@ const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseS
     };
 
     client.publish({
+      body: JSON.stringify(payload),
       destination: '/app/handUp',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
     });
   }, []);
 
@@ -368,19 +369,19 @@ const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseS
       return;
     }
     const payload = {
-      roomId: currentRoomId.current,
       mediaOption,
+      roomId: currentRoomId.current,
     };
 
     client.publish({
+      body: JSON.stringify(payload),
       destination: '/app/device',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
     });
   }, []);
 
   const sendLeave = useCallback((streamType: StreamType) => {
-    const { client, clearRoomSubscriptions } = useClientStore.getState();
+    const { clearRoomSubscriptions, client } = useClientStore.getState();
     if (!client || !useUserInfoStore.getState().id || !currentRoomId.current) {
       return;
     }
@@ -391,9 +392,9 @@ const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseS
     };
 
     client.publish({
+      body: JSON.stringify(payload),
       destination: '/app/signal/leave',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
     });
 
     if (streamType === 'USER') {
@@ -403,7 +404,7 @@ const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseS
   }, []);
 
   const disconnectSocket = useCallback(() => {
-    const { client, clearSubscriptions, setClient, setIsClientReady } = useClientStore.getState();
+    const { clearSubscriptions, client, setClient, setIsClientReady } = useClientStore.getState();
     if (!client) {
       return;
     }
@@ -432,15 +433,15 @@ const useSignalSocket = ({ onDeleteParticipant, onChat, onEmoji, onError }: UseS
 
   return {
     connectSocket,
-    sendJoin,
-    sendLeave,
+    disconnectSocket,
     sendChat,
+    sendDevice,
     sendEmoji,
     sendHandUp,
-    sendDevice,
+    sendJoin,
+    sendLeave,
     shareScreen,
     stopScreenShare,
-    disconnectSocket,
   };
 };
 

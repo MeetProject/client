@@ -1,48 +1,50 @@
 'use client';
 
 import { useShallow } from 'zustand/react/shallow';
+
 import { useDeviceStore } from '@/store/DeviceStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
-import { EmojiResponseType } from '@/type/reactionType';
 import { useWebRTCStore } from '@/store/WebRTCStore';
+import { EmojiResponseType } from '@/type/reactionType';
+
 import { VideoStream, OtherAudioStream } from './part/Stream';
 
-interface StreamScreenListProps {
+interface StreamScreenListProperties {
   emojiList: EmojiResponseType[];
 }
 
-export default function StreamScreenList({ emojiList }: StreamScreenListProps) {
-  const { id, name, color } = useUserInfoStore(
+export default function StreamScreenList({ emojiList }: StreamScreenListProperties) {
+  const { color, id, name } = useUserInfoStore(
     useShallow((state) => ({
+      color: state.color,
       id: state.id,
       name: state.name,
-      color: state.color,
     })),
   );
 
-  const { stream, screenStream, deviceEnable, audioInput, videoInput } = useDeviceStore(
+  const { audioInput, deviceEnable, screenStream, stream, videoInput } = useDeviceStore(
     useShallow((state) => ({
-      stream: state.stream,
-      screenStream: state.screenStream,
-      deviceEnable: state.deviceEnable,
       audioInput: state.audioInput,
+      deviceEnable: state.deviceEnable,
+      screenStream: state.screenStream,
+      stream: state.stream,
       videoInput: state.videoInput,
     })),
   );
 
   const {
-    screenSharingMediaStream,
+    participantsMediaOptions,
     participantsMediaStream,
     participantsUserData,
     screenOwnerId,
-    participantsMediaOptions,
+    screenSharingMediaStream,
   } = useWebRTCStore(
     useShallow((state) => ({
-      screenSharingMediaStream: state.screenSharingMediaStream,
+      participantsMediaOptions: state.participantsMediaOptions,
       participantsMediaStream: state.participantsMediaStream,
       participantsUserData: state.participantsUserData,
       screenOwnerId: state.screenOwnerId,
-      participantsMediaOptions: state.participantsMediaOptions,
+      screenSharingMediaStream: state.screenSharingMediaStream,
     })),
   );
 
@@ -54,10 +56,10 @@ export default function StreamScreenList({ emojiList }: StreamScreenListProps) {
   const otherSubscriber = isOverflow ? Array.from(participantsMediaStream).slice(3) : [];
 
   const screenOwnerInfo = {
+    audio: screenOwnerId ? true : Boolean(deviceEnable.audio && audioInput?.id),
+    color: participantsUserData.get(screenOwnerId)?.profileColor ?? color,
     id: screenOwnerId,
     name: participantsUserData.get(screenOwnerId)?.userName ?? name,
-    color: participantsUserData.get(screenOwnerId)?.profileColor ?? color,
-    audio: screenOwnerId ? true : Boolean(deviceEnable.audio && audioInput?.id),
     video: screenOwnerId ? true : Boolean(deviceEnable.video && videoInput?.id),
   };
 
@@ -69,10 +71,10 @@ export default function StreamScreenList({ emojiList }: StreamScreenListProps) {
       <div className='grid h-full grid-rows-4 gap-4' style={{ width: 'min(25%, 208px)' }}>
         <VideoStream
           user={{
+            audio: Boolean(deviceEnable.audio && audioInput?.id),
+            color,
             id,
             name,
-            color,
-            audio: Boolean(deviceEnable.audio && audioInput?.id),
             video: Boolean(deviceEnable.video && videoInput?.id),
           }}
           muted
@@ -83,10 +85,10 @@ export default function StreamScreenList({ emojiList }: StreamScreenListProps) {
           <VideoStream
             key={userId}
             user={{
+              audio: participantsMediaOptions.get(userId)?.audio ?? true,
+              color: participantsUserData.get(userId)?.profileColor,
               id: userId,
               name: participantsUserData.get(userId)?.userName,
-              color: participantsUserData.get(userId)?.profileColor,
-              audio: participantsMediaOptions.get(userId)?.audio ?? true,
               video: participantsMediaOptions.get(userId)?.video ?? true,
             }}
             emojiList={emojiList}

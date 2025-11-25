@@ -1,4 +1,5 @@
 import { createContext, PropsWithChildren, useCallback, useMemo, useState } from 'react';
+
 import { PanelType } from '@/type/panelType';
 
 interface PanelContextType {
@@ -9,10 +10,10 @@ interface PanelContextType {
 }
 
 export const PanelContext = createContext<PanelContextType>({
-  panelType: null,
-  isOpen: false,
-  handlePanelType: () => {},
   handleOpenStatus: () => {},
+  handlePanelType: () => {},
+  isOpen: false,
+  panelType: null,
 });
 
 export function PanelContextProvider({ children }: PropsWithChildren) {
@@ -29,10 +30,10 @@ export function PanelContextProvider({ children }: PropsWithChildren) {
 
   const value = useMemo(
     () => ({
-      panelType,
-      isOpen,
-      handlePanelType,
       handleOpenStatus,
+      handlePanelType,
+      isOpen,
+      panelType,
     }),
     [panelType, isOpen, handlePanelType, handleOpenStatus],
   );

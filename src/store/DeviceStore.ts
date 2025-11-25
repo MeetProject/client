@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+
 import { DeviceType, StreamStatusType } from '@/type/streamType';
 
 type PermissionType = Record<'audio' | 'video', boolean>;
@@ -34,33 +35,17 @@ interface DeviceStoreType {
 }
 
 export const useDeviceStore = create<DeviceStoreType>((set) => ({
-  stream: null,
-  streamStatus: null,
-  screenStream: null,
-  permission: null,
   audioInput: { id: '', name: '' },
-  audioOutput: { id: '', name: '' },
-  videoInput: { id: '', name: '' },
-  deviceEnable: { video: true, audio: true },
   audioInputList: [],
   audioOuputList: [],
-  videoInputList: [],
-  setStream: (value: MediaStream | null) => set(() => ({ stream: value })),
-  setStreamStatus: (value: StreamStatusType) => set(() => ({ streamStatus: value })),
-  setScreenStream: (value: MediaStream | null) => set(() => ({ screenStream: value })),
-  setPermission: (callback: Record<'audio' | 'video', boolean> | null | PermissionCallback) =>
-    set((state) => {
-      if (typeof callback === 'function') {
-        return { permission: callback(state.permission ?? { audio: false, video: false }) };
-      }
-      return { permission: callback };
-    }),
+  audioOutput: { id: '', name: '' },
+  deviceEnable: { audio: true, video: true },
+  permission: null,
+  screenStream: null,
   setAudioInput: (value: Record<'id' | 'name', string>) => set(() => ({ audioInput: value })),
-  setAudioOutput: (value: Record<'id' | 'name', string>) => set(() => ({ audioOutput: value })),
-  setVideoInput: (value: Record<'id' | 'name', string>) => set(() => ({ videoInput: value })),
   setAudioInputList: (value: MediaDeviceInfo[]) => set(() => ({ audioInputList: value })),
+  setAudioOutput: (value: Record<'id' | 'name', string>) => set(() => ({ audioOutput: value })),
   setAudioOutputList: (value: MediaDeviceInfo[]) => set(() => ({ audioOuputList: value })),
-  setVideoInputList: (value: MediaDeviceInfo[]) => set(() => ({ videoInputList: value })),
   setDeviceEnable: (callback: DeviceEnable | DeviceCallback) =>
     set((state) => {
       if (typeof callback === 'function') {
@@ -68,4 +53,20 @@ export const useDeviceStore = create<DeviceStoreType>((set) => ({
       }
       return { deviceEnable: callback };
     }),
+  setPermission: (callback: Record<'audio' | 'video', boolean> | null | PermissionCallback) =>
+    set((state) => {
+      if (typeof callback === 'function') {
+        return { permission: callback(state.permission ?? { audio: false, video: false }) };
+      }
+      return { permission: callback };
+    }),
+  setScreenStream: (value: MediaStream | null) => set(() => ({ screenStream: value })),
+  setStream: (value: MediaStream | null) => set(() => ({ stream: value })),
+  setStreamStatus: (value: StreamStatusType) => set(() => ({ streamStatus: value })),
+  setVideoInput: (value: Record<'id' | 'name', string>) => set(() => ({ videoInput: value })),
+  setVideoInputList: (value: MediaDeviceInfo[]) => set(() => ({ videoInputList: value })),
+  stream: null,
+  streamStatus: null,
+  videoInput: { id: '', name: '' },
+  videoInputList: [],
 }));

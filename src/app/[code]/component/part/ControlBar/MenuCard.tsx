@@ -1,12 +1,12 @@
 import { ReactNode } from 'react';
 
-interface MenuCardProps {
+interface MenuCardProperties {
   icon: ReactNode;
   name: string;
   onClick?: () => void;
 }
 
-export default function MenuCard({ icon, name, onClick }: MenuCardProps) {
+export default function MenuCard({ icon, name, onClick }: MenuCardProperties) {
   return (
     <button
       type='button'

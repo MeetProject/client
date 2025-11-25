@@ -1,21 +1,22 @@
 'use client';
 
-import { useEffect, useRef, useContext, useState, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useRef, useContext, useState, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
+import { Loading } from '@/component';
+import { ToggleContext } from '@/context/ToggleContext';
+import { useDevice2 } from '@/hook';
+import useWebRTC from '@/hook/useWebRTC/useWebRTC';
+import { timeDifferenceInMinutes } from '@/lib/getTimeDiff';
+import { useClientStore } from '@/store/ClientStore';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
-import { ToggleContext } from '@/context/ToggleContext';
-import { Loading } from '@/component';
-import useWebRTC from '@/hook/useWebRTC/useWebRTC';
-import { useClientStore } from '@/store/ClientStore';
-import { timeDifferenceInMinutes } from '@/lib/getTimeDiff';
-import { ChatResponseType, ChatType, EmojiResponseType } from '@/type/reactionType';
-import { UserListType } from '@/type/participantType';
-import { useDevice2 } from '@/hook';
 import { useWebRTCStore } from '@/store/WebRTCStore';
+import { UserListType } from '@/type/participantType';
+import { ChatResponseType, ChatType, EmojiResponseType } from '@/type/reactionType';
 import { ErrorResponseType } from '@/type/signalType';
+
 import {
   ControlBar,
   EmojiAnimation,
@@ -32,24 +33,24 @@ export default function Meetting() {
   const router = useRouter();
   const isRender = useRef<boolean>(false);
   const [isPending, setIsPending] = useState(true);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const barRef = useRef<HTMLDivElement>(null);
+  const wrapperReference = useRef<HTMLDivElement>(null);
+  const barReference = useRef<HTMLDivElement>(null);
 
   const [emojiList, setEmojiList] = useState<EmojiResponseType[]>([]);
   const [chatList, setChatList] = useState<ChatType[]>([]);
 
-  const { id, name, color } = useUserInfoStore(
+  const { color, id, name } = useUserInfoStore(
     useShallow((state) => ({
+      color: state.color,
       id: state.id,
       name: state.name,
-      color: state.color,
     })),
   );
 
-  const { participantsUserData, participantsMediaStream, screenSharingMediaStream } = useWebRTCStore(
+  const { participantsMediaStream, participantsUserData, screenSharingMediaStream } = useWebRTCStore(
     useShallow((state) => ({
-      participantsUserData: state.participantsUserData,
       participantsMediaStream: state.participantsMediaStream,
+      participantsUserData: state.participantsUserData,
       screenSharingMediaStream: state.screenSharingMediaStream,
     })),
   );
@@ -58,20 +59,20 @@ export default function Meetting() {
 
   const handleChat = useCallback((data: ChatResponseType) => {
     const { participantsUserData: userData } = useWebRTCStore.getState();
-    setChatList((prev) => {
-      if (prev.length === 0) {
-        return [{ ...data, userName: userData.get(data.userId)?.userName, header: true }];
+    setChatList((previous) => {
+      if (previous.length === 0) {
+        return [{ ...data, header: true, userName: userData.get(data.userId)?.userName }];
       }
-      const lastChat = prev[prev.length - 1];
+      const lastChat = previous[previous.length - 1];
       if (timeDifferenceInMinutes(lastChat.timestamp, data.timestamp) > 2 || data.userId !== lastChat.userId) {
-        return [...prev, { ...data, userName: userData.get(data.userId)?.userName, header: true }];
+        return [...previous, { ...data, header: true, userName: userData.get(data.userId)?.userName }];
       }
-      return [...prev, { ...data, userName: userData.get(data.userId)?.userName, header: false }];
+      return [...previous, { ...data, header: false, userName: userData.get(data.userId)?.userName }];
     });
   }, []);
 
   const handleEmoji = useCallback((data: EmojiResponseType) => {
-    setEmojiList((prev) => [...prev, data]);
+    setEmojiList((previous) => [...previous, data]);
   }, []);
 
   const handleError = useCallback(
@@ -84,42 +85,42 @@ export default function Meetting() {
   );
 
   const {
-    joinSession,
     joinRoom,
+    joinSession,
     leaveRoom,
-    shareScreen,
-    stopShareScreen,
     sendChat,
+    sendDevice,
     sendEmoji,
     sendHandUp,
-    sendDevice,
+    shareScreen,
+    stopShareScreen,
   } = useWebRTC({
     onChat: handleChat,
     onEmoji: handleEmoji,
     onError: handleError,
   });
 
-  const { stream, deviceEnable, screenStream } = useDeviceStore(
+  const { deviceEnable, screenStream, stream } = useDeviceStore(
     useShallow((state) => ({
-      stream: state.stream,
-      screenStream: state.screenStream,
       deviceEnable: state.deviceEnable,
       permission: state.permission,
+      screenStream: state.screenStream,
+      stream: state.stream,
     })),
   );
 
   const { handleToggleStatus } = useContext(ToggleContext);
 
   const deleteEmoji = useCallback((emojiId: string) => {
-    setEmojiList((prev) => prev.filter((emoji) => emoji.id !== emojiId));
+    setEmojiList((previous) => previous.filter((emoji) => emoji.id !== emojiId));
   }, []);
 
-  const userList: UserListType[] = Array.from(participantsMediaStream).map(([i, s]) => ({
-    id: i,
-    name: participantsUserData.get(i)?.userName,
-    color: participantsUserData.get(i)?.profileColor,
+  const userList: UserListType[] = Array.from(participantsMediaStream).map(([index, s]) => ({
+    color: participantsUserData.get(index)?.profileColor,
+    id: index,
     isMicOn: true,
     isVideoOn: true,
+    name: participantsUserData.get(index)?.userName,
     stream: s,
   }));
 
@@ -152,10 +153,10 @@ export default function Meetting() {
       return;
     }
     const mediaElements = document.querySelectorAll('audio, video');
-    mediaElements.forEach((el) => {
-      const mediaEl = el as HTMLMediaElement;
-      if (mediaEl.setSinkId) {
-        mediaEl.setSinkId(useDeviceStore.getState().audioOutput?.id);
+    mediaElements.forEach((element) => {
+      const mediaElement = element as HTMLMediaElement;
+      if (mediaElement.setSinkId) {
+        mediaElement.setSinkId(useDeviceStore.getState().audioOutput?.id);
       }
     });
   }, [isPending]);
@@ -166,9 +167,9 @@ export default function Meetting() {
         <>
           <div
             className='relative flex flex-1 p-4'
-            style={{ height: `calc(100vh - ${barRef.current?.clientHeight}px)` }}
+            style={{ height: `calc(100vh - ${barReference.current?.clientHeight}px)` }}
           >
-            <div ref={wrapperRef} className='relative flex-1 overflow-hidden'>
+            <div ref={wrapperReference} className='relative flex-1 overflow-hidden'>
               {screenSharingMediaStream || screenStream ? (
                 <StreamScreenList emojiList={emojiList} />
               ) : (
@@ -178,7 +179,7 @@ export default function Meetting() {
                 <EmojiAnimation
                   key={emoji.id}
                   emoji={emoji}
-                  maxWidth={wrapperRef.current?.clientWidth ?? 0}
+                  maxWidth={wrapperReference.current?.clientWidth ?? 0}
                   deleteEmoji={deleteEmoji}
                 />
               ))}
@@ -186,11 +187,11 @@ export default function Meetting() {
             <Panel
               userList={[
                 {
-                  id,
-                  name,
                   color,
+                  id,
                   isMicOn: deviceEnable.audio,
                   isVideoOn: deviceEnable.video,
+                  name,
                   stream,
                 },
                 ...userList,
@@ -199,7 +200,7 @@ export default function Meetting() {
               onSendMessage={sendChat}
             />
           </div>
-          <div ref={barRef} className='relative w-full shrink-0 bg-[#202124] font-googleSans text-base text-white'>
+          <div ref={barReference} className='relative w-full shrink-0 bg-[#202124] font-googleSans text-base text-white'>
             <Toggle onClickEmojiButton={sendEmoji} />
             <div className='relative flex shrink-0 justify-between bg-[#212121] p-4'>
               <MeetInfoBar />

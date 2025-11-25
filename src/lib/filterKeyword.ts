@@ -35,8 +35,8 @@ export const charMatcher = (search = '') => {
   }
 
   const regex = FIRST_CONSTANT.reduce(
-    (acc, first, index) =>
-      acc.replace(new RegExp(first, 'g'), `[${charCode(index, 0, 0)}-${charCode(index + 1, 0, -1)}]`),
+    (accumulator, first, index) =>
+      accumulator.replace(new RegExp(first, 'g'), `[${charCode(index, 0, 0)}-${charCode(index + 1, 0, -1)}]`),
     search,
   );
 

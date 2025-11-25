@@ -1,14 +1,15 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+
 import * as Icon from '@/asset/icon';
 import { ButtonTag } from '@/component';
 
-interface CallEndButtonProps {
+interface CallEndButtonProperties {
   onClick: () => void;
 }
 
-export default function CallEndButton({ onClick }: CallEndButtonProps) {
+export default function CallEndButton({ onClick }: CallEndButtonProperties) {
   const router = useRouter();
   const handleButtonClick = () => {
     onClick();

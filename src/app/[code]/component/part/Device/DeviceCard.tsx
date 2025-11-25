@@ -2,14 +2,14 @@
 
 import * as Icon from '@/asset/icon';
 
-interface DeviceCardProps {
+interface DeviceCardProperties {
   device: MediaDeviceInfo;
   onClick: (device: MediaDeviceInfo) => void;
   isChoosed: boolean;
   color: 'black' | 'white';
 }
 
-export default function DeviceCard({ device, isChoosed, onClick, color }: DeviceCardProps) {
+export default function DeviceCard({ color, device, isChoosed, onClick }: DeviceCardProperties) {
   const handleButtonClick = () => {
     onClick(device);
   };

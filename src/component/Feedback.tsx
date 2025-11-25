@@ -2,9 +2,10 @@
 
 import { PropsWithChildren, useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+
 import { BaseContent, Header, Report, Suggest } from './part/Feedback';
 
-interface FeedBackProps {
+interface FeedBackProperties {
   isOpen: boolean;
   onClose: () => void;
 }
@@ -23,7 +24,7 @@ function FeedBackPortal({ children }: PropsWithChildren) {
   return ReactDOM.createPortal(children, portalElement) as JSX.Element;
 }
 
-export default function Feedback({ isOpen, onClose }: FeedBackProps) {
+export default function Feedback({ isOpen, onClose }: FeedBackProperties) {
   const [category, setCategory] = useState<null | 'report' | 'suggest'>(null);
   const [isCompletedForm, setIsCompletedForm] = useState(false);
   const [isVisible, setIsVisible] = useState(true);

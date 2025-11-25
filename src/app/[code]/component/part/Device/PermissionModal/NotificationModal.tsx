@@ -1,11 +1,12 @@
-import { useDevice2 } from '@/hook';
 import { useState } from 'react';
 
-interface NotificationModalProps {
+import { useDevice2 } from '@/hook';
+
+interface NotificationModalProperties {
   onClose: () => void;
 }
 
-export default function NotificationModal({ onClose }: NotificationModalProps) {
+export default function NotificationModal({ onClose }: NotificationModalProperties) {
   const [isPending, setIsPending] = useState(false);
   const { updateStream } = useDevice2();
   const handleRetryButtonClick = async () => {

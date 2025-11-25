@@ -1,16 +1,16 @@
 'use client';
 
-import { useUserInfoStore } from '@/store/UserInfoStore';
-import { memo, useEffect } from 'react';
 import Image, { StaticImageData } from 'next/image';
+import { memo, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import * as webp from '@/asset/webp';
-import { EmojiType } from '@/type/toggleType';
-import { EmojiResponseType } from '@/type/reactionType';
+import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useWebRTCStore } from '@/store/WebRTCStore';
+import { EmojiResponseType } from '@/type/reactionType';
+import { EmojiType } from '@/type/toggleType';
 
-interface EmojiAnimationProps {
+interface EmojiAnimationProperties {
   emoji: EmojiResponseType;
   maxWidth: number;
   deleteEmoji: (emojiId: string) => void;
@@ -28,7 +28,7 @@ const EMOJI_IMAGE: Record<EmojiType, StaticImageData> = {
   THUMBUP: webp.thumbUpEmoji,
 };
 
-function EmojiIcon({ emoji, maxWidth, deleteEmoji }: EmojiAnimationProps) {
+function EmojiIcon({ deleteEmoji, emoji, maxWidth }: EmojiAnimationProperties) {
   const { id } = useUserInfoStore(
     useShallow((state) => ({
       id: state.id,

@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
+
 import { connectDB } from '@/lib/connectDB';
 
 /* 해당 세션 있는 지 여부 확인 */
-export async function POST(req: Request) {
-  const { searchParams } = new URL(req.url);
+export async function POST(request: Request) {
+  const { searchParams } = new URL(request.url);
   const sessionId = searchParams.get('sessionId');
 
   if (!sessionId) {
@@ -11,8 +12,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    const db = (await connectDB).db('session');
-    const result = await db.collection('session').findOne({ sessionId });
+    const database = (await connectDB).db('session');
+    const result = await database.collection('session').findOne({ sessionId });
     if (result) {
       return NextResponse.json({ data: true });
     }

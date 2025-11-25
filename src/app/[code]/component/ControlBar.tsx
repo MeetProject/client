@@ -1,17 +1,19 @@
 'use client';
 
 import { ReactNode, useCallback, useState } from 'react';
+
 import * as Icon from '@/asset/icon';
-import { ToggleType } from '@/type/toggleType';
-import { useDeviceStore } from '@/store/DeviceStore';
 import { Alert } from '@/component';
-import { checkBrowser } from '@/lib/checkBrowser';
-import { DeviceEnableType } from '@/type/streamType';
 import { useDevice2 } from '@/hook';
+import { checkBrowser } from '@/lib/checkBrowser';
+import { useDeviceStore } from '@/store/DeviceStore';
+import { DeviceEnableType } from '@/type/streamType';
+import { ToggleType } from '@/type/toggleType';
+
 import { ControlButton, MenuButton, OptionButton, CallEndButton } from './part/ControlBar';
 import { PermissionModal } from './part/Device';
 
-interface ControlBarProps {
+interface ControlBarProperties {
   handleScreenShare: () => void;
   handleStopScreenShare: () => void;
   handleLeavSession: () => void;
@@ -30,16 +32,16 @@ interface ControlButtonType {
   hidden?: boolean;
 }
 
-const CONTROL_BUTTON_OFF_PROPS = { width: 24, height: 24, fill: '#06306D' };
-const CONTROL_BUTTON_ON_PROPS = { width: 24, height: 24, fill: '#E3E3E3' };
+const CONTROL_BUTTON_OFF_PROPS = { fill: '#06306D', height: 24, width: 24 };
+const CONTROL_BUTTON_ON_PROPS = { fill: '#E3E3E3', height: 24, width: 24 };
 
 export default function ControlBar({
-  handleScreenShare,
-  handleStopScreenShare,
-  handleLeavSession,
   handleDeviceEnable,
   handleHandUp,
-}: ControlBarProps) {
+  handleLeavSession,
+  handleScreenShare,
+  handleStopScreenShare,
+}: ControlBarProperties) {
   const [isOpenAlert, setIsOpenAlert] = useState(false);
   const handleScreenShareButtonClick = (value: boolean | 'disable') => {
     if (value === 'disable') {
@@ -70,27 +72,27 @@ export default function ControlBar({
       clickedIcon: <Icon.Cc {...CONTROL_BUTTON_ON_PROPS} />,
     }, */
     {
+      clickedIcon: <Icon.EmojiOn {...CONTROL_BUTTON_ON_PROPS} />,
+      icon: <Icon.EmojiOff {...CONTROL_BUTTON_OFF_PROPS} />,
       name: '반응 보내기',
       type: 'emoji',
-      icon: <Icon.EmojiOff {...CONTROL_BUTTON_OFF_PROPS} />,
-      clickedIcon: <Icon.EmojiOn {...CONTROL_BUTTON_ON_PROPS} />,
     },
     {
-      name: '발표 시작',
-      type: 'screen',
-      icon: <Icon.ScreenShare {...CONTROL_BUTTON_OFF_PROPS} />,
       clickedIcon: <Icon.ScreenShare {...CONTROL_BUTTON_ON_PROPS} />,
       disabledIcon: <Icon.ScreenShare {...{ ...CONTROL_BUTTON_OFF_PROPS, fill: '#AFB5C4' }} />,
-      onClick: handleScreenShareButtonClick,
       hidden: !isSupportScreenShareBrowser,
+      icon: <Icon.ScreenShare {...CONTROL_BUTTON_OFF_PROPS} />,
+      name: '발표 시작',
+      onClick: handleScreenShareButtonClick,
+      type: 'screen',
     },
     {
-      name: '손들기(ctrl + alt + h)',
-      type: 'handsUp',
-      icon: <Icon.HandOff {...CONTROL_BUTTON_OFF_PROPS} />,
       clickedIcon: <Icon.HandOn {...CONTROL_BUTTON_ON_PROPS} />,
+      icon: <Icon.HandOff {...CONTROL_BUTTON_OFF_PROPS} />,
+      name: '손들기(ctrl + alt + h)',
       onClick: handleHandsUpButtonClick,
       shortcutKey: ['Control', 'Alt', 'h'],
+      type: 'handsUp',
     },
   ];
   const [isOpenModal, setIsOpenModal] = useState(false);
@@ -107,7 +109,7 @@ export default function ControlBar({
 
   const handleButtonClick = useCallback(
     (type: 'audio' | 'video') => {
-      const { permission, deviceEnable } = useDeviceStore.getState();
+      const { deviceEnable, permission } = useDeviceStore.getState();
       if (permission && permission[type]) {
         handleDeviceEnable({ ...deviceEnable, [type]: !deviceEnable[type] });
         if (type === 'audio') {
@@ -129,7 +131,7 @@ export default function ControlBar({
         onClickButton={handleButtonClick}
         icon={<Icon.MicOn width={24} height={24} fill='#E3E3E3' />}
         clickedIcon={<Icon.MicOff width={24} height={24} fill='#5F1312' />}
-        name={{ chevron: '오디오 설정', iconOn: '마이크 끄기(ctrl + d)', iconOff: '마이크 켜기(ctrl + d)' }}
+        name={{ chevron: '오디오 설정', iconOff: '마이크 켜기(ctrl + d)', iconOn: '마이크 끄기(ctrl + d)' }}
         shortcutKey={['Control', 'd']}
       />
       <OptionButton
@@ -137,7 +139,7 @@ export default function ControlBar({
         onClickButton={handleButtonClick}
         icon={<Icon.VideoOn width={24} height={24} fill='#E3E3E3' />}
         clickedIcon={<Icon.VideoOff width={24} height={24} fill='#5F1312' />}
-        name={{ chevron: '영상 설정', iconOn: '비디오 끄기(ctrl + e)', iconOff: '비디오 켜기(ctrl + e)' }}
+        name={{ chevron: '영상 설정', iconOff: '비디오 켜기(ctrl + e)', iconOn: '비디오 끄기(ctrl + e)' }}
         shortcutKey={['Control', 'e']}
       />
       {CONTROL_BUTTON.map((button) => (

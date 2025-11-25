@@ -8,16 +8,16 @@ export const setTrackChage = async (
   if (type === 'audioOutput') {
     const mediaElements = document.querySelectorAll('audio, video');
 
-    mediaElements.forEach((el) => {
-      const mediaEl = el as HTMLMediaElement;
-      if (mediaEl.setSinkId) {
-        mediaEl.setSinkId(device.deviceId);
+    mediaElements.forEach((element) => {
+      const mediaElement = element as HTMLMediaElement;
+      if (mediaElement.setSinkId) {
+        mediaElement.setSinkId(device.deviceId);
       }
     });
     return;
   }
   if (stream) {
-    const { audioInput, videoInput, setStream } = useDeviceStore.getState();
+    const { audioInput, setStream, videoInput } = useDeviceStore.getState();
     const newStream = await navigator.mediaDevices.getUserMedia({
       audio:
         type === 'audioInput'

@@ -1,15 +1,16 @@
-import { useState } from 'react';
 import Image from 'next/image';
+import { useState } from 'react';
+
 import * as Icon from '@/asset/icon';
 import ButtonTag from '@/component/ButtonTag';
 
-interface CaptureButtonProps {
+interface CaptureButtonProperties {
   imgSrc: null | string;
   onImageChange: (value: null | string) => void;
   onVisible: (value: boolean) => void;
 }
 
-export default function CaptureButton({ imgSrc, onImageChange, onVisible }: CaptureButtonProps) {
+export default function CaptureButton({ imgSrc, onImageChange, onVisible }: CaptureButtonProperties) {
   const [isClicked, setIsClicked] = useState(false);
 
   const handleCaptureButtonClick = async () => {
@@ -17,10 +18,10 @@ export default function CaptureButton({ imgSrc, onImageChange, onVisible }: Capt
     onVisible(false);
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({
+        preferCurrentTab: true,
         video: {
           displaySurface: 'browser',
         },
-        preferCurrentTab: true,
       } as DisplayMediaStreamOptions);
 
       const video = document.createElement('video');

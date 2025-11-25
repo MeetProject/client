@@ -1,13 +1,13 @@
 'use client';
 
-import { MouseEvent } from 'react';
 import Image from 'next/image';
+import { MouseEvent } from 'react';
 
 import * as Icon from '@/asset/icon';
 import * as image from '@/asset/image';
 import { CategoryType } from '@/type/feedbackType';
 
-interface BaseContentProps {
+interface BaseContentProperties {
   onClick: (value: CategoryType) => void;
   onClose: () => void;
 }
@@ -19,11 +19,11 @@ interface ButtonType {
 }
 
 const BUTTON: ButtonType[] = [
-  { name: '문제 신고', icon: Icon.ReportProblem, value: 'report' },
-  { name: '아이디어 제안', icon: Icon.SuggestIdea, value: 'suggest' },
+  { icon: Icon.ReportProblem, name: '문제 신고', value: 'report' },
+  { icon: Icon.SuggestIdea, name: '아이디어 제안', value: 'suggest' },
 ];
 
-export default function BaseContent({ onClick, onClose }: BaseContentProps) {
+export default function BaseContent({ onClick, onClose }: BaseContentProperties) {
   const handleButtonClick = (e: MouseEvent<HTMLButtonElement>, value: null | 'report' | 'suggest') => {
     e.stopPropagation();
     onClick(value);

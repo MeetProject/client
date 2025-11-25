@@ -1,24 +1,26 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { useCheckPermission, useDevice2 } from '@/hook';
-import * as Icon from '@/asset/icon';
-import { useDeviceStore } from '@/store/DeviceStore';
-import { useShallow } from 'zustand/react/shallow';
 import { usePathname } from 'next/navigation';
-import Modal from './Modal';
-import RequestModal from './RequestModal';
-import InitialRequestModal from './InitialRequestModal';
-import { AudioSetting, VideoSetting } from './part/Setting';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 
-interface SettingProps {
+import * as Icon from '@/asset/icon';
+import { useCheckPermission, useDevice2 } from '@/hook';
+import { useDeviceStore } from '@/store/DeviceStore';
+
+import InitialRequestModal from './InitialRequestModal';
+import Modal from './Modal';
+import { AudioSetting, VideoSetting } from './part/Setting';
+import RequestModal from './RequestModal';
+
+interface SettingProperties {
   isOpen: boolean;
   onClose: () => void;
 }
 
-interface SettingModalProps {
+interface SettingModalProperties {
   onClose: () => void;
 }
 
-interface SettingContentProps {
+interface SettingContentProperties {
   category: Category;
 }
 
@@ -32,18 +34,18 @@ interface CategoryButtonType {
 
 const CATEGORY_BUTTON: CategoryButtonType[] = [
   {
+    icon: Icon.Speaker,
     name: '오디오',
     value: 'audio',
-    icon: Icon.Speaker,
   },
   {
+    icon: Icon.VideoOn,
     name: '비디오',
     value: 'video',
-    icon: Icon.VideoOn,
   },
 ];
 
-function SettingContent({ category }: SettingContentProps) {
+function SettingContent({ category }: SettingContentProperties) {
   if (category === 'audio') {
     return <AudioSetting />;
   }
@@ -51,7 +53,7 @@ function SettingContent({ category }: SettingContentProps) {
   return <VideoSetting />;
 }
 
-function SettingModal({ onClose }: SettingModalProps) {
+function SettingModal({ onClose }: SettingModalProperties) {
   const [category, setCategory] = useState<Category>('audio');
   const handleCategoryButtonClick = (value: Category) => {
     setCategory(value);
@@ -63,10 +65,10 @@ function SettingModal({ onClose }: SettingModalProps) {
 
   useEffect(() => {
     const mediaElements = document.querySelectorAll('audio, video');
-    mediaElements.forEach((el) => {
-      const mediaEl = el as HTMLMediaElement;
-      if (mediaEl.setSinkId) {
-        mediaEl.setSinkId(useDeviceStore.getState().audioOutput?.id);
+    mediaElements.forEach((element) => {
+      const mediaElement = element as HTMLMediaElement;
+      if (mediaElement.setSinkId) {
+        mediaElement.setSinkId(useDeviceStore.getState().audioOutput?.id);
       }
     });
   }, []);
@@ -122,8 +124,8 @@ function SettingModal({ onClose }: SettingModalProps) {
   );
 }
 
-export default function Setting({ isOpen, onClose }: SettingProps) {
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+export default function Setting({ isOpen, onClose }: SettingProperties) {
+  const timerReference = useRef<NodeJS.Timeout | null>(null);
   const pathname = usePathname();
 
   const [isRequsetStream, setIsRequestStream] = useState(false);
@@ -136,19 +138,19 @@ export default function Setting({ isOpen, onClose }: SettingProps) {
     })),
   );
 
-  const { updateStream: handleUpdateStream, stopStream } = useDevice2();
+  const { stopStream, updateStream: handleUpdateStream } = useDevice2();
   const { checkPermissionQuery } = useCheckPermission();
 
   const updateStream = useCallback(async () => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
+    if (timerReference.current) {
+      clearTimeout(timerReference.current);
     }
     handleUpdateStream();
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
+    if (timerReference.current) {
+      clearTimeout(timerReference.current);
     }
-    timerRef.current = setTimeout(() => {
-      timerRef.current = null;
+    timerReference.current = setTimeout(() => {
+      timerReference.current = null;
     }, 2000);
   }, [handleUpdateStream]);
 
@@ -177,9 +179,9 @@ export default function Setting({ isOpen, onClose }: SettingProps) {
 
   useEffect(() => {
     if (stream || streamStatus === 'rejected' || streamStatus === 'failed') {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
+      if (timerReference.current) {
+        clearTimeout(timerReference.current);
+        timerReference.current = null;
       }
       setIsRenderSetting(true);
     }

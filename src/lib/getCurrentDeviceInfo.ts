@@ -1,15 +1,15 @@
 const getDevice = (deviceList: MediaDeviceInfo[], currentDevice: MediaStreamTrack | MediaDeviceInfo | undefined) => {
   if (deviceList.length === 0 || !currentDevice) {
-    return { name: '', id: '' };
+    return { id: '', name: '' };
   }
 
   const target = deviceList.find((device) => currentDevice.label.includes(device.label));
 
   if (!target) {
-    return { name: deviceList[0].label, id: deviceList[0].deviceId };
+    return { id: deviceList[0].deviceId, name: deviceList[0].label };
   }
 
-  return { name: target.label, id: target.deviceId };
+  return { id: target.deviceId, name: target.label };
 };
 
 export const getCurrentDeviceInfo = async (stream: MediaStream) => {
@@ -32,13 +32,13 @@ export const getCurrentDeviceInfo = async (stream: MediaStream) => {
   const currentAudioOutput = deviceInfo.filter((device) => device.kind === 'audiooutput')[0];
 
   return {
-    currentAudioInputList: audioInputList,
-    currentAudioOutputList: audioOutputList,
-    currentVideoInputList: videoInputList,
-    currentAudioInput: getDevice(audioInputList, currentAudioInput),
-    currentAudioOutput: getDevice(audioOutputList, currentAudioOutput),
-    currentVideoInput: getDevice(videoInputList, currentVideoInput),
     audioTrack: currentAudioInput,
+    currentAudioInput: getDevice(audioInputList, currentAudioInput),
+    currentAudioInputList: audioInputList,
+    currentAudioOutput: getDevice(audioOutputList, currentAudioOutput),
+    currentAudioOutputList: audioOutputList,
+    currentVideoInput: getDevice(videoInputList, currentVideoInput),
+    currentVideoInputList: videoInputList,
     videoTrack: currentVideoInput,
   };
 };

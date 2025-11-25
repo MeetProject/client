@@ -1,21 +1,22 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Modal, InitialRequestModal, RequestModal } from '@/component';
-
-import { useDeviceStore } from '@/store/DeviceStore';
 import { useShallow } from 'zustand/react/shallow';
+
+import { Modal, InitialRequestModal, RequestModal } from '@/component';
+import { useDeviceStore } from '@/store/DeviceStore';
 
 import { NotificationModal, RequestInfoModal } from './PermissionModal/index';
 
-interface PermissionModalProps {
+
+interface PermissionModalProperties {
   isOpenModal: boolean;
   onClose: () => void;
 }
 
-type ModalContentProps = Omit<PermissionModalProps, 'isOpenModal'>;
+type ModalContentProperties = Omit<PermissionModalProperties, 'isOpenModal'>;
 
-function ModalContent({ onClose }: ModalContentProps) {
+function ModalContent({ onClose }: ModalContentProperties) {
   const [isDenied, setIsDenied] = useState(false);
 
   const { permission: devicePermission, streamStatus } = useDeviceStore(
@@ -44,7 +45,7 @@ function ModalContent({ onClose }: ModalContentProps) {
   return <RequestInfoModal onClose={onClose} />;
 }
 
-export default function PermissionModal({ isOpenModal, onClose }: PermissionModalProps) {
+export default function PermissionModal({ isOpenModal, onClose }: PermissionModalProperties) {
   const [isTimeOut, setIsTimeOut] = useState(false);
 
   const { permission: devicePermission } = useDeviceStore(

@@ -1,46 +1,46 @@
 import { useEffect, useRef } from 'react';
 
-interface OtherAudioStreamProps {
+interface OtherAudioStreamProperties {
   otherStreams: [string, MediaStream][];
   color: string;
   name: string;
 }
 
-export default function OtherAudioStream({ otherStreams, color, name }: OtherAudioStreamProps) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const destinationRef = useRef<MediaStreamAudioDestinationNode | null>(null);
+export default function OtherAudioStream({ color, name, otherStreams }: OtherAudioStreamProperties) {
+  const audioReference = useRef<HTMLAudioElement>(null);
+  const audioContextReference = useRef<AudioContext | null>(null);
+  const destinationReference = useRef<MediaStreamAudioDestinationNode | null>(null);
 
   useEffect(() => {
-    if (!audioContextRef.current) {
+    if (!audioContextReference.current) {
       const audioContext = new AudioContext();
-      audioContextRef.current = audioContext;
+      audioContextReference.current = audioContext;
     }
 
-    if (!destinationRef.current) {
-      const destination = audioContextRef.current.createMediaStreamDestination();
-      destinationRef.current = destination;
+    if (!destinationReference.current) {
+      const destination = audioContextReference.current.createMediaStreamDestination();
+      destinationReference.current = destination;
     }
 
     const currentSources = new Set<MediaStreamAudioSourceNode>();
 
     otherStreams.forEach(([, stream]) => {
       const audioTrack = stream.getAudioTracks();
-      if (audioTrack.length > 0 && audioContextRef.current && destinationRef.current) {
-        const audioSource = audioContextRef.current.createMediaStreamSource(new MediaStream(audioTrack));
-        audioSource.connect(destinationRef.current);
+      if (audioTrack.length > 0 && audioContextReference.current && destinationReference.current) {
+        const audioSource = audioContextReference.current.createMediaStreamSource(new MediaStream(audioTrack));
+        audioSource.connect(destinationReference.current);
         currentSources.add(audioSource);
       }
     });
 
-    if (audioRef.current) {
-      audioRef.current.srcObject = destinationRef.current.stream;
+    if (audioReference.current) {
+      audioReference.current.srcObject = destinationReference.current.stream;
     }
 
     return () => {
-      if (destinationRef.current) {
+      if (destinationReference.current) {
         currentSources.forEach((sourceNode) => {
-          sourceNode.disconnect(destinationRef.current!);
+          sourceNode.disconnect(destinationReference.current!);
         });
         currentSources.clear();
       }
@@ -60,7 +60,7 @@ export default function OtherAudioStream({ otherStreams, color, name }: OtherAud
           {`외 ${otherStreams.length - 1}명`}
         </p>
       </div>
-      <audio ref={audioRef} autoPlay />
+      <audio ref={audioReference} autoPlay />
     </div>
   );
 }

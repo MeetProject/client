@@ -3,35 +3,36 @@
 import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
-import { setTrackChage } from '@/lib/setTrackChange';
-import { useDevice2 } from '@/hook';
-import { useDeviceStore } from '@/store/DeviceStore';
 import * as Icon from '@/asset/icon';
 import { Visualizer } from '@/component';
+import { useDevice2 } from '@/hook';
+import { setTrackChage } from '@/lib/setTrackChange';
+import { useDeviceStore } from '@/store/DeviceStore';
+
 import { PermissionModal, VideoNotification, DeviceButton } from './part/Device';
 
 export default function Device() {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoReference = useRef<HTMLVideoElement>(null);
   const isRender = useRef(false);
 
   const {
-    permission,
-    deviceEnable,
     audioInput,
-    audioOutput,
-    videoInput,
     audioInputList,
+    audioOutput,
     audioOutputList,
+    deviceEnable,
+    permission,
+    videoInput,
     videoInputList,
   } = useDeviceStore(
     useShallow((state) => ({
-      permission: state.permission,
-      deviceEnable: state.deviceEnable,
       audioInput: state.audioInput,
-      audioOutput: state.audioOutput,
-      videoInput: state.videoInput,
       audioInputList: state.audioInputList,
+      audioOutput: state.audioOutput,
       audioOutputList: state.audioOuputList,
+      deviceEnable: state.deviceEnable,
+      permission: state.permission,
+      videoInput: state.videoInput,
       videoInputList: state.videoInputList,
     })),
   );
@@ -42,7 +43,7 @@ export default function Device() {
     })),
   );
 
-  const { toggleVideoInput, toggleAudioInput, updateStream } = useDevice2();
+  const { toggleAudioInput, toggleVideoInput, updateStream } = useDevice2();
   const { streamStatus } = useDeviceStore(
     useShallow((state) => ({
       streamStatus: state.streamStatus,
@@ -55,8 +56,8 @@ export default function Device() {
   const videoDisabled = streamStatus === 'rejected' || (permission && !permission.video);
 
   useEffect(() => {
-    if (stream && videoRef.current) {
-      videoRef.current.srcObject = stream;
+    if (stream && videoReference.current) {
+      videoReference.current.srcObject = stream;
     }
   }, [stream]);
 
@@ -99,10 +100,10 @@ export default function Device() {
 
   useEffect(() => {
     const mediaElements = document.querySelectorAll('audio, video');
-    mediaElements.forEach((el) => {
-      const mediaEl = el as HTMLMediaElement;
-      if (mediaEl.setSinkId) {
-        mediaEl.setSinkId(useDeviceStore.getState().audioOutput?.id);
+    mediaElements.forEach((element) => {
+      const mediaElement = element as HTMLMediaElement;
+      if (mediaElement.setSinkId) {
+        mediaElement.setSinkId(useDeviceStore.getState().audioOutput?.id);
       }
     });
   }, []);
@@ -116,7 +117,7 @@ export default function Device() {
       >
         <video
           autoPlay
-          ref={videoRef}
+          ref={videoReference}
           className='aspect-video size-full object-cover'
           style={{ transform: 'rotateY(180deg)' }}
         />

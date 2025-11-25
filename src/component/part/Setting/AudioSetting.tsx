@@ -1,28 +1,29 @@
 import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { useDeviceStore } from '@/store/DeviceStore';
-import { DeviceSelectBox, Visualizer } from '@/component';
+
 import * as Icon from '@/asset/icon';
+import { DeviceSelectBox, Visualizer } from '@/component';
 import { useDevice2 } from '@/hook';
+import { useDeviceStore } from '@/store/DeviceStore';
 
 export default function AudioSetting() {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const audioReference = useRef<HTMLAudioElement>(null);
+  const timerReference = useRef<NodeJS.Timeout | null>(null);
   const [isPlay, setIsPlay] = useState(false);
 
   const { updateStream } = useDevice2();
 
-  const { stream, audioInputList, audioOuputList, audioInput, audioOutput, setAudioInput, setAudioOutput, permission } =
+  const { audioInput, audioInputList, audioOuputList, audioOutput, permission, setAudioInput, setAudioOutput, stream } =
     useDeviceStore(
       useShallow((state) => ({
-        stream: state.stream,
+        audioInput: state.audioInput,
         audioInputList: state.audioInputList,
         audioOuputList: state.audioOuputList,
-        audioInput: state.audioInput,
         audioOutput: state.audioOutput,
+        permission: state.permission,
         setAudioInput: state.setAudioInput,
         setAudioOutput: state.setAudioOutput,
-        permission: state.permission,
+        stream: state.stream,
       })),
     );
 
@@ -44,36 +45,36 @@ export default function AudioSetting() {
 
     setAudioOutput({ id: newValue.deviceId, name: newValue.label });
     setIsPlay(false);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      if (audioRef.current.setSinkId) {
-        audioRef.current.setSinkId(newValue.deviceId);
-        audioRef.current.setSinkId(newValue.deviceId);
+    if (audioReference.current) {
+      audioReference.current.pause();
+      if (audioReference.current.setSinkId) {
+        audioReference.current.setSinkId(newValue.deviceId);
+        audioReference.current.setSinkId(newValue.deviceId);
       }
     }
   };
 
   const handleAudioTestButton = () => {
-    if (!audioRef.current || isPlay) {
+    if (!audioReference.current || isPlay) {
       return;
     }
     setIsPlay(true);
-    audioRef.current.currentTime = 0;
-    audioRef.current.play();
-    timerRef.current = setTimeout(() => {
-      if (audioRef.current) {
-        audioRef.current.pause();
+    audioReference.current.currentTime = 0;
+    audioReference.current.play();
+    timerReference.current = setTimeout(() => {
+      if (audioReference.current) {
+        audioReference.current.pause();
       }
       setIsPlay(false);
-      timerRef.current = null;
+      timerReference.current = null;
     }, 4000);
   };
 
   useEffect(() => {
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
+      if (timerReference.current) {
+        clearTimeout(timerReference.current);
+        timerReference.current = null;
       }
     };
   }, []);
@@ -125,7 +126,7 @@ export default function AudioSetting() {
           </button>
         </div>
       </div>
-      <audio ref={audioRef} src='/audio/soundTest.mp3' />
+      <audio ref={audioReference} src='/audio/soundTest.mp3' />
     </div>
   );
 }

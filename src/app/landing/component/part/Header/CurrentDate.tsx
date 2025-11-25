@@ -1,7 +1,7 @@
 'use client';
 
-import { formatTime, formatDate } from '@/lib/formatDate';
 import { useCurrentDate } from '@/hook';
+import { formatTime, formatDate } from '@/lib/formatDate';
 
 export default function CurrentDate() {
   const time = useCurrentDate();

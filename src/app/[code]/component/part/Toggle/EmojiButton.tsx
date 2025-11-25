@@ -1,11 +1,11 @@
 import Image, { StaticImageData } from 'next/image';
 
-interface EmojiButtonProps {
+interface EmojiButtonProperties {
   src: StaticImageData;
   name: string;
   onClick: () => void;
 }
-export default function EmojiButton({ src, name, onClick }: EmojiButtonProps) {
+export default function EmojiButton({ name, onClick, src }: EmojiButtonProperties) {
   const handleButtonClick = () => {
     onClick();
   };
