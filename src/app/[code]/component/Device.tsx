@@ -7,7 +7,6 @@ import * as Icon from '@/asset/icon';
 import { Visualizer } from '@/component';
 import { useDevice } from '@/hook';
 import { useDeviceStore } from '@/store/DeviceStore';
-import { DeviceType } from '@/type/streamType';
 
 import { PermissionModal, VideoNotification, DeviceButton } from './part/Device';
 
@@ -43,7 +42,7 @@ export default function Device() {
     })),
   );
 
-  const { changeTrack, toggleAudioInput, toggleVideoInput, updateStream } = useDevice();
+  const { toggleAudioInput, toggleVideoInput, updateStream } = useDevice();
   const { streamStatus } = useDeviceStore(
     useShallow((state) => ({
       streamStatus: state.streamStatus,
