@@ -2,86 +2,86 @@ type ResponseType = 'REGISTER' | 'JOIN' | 'ANSWER' | 'OFFER' | 'ICE' | 'LEAVE' |
 export type StreamType = 'USER' | 'SCREEN';
 
 interface SignalResponseType {
-  type: ResponseType;
+	type: ResponseType;
 }
 
 interface SdpResponseType extends SignalResponseType {
-  fromUserId: string;
-  fromUserSDP: string;
-  mediaOption?: Record<'audio' | 'video', boolean> | null;
-  streamType: 'SCREEN' | 'USER';
-  isScreenSender: boolean;
+	fromUserId: string;
+	fromUserSDP: string;
+	mediaOption?: Record<'audio' | 'video', boolean> | null;
+	streamType: 'SCREEN' | 'USER';
+	isScreenSender: boolean;
 }
 
 export interface ParticipantDataType {
-  userId: string;
-  userName: string;
-  profileColor: string;
-  roomId: string;
+	userId: string;
+	userName: string;
+	profileColor: string;
+	roomId: string;
 }
 
 export interface ParticipantResponseType extends ParticipantDataType {
-  isHandUp: boolean;
+	isHandUp: boolean;
 }
 
 export interface RegisterResponseType extends SignalResponseType {
-  userId: string;
+	userId: string;
 }
 
 export interface JoinPayloadType {
-  roomId: string;
+	roomId: string;
 }
 
 export interface JoinResponseType extends SignalResponseType {
-  roomId: string;
-  participants: ParticipantResponseType[];
-  screenId: string | null;
+	roomId: string;
+	participants: ParticipantResponseType[];
+	screenId: string | null;
 }
 
 export interface SdpPayloadType {
-  toUserId: string;
-  fromUserSDP: string;
-  mediaOption: Record<'audio' | 'video', boolean> | null;
-  streamType: 'SCREEN' | 'USER';
+	toUserId: string;
+	fromUserSDP: string;
+	mediaOption: Record<'audio' | 'video', boolean> | null;
+	streamType: 'SCREEN' | 'USER';
 }
 
 export interface AnswerResponseType extends SdpResponseType {}
 
 export interface OfferResponseType extends SdpResponseType {
-  user: ParticipantResponseType;
+	user: ParticipantResponseType;
 }
 
 export interface IcePayloadType {
-  toUserId: string;
-  fromCandidate: string;
-  streamType: 'SCREEN' | 'USER';
+	toUserId: string;
+	fromCandidate: string;
+	streamType: 'SCREEN' | 'USER';
 }
 
 export interface IceResponseType extends SignalResponseType {
-  fromUserId: string;
-  fromUserIce: string;
-  streamType: 'SCREEN' | 'USER';
+	fromUserId: string;
+	fromUserIce: string;
+	streamType: 'SCREEN' | 'USER';
 }
 
 export interface LeavePayloadType {
-  roomId: string;
-  streamType: StreamType;
+	roomId: string;
+	streamType: StreamType;
 }
 
 export interface LeaveResponseType extends SignalResponseType {
-  fromUserId: string;
-  streamType: StreamType;
+	fromUserId: string;
+	streamType: StreamType;
 }
 
 export interface ScreenPayloadType {
-  roomId: string;
+	roomId: string;
 }
 
 export interface ScreenResponseType extends SignalResponseType {
-  participants: string[];
+	participants: string[];
 }
 
 export interface ErrorResponseType extends SignalResponseType {
-  code: string;
-  message: string;
+	code: string;
+	message: string;
 }

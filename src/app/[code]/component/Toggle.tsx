@@ -8,15 +8,15 @@ import { EmojiType } from '@/type/toggleType';
 import { Caption, Emoji } from './part/Toggle';
 
 interface ToggleProperties {
-  onClickEmojiButton: (value: EmojiType) => void;
+	onClickEmojiButton: (value: EmojiType) => void;
 }
 
 export default function Toggle({ onClickEmojiButton }: ToggleProperties) {
-  const { toggleStatus } = useContext(ToggleContext);
-  return (
-    <div>
-      {toggleStatus.caption && <Caption />}
-      {toggleStatus.emoji && <Emoji onClickEmojiButton={onClickEmojiButton} />}
-    </div>
-  );
+	const { toggleStatus } = useContext(ToggleContext);
+	return (
+		<div>
+			{toggleStatus.caption && <Caption />}
+			{toggleStatus.emoji && <Emoji onClickEmojiButton={onClickEmojiButton} />}
+		</div>
+	);
 }

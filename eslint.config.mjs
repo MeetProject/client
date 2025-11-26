@@ -1,4 +1,3 @@
-// eslint.config.mjs
 import tsParser from "@typescript-eslint/parser";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
 import reactPlugin from "eslint-plugin-react";
@@ -10,6 +9,7 @@ import sonarjsPlugin from "eslint-plugin-sonarjs";
 import perfectionistPlugin from "eslint-plugin-perfectionist";
 import prettierPlugin from "eslint-plugin-prettier";
 import tailwindcssPlugin from "eslint-plugin-tailwindcss";
+import prettierConfig from "eslint-config-prettier";
 
 export default [
   {
@@ -20,8 +20,8 @@ export default [
       parserOptions: {
         ecmaVersion: "latest",
         sourceType: "module",
-        ecmaFeatures: { jsx: true }
-      }
+        ecmaFeatures: { jsx: true },
+      },
     },
     plugins: {
       ts: tsPlugin,
@@ -38,32 +38,28 @@ export default [
     rules: {
       "unicorn/no-unused-properties": "error",
 
-      // SonarJS
       "sonarjs/no-duplicate-string": "warn",
       "sonarjs/no-identical-functions": "warn",
 
-      // Perfectionist
       "perfectionist/sort-imports": "error",
       "perfectionist/sort-objects": "error",
       "perfectionist/sort-array-includes": "error",
 
-      // React
       "react/react-in-jsx-scope": "off",
       "react/jsx-no-duplicate-props": "error",
       "react/jsx-curly-brace-presence": ["error", "never"],
-
-      // React Hooks
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
 
-      // General
       "no-param-reassign": "error",
-      "indent": ["error", 2, { "SwitchCase": 1 }],
-      eqeqeq: ["error", "always"]
+      indent: ["error", 2, { SwitchCase: 1 }],
+      eqeqeq: ["error", "always"],
+
+      ...prettierConfig.rules,
     },
     settings: {
       react: { version: "detect" },
-      tailwindcss: { callees: ["cn", "clsx"], config: "tailwind.config.js" }
-    }
-  }
+      tailwindcss: { callees: ["cn", "clsx"], config: "tailwind.config.js" },
+    },
+  },
 ];

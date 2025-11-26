@@ -5,57 +5,57 @@ import { useShallow } from 'zustand/react/shallow';
 import { useDeviceStore } from '@/store/DeviceStore';
 
 interface VideoNotificationProperties {
-  onClickButton: () => void;
+	onClickButton: () => void;
 }
 
 export default function VideoNotification({ onClickButton }: VideoNotificationProperties) {
-  const { deviceEnable, permission, streamStatus, videoInput } = useDeviceStore(
-    useShallow((state) => ({
-      deviceEnable: state.deviceEnable,
-      permission: state.permission,
-      streamStatus: state.streamStatus,
-      videoInput: state.videoInput,
-    })),
-  );
+	const { deviceEnable, permission, streamStatus, videoInput } = useDeviceStore(
+		useShallow((state) => ({
+			deviceEnable: state.deviceEnable,
+			permission: state.permission,
+			streamStatus: state.streamStatus,
+			videoInput: state.videoInput,
+		})),
+	);
 
-  const getStreamMessage = () => {
-    if (streamStatus === 'failed' || streamStatus === 'rejected' || (permission && !permission.video)) {
-      return '카메라를 사용할 수 없음';
-    }
+	const getStreamMessage = () => {
+		if (streamStatus === 'failed' || streamStatus === 'rejected' || (permission && !permission.video)) {
+			return '카메라를 사용할 수 없음';
+		}
 
-    if (!deviceEnable.video && videoInput?.deviceId) {
-      return '카메라가 꺼져 있음';
-    }
+		if (!deviceEnable.video && videoInput?.deviceId) {
+			return '카메라가 꺼져 있음';
+		}
 
-    if (streamStatus === 'pending') {
-      return '카메라 시작 중';
-    }
+		if (streamStatus === 'pending') {
+			return '카메라 시작 중';
+		}
 
-    return '';
-  };
+		return '';
+	};
 
-  const handleCheckPermissionButtonClick = () => {
-    onClickButton();
-  };
+	const handleCheckPermissionButtonClick = () => {
+		onClickButton();
+	};
 
-  return (
-    <div
-      className={`absolute top-0 flex size-full items-center justify-center ${streamStatus === 'success' && deviceEnable.video ? 'bg-transparent' : 'bg-[#202124]'} font-googleSans text-2xl text-white`}
-    >
-      {streamStatus === 'rejected' || (permission && !permission.video && streamStatus !== 'failed') ? (
-        <div className='flex flex-col items-center justify-center p-[5px]'>
-          <div className='text-center'>회의에서 참여자들이 나를 보고 듣도록 하시겠습니까?</div>
-          <button
-            type='button'
-            onClick={handleCheckPermissionButtonClick}
-            className='my-[15px] min-w-[185px] rounded bg-[#1A73E8] px-6 py-2 text-center text-sm'
-          >
-            {permission && permission.audio ? '비디오 허용' : '마이크 및 카메라 허용'}
-          </button>
-        </div>
-      ) : (
-        getStreamMessage()
-      )}
-    </div>
-  );
+	return (
+		<div
+			className={`absolute top-0 flex size-full items-center justify-center ${streamStatus === 'success' && deviceEnable.video ? 'bg-transparent' : 'bg-[#202124]'} font-googleSans text-2xl text-white`}
+		>
+			{streamStatus === 'rejected' || (permission && !permission.video && streamStatus !== 'failed') ? (
+				<div className='flex flex-col items-center justify-center p-[5px]'>
+					<div className='text-center'>회의에서 참여자들이 나를 보고 듣도록 하시겠습니까?</div>
+					<button
+						type='button'
+						onClick={handleCheckPermissionButtonClick}
+						className='my-[15px] min-w-[185px] rounded bg-[#1A73E8] px-6 py-2 text-center text-sm'
+					>
+						{permission && permission.audio ? '비디오 허용' : '마이크 및 카메라 허용'}
+					</button>
+				</div>
+			) : (
+				getStreamMessage()
+			)}
+		</div>
+	);
 }
