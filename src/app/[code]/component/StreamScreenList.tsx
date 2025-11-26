@@ -56,11 +56,11 @@ export default function StreamScreenList({ emojiList }: StreamScreenListProperti
   const otherSubscriber = isOverflow ? Array.from(participantsMediaStream).slice(3) : [];
 
   const screenOwnerInfo = {
-    audio: screenOwnerId ? true : Boolean(deviceEnable.audio && audioInput?.id),
+    audio: screenOwnerId ? true : Boolean(deviceEnable.audio && audioInput?.deviceId),
     color: participantsUserData.get(screenOwnerId)?.profileColor ?? color,
     id: screenOwnerId,
     name: participantsUserData.get(screenOwnerId)?.userName ?? name,
-    video: screenOwnerId ? true : Boolean(deviceEnable.video && videoInput?.id),
+    video: screenOwnerId ? true : Boolean(deviceEnable.video && videoInput?.deviceId),
   };
 
   return (
@@ -71,11 +71,11 @@ export default function StreamScreenList({ emojiList }: StreamScreenListProperti
       <div className='grid h-full grid-rows-4 gap-4' style={{ width: 'min(25%, 208px)' }}>
         <VideoStream
           user={{
-            audio: Boolean(deviceEnable.audio && audioInput?.id),
+            audio: Boolean(deviceEnable.audio && audioInput?.deviceId),
             color,
             id,
             name,
-            video: Boolean(deviceEnable.video && videoInput?.id),
+            video: Boolean(deviceEnable.video && videoInput?.deviceId),
           }}
           muted
           stream={stream}

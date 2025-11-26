@@ -7,6 +7,7 @@ import { checkPermissionOnchange } from '@/lib/checkBrowser';
 import { getCurrentDeviceInfo } from '@/lib/getCurrentDeviceInfo';
 import { getStreamConstraint } from '@/lib/getStreamConstraint';
 import { useDeviceStore } from '@/store/DeviceStore';
+import { DeviceType } from '@/type/streamType';
 
 import useCheckPermission from './useCheckPermission';
 
@@ -22,15 +23,14 @@ const useDevice = () => {
   );
 
   const stopStream = useCallback(() => {
-    const { setStreamStatus, stream } = useDeviceStore.getState();
+    const { setStream, setStreamStatus, stream } = useDeviceStore.getState();
     if (!stream) {
       return;
     }
 
     setStreamStatus(null);
-
     stream.getTracks().forEach((device) => device.stop());
-    useDeviceStore.getState().setStream(null);
+    setStream(null);
   }, []);
 
   const stopScreenStream = useCallback(() => {
@@ -44,21 +44,24 @@ const useDevice = () => {
 
   const updateDeviceStatus = useCallback(async (mediaStream: MediaStream) => {
     const deviceInfo = await getCurrentDeviceInfo(mediaStream);
+    
+    const {audioOutput, setAudioInput, setAudioInputList, setAudioOutput, setAudioOutputList, setVideoInput, setVideoInputList} = useDeviceStore.getState();
 
-    useDeviceStore.getState().setAudioInputList(deviceInfo.currentAudioInputList);
-    useDeviceStore.getState().setAudioOutputList(deviceInfo.currentAudioOutputList);
-    useDeviceStore.getState().setVideoInputList(deviceInfo.currentVideoInputList);
+    setAudioInputList(deviceInfo.currentAudioInputList);
+    setAudioOutputList(deviceInfo.currentAudioOutputList);
+    setVideoInputList(deviceInfo.currentVideoInputList);
 
-    useDeviceStore.getState().setAudioInput(deviceInfo.currentAudioInput);
-    if (!useDeviceStore.getState().audioOutput.id) {
-      useDeviceStore.getState().setAudioOutput(deviceInfo.currentAudioOutput);
+    setAudioInput(deviceInfo.currentAudioInput);
+    if (!audioOutput) {
+      setAudioOutput(deviceInfo.currentAudioOutput);
     }
-    useDeviceStore.getState().setVideoInput(deviceInfo.currentVideoInput);
+    setVideoInput(deviceInfo.currentVideoInput);
 
     return deviceInfo;
   }, []);
 
   const checkPermission = useCallback(async () => {
+    const { setPermission } = useDeviceStore.getState();
     if (!navigator.permissions) {
       return false;
     }
@@ -80,7 +83,7 @@ const useDevice = () => {
         isFailed: false,
         video: Boolean(videoPermission.state === 'granted'),
       };
-      useDeviceStore.getState().setPermission(newPermission);
+      setPermission(newPermission);
       return newPermission;
     } catch {
       return false;
@@ -133,18 +136,18 @@ const useDevice = () => {
   );
 
   const updateStream = useCallback(async () => {
-    const { audioInput, deviceEnable, setStreamStatus, videoInput } = useDeviceStore.getState();
+    const { audioInput, deviceEnable, setDeviceEnable, setStream, setStreamStatus, videoInput } = useDeviceStore.getState();
     stopStream();
     setStreamStatus('pending');
 
     const isPermissionUpdate = await checkPermission();
     try {
       const constraints = isPermissionUpdate
-        ? getStreamConstraint(isPermissionUpdate, { audio: audioInput?.id, video: videoInput?.id })
+        ? getStreamConstraint(isPermissionUpdate, { audio: audioInput?.deviceId, video: videoInput?.deviceId })
         : undefined;
       const newStream = isPermissionUpdate
         ? await navigator.mediaDevices.getUserMedia(constraints)
-        : await getUnsupprtedPermissionStream(audioInput?.id, videoInput?.id);
+        : await getUnsupprtedPermissionStream(audioInput?.deviceId, videoInput?.deviceId);
 
       if (!newStream) {
         throw new Error('권한 없음');
@@ -163,21 +166,22 @@ const useDevice = () => {
       }
 
       updateDeviceStatus(newStream);
-      useDeviceStore.getState().setStream(newStream);
+      setStream(newStream);
       setStreamStatus('success');
       return newStream;
     } catch {
       setStreamStatus('rejected');
-      useDeviceStore.getState().setStream(null);
-      useDeviceStore.getState().setDeviceEnable({ audio: false, video: false });
+      setStream(null);
+      setDeviceEnable({ audio: false, video: false });
       return null;
     }
   }, [stopStream, checkPermission, getUnsupprtedPermissionStream, updateDeviceStatus]);
 
   const updateScreenStream = useCallback(async (audio: boolean) => {
+    const { setScreenStream } = useDeviceStore.getState();
     try {
       const mediaStream = await navigator.mediaDevices.getDisplayMedia({ audio });
-      useDeviceStore.getState().setScreenStream(mediaStream);
+      setScreenStream(mediaStream);
       return mediaStream;
     } catch {
       throw new Error('화면 공유 스트림 가져오기 실패');
@@ -185,9 +189,9 @@ const useDevice = () => {
   }, []);
 
   const toggleAudioInput = useCallback(async () => {
-    const { deviceEnable, stream } = useDeviceStore.getState();
-    if (useDeviceStore.getState().stream && useDeviceStore.getState().audioInputList.length !== 0) {
-      useDeviceStore.getState().setDeviceEnable(() => {
+    const { audioInputList, deviceEnable, setDeviceEnable, stream } = useDeviceStore.getState();
+    if (stream && audioInputList.length !== 0) {
+      setDeviceEnable(() => {
         const newValue = !deviceEnable.audio;
         stream.getAudioTracks().forEach((track) => {
           track.enabled = newValue;
@@ -198,12 +202,12 @@ const useDevice = () => {
   }, []);
 
   const toggleVideoInput = useCallback(async () => {
-    const { deviceEnable, stream } = useDeviceStore.getState();
+    const { deviceEnable, setDeviceEnable, stream } = useDeviceStore.getState();
     if (!stream) {
       return;
     }
 
-    useDeviceStore.getState().setDeviceEnable((previous) => ({ ...previous, video: !previous.video }));
+    setDeviceEnable((previous) => ({ ...previous, video: !previous.video }));
     if (deviceEnable.video) {
       stream.getVideoTracks().forEach((track) => {
         track.stop();
@@ -212,6 +216,35 @@ const useDevice = () => {
       updateStream();
     }
   }, [updateStream]);
+
+  const changeTrack = useCallback(async(
+    device: MediaDeviceInfo,
+    type: DeviceType,
+  ) => {
+    const { setAudioInput, setAudioOutput, setVideoInput, stream } = useDeviceStore.getState();
+    if (!stream) {
+      return;
+    }
+
+    if (type === 'audioOutput') {
+      setAudioOutput(device);
+      const mediaElements = document.querySelectorAll('audio, video');
+      mediaElements.forEach((element) => {
+        const mediaElement = element as HTMLMediaElement;
+        if (mediaElement.setSinkId) {
+          mediaElement.setSinkId(device.deviceId);
+        }
+      });
+      return;
+    }
+    if(type === 'audioInput') {
+      setAudioInput(device)
+    } else {
+      setVideoInput(device);
+    }
+    updateStream();
+  
+  }, [updateStream])
 
   useEffect(() => {
     const handleDeviceChange = async () => {
@@ -286,6 +319,7 @@ const useDevice = () => {
   }, [deviceStream, updateStream]);
 
   return {
+    changeTrack,
     stopScreenStream,
     stopStream,
     toggleAudioInput,

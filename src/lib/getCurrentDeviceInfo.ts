@@ -1,17 +1,3 @@
-const getDevice = (deviceList: MediaDeviceInfo[], currentDevice: MediaStreamTrack | MediaDeviceInfo | undefined) => {
-  if (deviceList.length === 0 || !currentDevice) {
-    return { id: '', name: '' };
-  }
-
-  const target = deviceList.find((device) => currentDevice.label.includes(device.label));
-
-  if (!target) {
-    return { id: deviceList[0].deviceId, name: deviceList[0].label };
-  }
-
-  return { id: target.deviceId, name: target.label };
-};
-
 export const getCurrentDeviceInfo = async (stream: MediaStream) => {
   const deviceInfo = await navigator.mediaDevices.enumerateDevices();
 
@@ -27,17 +13,23 @@ export const getCurrentDeviceInfo = async (stream: MediaStream) => {
     (device) => device.kind === 'audiooutput' && device.deviceId !== 'default' && device.deviceId !== 'communications',
   );
 
-  const currentAudioInput = stream.getAudioTracks()[0];
-  const currentVideoInput = stream.getVideoTracks()[0];
-  const currentAudioOutput = deviceInfo.filter((device) => device.kind === 'audiooutput')[0];
+  const audioTrack = stream.getAudioTracks()[0];
+  const videoTrack = stream.getVideoTracks()[0];
+
+  const audioDeviceId = audioTrack?.getSettings?.().deviceId;
+  const videoDeviceId = videoTrack?.getSettings?.().deviceId;
+
+  const currentAudioInput = audioInputList.find((d) => d.deviceId === audioDeviceId) ?? null;
+  const currentVideoInput = videoInputList.find((d) => d.deviceId === videoDeviceId) ?? null;
+  const currentAudioOutput = deviceInfo.find((device) => device.kind === 'audiooutput');
 
   return {
     audioTrack: currentAudioInput,
-    currentAudioInput: getDevice(audioInputList, currentAudioInput),
+    currentAudioInput: currentAudioInput,
     currentAudioInputList: audioInputList,
-    currentAudioOutput: getDevice(audioOutputList, currentAudioOutput),
+    currentAudioOutput: currentAudioOutput,
     currentAudioOutputList: audioOutputList,
-    currentVideoInput: getDevice(videoInputList, currentVideoInput),
+    currentVideoInput: currentVideoInput,
     currentVideoInputList: videoInputList,
     videoTrack: currentVideoInput,
   };

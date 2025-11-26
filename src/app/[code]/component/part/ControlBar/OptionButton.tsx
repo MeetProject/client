@@ -44,8 +44,8 @@ export default function OptionButton({
   const [isClickedChevron, setIsClickedChevron] = useState(false);
   const [currentHover, setCurrentHover] = useState<'chevron' | 'iconOn' | 'iconOff'>('chevron');
 
-  const audioDisabled = !audioInput?.id;
-  const videoDisabled = !videoInput?.id || streamStatus === 'rejected' || (permission && !permission.video);
+  const audioDisabled = !audioInput?.deviceId;
+  const videoDisabled = !videoInput?.deviceId || streamStatus === 'rejected' || (permission && !permission.video);
 
   const isDisabled = type === 'audio' ? audioDisabled : videoDisabled;
 

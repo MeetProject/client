@@ -12,7 +12,7 @@ import DeviceSubButton from './DeviceSubButton';
 
 interface DeviceButtonIcon {
   icon: ReactNode;
-  currentDevice: Record<'name' | 'id', string>;
+  currentDevice: MediaDeviceInfo;
   deviceList: MediaDeviceInfo[];
   type: 'audioInput' | 'audioOutput' | 'videoInput';
   onTrackChange?: (device?: MediaDeviceInfo, type?: 'audioInput' | 'audioOutput' | 'videoInput') => Promise<void>;
@@ -84,19 +84,19 @@ export default function DeviceButton({
   };
 
   const handleCardClick = async (device: MediaDeviceInfo) => {
-    if (device.deviceId === currentDevice?.id) {
+    if (device.deviceId === currentDevice?.deviceId) {
       return;
     }
 
     if (type === 'audioInput') {
-      setAudioInput({ id: device.deviceId, name: device.label });
+      setAudioInput(device);
     }
 
     if (type === 'videoInput') {
-      setVideoInput({ id: device.deviceId, name: device.label });
+      setVideoInput(device);
     }
     if (type === 'audioOutput') {
-      setAudioOutput({ id: device.deviceId, name: device.label });
+      setAudioOutput(device);
     }
 
     if (onTrackChange) {
@@ -142,7 +142,7 @@ export default function DeviceButton({
           className={`truncate text-left text-sm ${color === 'black' ? 'text-white' : isDisabled ? 'text-[#B5B6B7]' : 'text-[#5f6368]'}`}
           style={{ width: width ? `${width - 65}px` : '105px' }}
         >
-          {isDisabled ? disabledText : currentDevice.name}
+          {isDisabled ? disabledText : currentDevice.label}
         </p>
         <div className='w-[18px]'>
           <Icon.Chevron
@@ -164,7 +164,7 @@ export default function DeviceButton({
               <DeviceCard
                 key={device.deviceId}
                 device={device}
-                isChoosed={device.deviceId === currentDevice?.id}
+                isChoosed={device.deviceId === currentDevice?.deviceId}
                 onClick={handleCardClick}
                 color={color}
               />

@@ -82,11 +82,11 @@ export default function StreamGridList({ emojiList }: StreamGridListProperties) 
     >
       <VideoStream
         user={{
-          audio: Boolean(deviceEnable.audio && audioInput?.id),
+          audio: Boolean(deviceEnable.audio && audioInput?.deviceId),
           color,
           id,
           name,
-          video: Boolean(deviceEnable.video && videoInput?.id),
+          video: Boolean(deviceEnable.video && videoInput?.deviceId),
         }}
         muted
         emojiList={emojiList}

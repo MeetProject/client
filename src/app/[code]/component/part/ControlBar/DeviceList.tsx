@@ -3,8 +3,9 @@
 import { useShallow } from 'zustand/react/shallow';
 
 import * as Icon from '@/asset/icon';
-import { setTrackChage } from '@/lib/setTrackChange';
+import { useDevice2 } from '@/hook';
 import { useDeviceStore } from '@/store/DeviceStore';
+import { DeviceType } from '@/type/streamType';
 
 import { DeviceButton } from '../Device';
 
@@ -13,6 +14,7 @@ interface DeviceListProperties {
 }
 
 export default function DeviceList({ type }: DeviceListProperties) {
+  const {changeTrack} = useDevice2();
   const { audioInput, audioInputList, audioOutput, audioOutputList, stream, videoInput, videoInputList } =
     useDeviceStore(
       useShallow((state) => ({
@@ -27,8 +29,8 @@ export default function DeviceList({ type }: DeviceListProperties) {
       })),
     );
 
-  const handleTrackChange = async (device: MediaDeviceInfo, trackType: 'audioInput' | 'videoInput' | 'audioOutput') => {
-    setTrackChage(stream, device, trackType);
+  const handleTrackChange = async (device: MediaDeviceInfo, trackType: DeviceType) => {
+    changeTrack(device, trackType);
   };
 
   return (

@@ -23,7 +23,7 @@ export default function VideoNotification({ onClickButton }: VideoNotificationPr
       return '카메라를 사용할 수 없음';
     }
 
-    if (!deviceEnable.video && videoInput?.id) {
+    if (!deviceEnable.video && videoInput?.deviceId) {
       return '카메라가 꺼져 있음';
     }
 

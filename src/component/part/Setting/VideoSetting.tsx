@@ -8,7 +8,7 @@ import { useDeviceStore } from '@/store/DeviceStore';
 
 export default function VideoSetting() {
   const videoReference = useRef<HTMLVideoElement>(null);
-  const { updateStream } = useDevice2();
+  const { changeTrack } = useDevice2();
   const { permission, setVideoInput, stream, videoInput, videoInputList } = useDeviceStore(
     useShallow((state) => ({
       permission: state.permission,
@@ -19,13 +19,8 @@ export default function VideoSetting() {
     })),
   );
 
-  const handleVideoChange = (id: string) => {
-    const newVideo = videoInputList.find((track) => track.deviceId === id);
-    if (!newVideo) {
-      return;
-    }
-    setVideoInput({ id: newVideo.deviceId, name: newVideo.label });
-    updateStream();
+  const handleVideoChange = (device: MediaDeviceInfo) => {
+    changeTrack(device, 'videoInput');
   };
 
   useEffect(() => {
@@ -49,7 +44,7 @@ export default function VideoSetting() {
               DeviceIcon={Icon.VideoOn}
               disabled={permission?.video ? false : '권한'}
             />
-            <div className='flex justify-center'>
+            <div className='flex justify-center bg-gray-700 overflow-hidden rounded-md w-fit'>
               {permission?.video && (
                 <video
                   autoPlay

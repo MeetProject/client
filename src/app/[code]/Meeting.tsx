@@ -156,7 +156,7 @@ export default function Meetting() {
     mediaElements.forEach((element) => {
       const mediaElement = element as HTMLMediaElement;
       if (mediaElement.setSinkId) {
-        mediaElement.setSinkId(useDeviceStore.getState().audioOutput?.id);
+        mediaElement.setSinkId(useDeviceStore.getState().audioOutput?.deviceId);
       }
     });
   }, [isPending]);

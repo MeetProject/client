@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback } from 'react';
 
 import { useClientStore } from '@/store/ClientStore';
 import { useWebRTCStore } from '@/store/WebRTCStore';
@@ -19,10 +19,6 @@ interface UseWebRTCProperties {
 }
 
 const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
-  const onTrackReference =
-    useRef<(targetId: string, targetStream: MediaStream, streamType: StreamType, isScreenSender: boolean) => void>();
-  const onDeviceEnableChangeReference = useRef<(id: string, value: DeviceEnableType) => void>();
-
   const onTrack = useCallback(
     (targetId: string, targetStream: MediaStream, streamType: StreamType, isScreenSender: boolean) => {
       const { setScreenOwnerId, setScreenSharingMediaStream, updateParticipantsMediaStream } =
@@ -45,23 +41,13 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
     updateParticipantsMediaOptions(id, value);
   }, []);
 
-  useEffect(() => {
-    onTrackReference.current = onTrack;
-  }, [onTrack]);
-
-  useEffect(() => {
-    onDeviceEnableChangeReference.current = onDeviceEnableChange;
-  }, [onDeviceEnableChange]);
-
   const { stopScreenStream, stopStream, updateScreenStream, updateStream } = useDevice2();
-
-  const stopShareScreenReference = useRef<() => void>();
 
   const onDisplayShareEnd = useCallback(() => {
     const { setScreenOwnerId } = useWebRTCStore.getState();
-    stopShareScreenReference.current?.();
+    stopScreenStream();
     setScreenOwnerId(null);
-  }, []);
+  }, [stopScreenStream]);
 
   const {
     createAnswerSdp,
@@ -74,9 +60,9 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
     registerOfferSdp,
     registerRemoteIce,
   } = usePeerConnection({
-    onDeviceEnableChange: (id, value) => onDeviceEnableChangeReference.current?.(id, value),
+    onDeviceEnableChange,
     onDisplayShareEnd,
-    onTrack: (id, stream, type, isScreenSender) => onTrackReference.current?.(id, stream, type, isScreenSender),
+    onTrack,
   });
 
   const deleteParticipant = useCallback(
@@ -126,8 +112,6 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
     stopScreenStream();
     setIsScreenShare(false);
   }, [sendLeave, disconnectAllScreenPeerConnection, stopScreenStream]);
-
-  stopShareScreenReference.current = stopShareScreen;
 
   const joinSession = useCallback(async () => {
     useClientStore.getState().setIsClientReady(false);

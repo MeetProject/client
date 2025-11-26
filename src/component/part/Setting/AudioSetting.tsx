@@ -5,13 +5,14 @@ import * as Icon from '@/asset/icon';
 import { DeviceSelectBox, Visualizer } from '@/component';
 import { useDevice2 } from '@/hook';
 import { useDeviceStore } from '@/store/DeviceStore';
+import { DeviceType } from '@/type/streamType';
 
 export default function AudioSetting() {
   const audioReference = useRef<HTMLAudioElement>(null);
   const timerReference = useRef<NodeJS.Timeout | null>(null);
   const [isPlay, setIsPlay] = useState(false);
 
-  const { updateStream } = useDevice2();
+  const { changeTrack } = useDevice2();
 
   const { audioInput, audioInputList, audioOuputList, audioOutput, permission, setAudioInput, setAudioOutput, stream } =
     useDeviceStore(
@@ -27,31 +28,8 @@ export default function AudioSetting() {
       })),
     );
 
-  const handleAudioChange = (id: string, type: 'input' | 'output') => {
-    const newValue =
-      type === 'input'
-        ? audioInputList.find((audio) => audio.deviceId === id)
-        : audioOuputList.find((audio) => audio.deviceId === id);
-
-    if (!newValue) {
-      return;
-    }
-
-    if (type === 'input') {
-      setAudioInput({ id: newValue.deviceId, name: newValue.label });
-      updateStream();
-      return;
-    }
-
-    setAudioOutput({ id: newValue.deviceId, name: newValue.label });
-    setIsPlay(false);
-    if (audioReference.current) {
-      audioReference.current.pause();
-      if (audioReference.current.setSinkId) {
-        audioReference.current.setSinkId(newValue.deviceId);
-        audioReference.current.setSinkId(newValue.deviceId);
-      }
-    }
+  const handleAudioChange = (device: MediaDeviceInfo, type: DeviceType) => {
+    changeTrack(device, type)
   };
 
   const handleAudioTestButton = () => {
@@ -89,7 +67,7 @@ export default function AudioSetting() {
           <DeviceSelectBox
             currentValue={audioInput}
             deviceList={audioInputList}
-            onChange={(id: string) => handleAudioChange(id, 'input')}
+            onChange={(device: MediaDeviceInfo) => handleAudioChange(device, 'audioInput')}
             DeviceIcon={Icon.MicOn}
             disabled={permission?.audio ? false : '권한'}
           />
@@ -108,7 +86,7 @@ export default function AudioSetting() {
           <DeviceSelectBox
             currentValue={audioOutput}
             deviceList={audioOuputList}
-            onChange={(id: string) => handleAudioChange(id, 'output')}
+            onChange={(device: MediaDeviceInfo) => handleAudioChange(device, 'audioOutput')}
             DeviceIcon={Icon.Sound}
             disabled={permission?.audio ? (audioOuputList.length === 0 ? '시스템' : false) : '권한'}
           />

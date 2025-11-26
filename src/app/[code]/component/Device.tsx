@@ -6,8 +6,8 @@ import { useShallow } from 'zustand/react/shallow';
 import * as Icon from '@/asset/icon';
 import { Visualizer } from '@/component';
 import { useDevice2 } from '@/hook';
-import { setTrackChage } from '@/lib/setTrackChange';
 import { useDeviceStore } from '@/store/DeviceStore';
+import { DeviceType } from '@/type/streamType';
 
 import { PermissionModal, VideoNotification, DeviceButton } from './part/Device';
 
@@ -43,7 +43,7 @@ export default function Device() {
     })),
   );
 
-  const { toggleAudioInput, toggleVideoInput, updateStream } = useDevice2();
+  const { changeTrack, toggleAudioInput, toggleVideoInput, updateStream } = useDevice2();
   const { streamStatus } = useDeviceStore(
     useShallow((state) => ({
       streamStatus: state.streamStatus,
@@ -79,8 +79,8 @@ export default function Device() {
     }
   };
 
-  const handleTrackChange = async (device: MediaDeviceInfo, type: 'audioInput' | 'videoInput' | 'audioOutput') => {
-    setTrackChage(stream, device, type);
+  const handleTrackChange = async (device: MediaDeviceInfo, type: DeviceType) => {
+    changeTrack(device, type);
   };
 
   const handleVideoButtonClick = () => {
@@ -103,7 +103,7 @@ export default function Device() {
     mediaElements.forEach((element) => {
       const mediaElement = element as HTMLMediaElement;
       if (mediaElement.setSinkId) {
-        mediaElement.setSinkId(useDeviceStore.getState().audioOutput?.id);
+        mediaElement.setSinkId(useDeviceStore.getState().audioOutput?.deviceId);
       }
     });
   }, []);
@@ -176,7 +176,7 @@ export default function Device() {
                 width={14}
                 height={14}
                 fill={
-                  (streamStatus === 'failed' && !audioInput?.id) ||
+                  (streamStatus === 'failed' && !audioInput?.deviceId) ||
                   streamStatus === 'rejected' ||
                   (permission && !permission.audio)
                     ? '#B5B6B7'
@@ -198,7 +198,7 @@ export default function Device() {
                 width={14}
                 height={14}
                 fill={
-                  (streamStatus === 'failed' && !audioOutput?.id) ||
+                  (streamStatus === 'failed' && !audioOutput?.deviceId) ||
                   streamStatus === 'rejected' ||
                   (permission && !permission.audio)
                     ? '#B5B6B7'

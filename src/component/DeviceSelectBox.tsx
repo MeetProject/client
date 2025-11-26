@@ -2,14 +2,13 @@ import React, { useState, MouseEvent, ReactNode } from 'react';
 
 import * as Icon from '@/asset/icon';
 import { useOutsideClick } from '@/hook';
-import { DeviceType } from '@/type/streamType';
 
 import ButtonTag from './ButtonTag';
 
 interface DeviceSelectBoxProperties {
-  currentValue: DeviceType;
+  currentValue: MediaDeviceInfo;
   deviceList: MediaDeviceInfo[];
-  onChange: (id: string) => void;
+  onChange: (device: MediaDeviceInfo) => void;
   DeviceIcon: React.FC<React.SVGProps<SVGSVGElement>>;
   disabled?: boolean | '권한' | '시스템';
 }
@@ -45,15 +44,15 @@ export default function DeviceSelectBox({
     setIsClicked((previous) => !previous);
   };
 
-  const handleDeviceButtonClick = (e: MouseEvent<HTMLButtonElement>, id: string) => {
+  const handleDeviceButtonClick = (e: MouseEvent<HTMLButtonElement>, device: MediaDeviceInfo) => {
     e.stopPropagation();
-    onChange(id);
+    onChange(device);
     setIsClicked(false);
   };
 
   const getLabel = () => {
     if (disabled === false) {
-      return currentValue.name;
+      return currentValue.label;
     }
 
     if (disabled === '권한') {
@@ -95,15 +94,15 @@ export default function DeviceSelectBox({
               <button
                 key={device.deviceId}
                 type='button'
-                onClick={(e) => handleDeviceButtonClick(e, device.deviceId)}
+                onClick={(e) => handleDeviceButtonClick(e, device)}
                 className='relative h-11 w-full truncate bg-white pl-14 pr-4 hover:bg-[#F5F5F5] active:bg-[#D7D7D7]'
               >
                 <p
-                  className={`w-full truncate ${device.deviceId === currentValue?.id ? 'text-[#1A73E8]' : 'text-black'} text-left`}
+                  className={`w-full truncate ${device.deviceId === currentValue?.deviceId ? 'text-[#1A73E8]' : 'text-black'} text-left`}
                 >
                   {device.label}
                 </p>
-                {device.deviceId === currentValue?.id && (
+                {device.deviceId === currentValue?.deviceId && (
                   <Icon.Check width={24} height={24} fill='#1A73E8' className='absolute left-4 top-2.5 ' />
                 )}
               </button>
