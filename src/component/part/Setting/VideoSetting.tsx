@@ -3,12 +3,12 @@ import { useShallow } from 'zustand/react/shallow';
 
 import * as Icon from '@/asset/icon';
 import { DeviceSelectBox } from '@/component';
-import { useDevice2 } from '@/hook';
+import { useDevice } from '@/hook';
 import { useDeviceStore } from '@/store/DeviceStore';
 
 export default function VideoSetting() {
   const videoReference = useRef<HTMLVideoElement>(null);
-  const { changeTrack } = useDevice2();
+  const { changeTrack } = useDevice();
   const { permission, setVideoInput, stream, videoInput, videoInputList } = useDeviceStore(
     useShallow((state) => ({
       permission: state.permission,

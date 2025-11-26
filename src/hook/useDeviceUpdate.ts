@@ -6,13 +6,12 @@ import { useShallow } from 'zustand/react/shallow';
 import { checkPermissionOnchange } from '@/lib/checkBrowser';
 import { getCurrentDeviceInfo } from '@/lib/getCurrentDeviceInfo';
 import { getStreamConstraint } from '@/lib/getStreamConstraint';
+import { addPermissionListener } from '@/lib/mediaPermission';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { DeviceType } from '@/type/streamType';
 
-import useCheckPermission from './useCheckPermission';
 
 const useDevice = () => {
-  const { addPermissionListener, checkPermissionQuery } = useCheckPermission();
   const timerReference = useRef<NodeJS.Timeout | null>(null);
 
   const { deviceStream } = useDeviceStore(
@@ -228,13 +227,6 @@ const useDevice = () => {
 
     if (type === 'audioOutput') {
       setAudioOutput(device);
-      const mediaElements = document.querySelectorAll('audio, video');
-      mediaElements.forEach((element) => {
-        const mediaElement = element as HTMLMediaElement;
-        if (mediaElement.setSinkId) {
-          mediaElement.setSinkId(device.deviceId);
-        }
-      });
       return;
     }
     if(type === 'audioInput') {
@@ -291,7 +283,7 @@ const useDevice = () => {
         timerReference.current = null;
       }
     };
-  }, [deviceStream, addPermissionListener, checkPermissionQuery, updateStream, stopStream]);
+  }, [deviceStream, updateStream, stopStream]);
 
   useEffect(() => {
     if (!deviceStream) {

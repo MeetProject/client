@@ -18,7 +18,7 @@ export default function DeviceSubButton({ color, type, volume }: DeviceSubButton
 
   const handleAudioButtonClick = () => {
     if (audioReference.current) {
-      if (audioReference.current.setSinkId) {
+      if (audioReference.current?.setSinkId) {
         audioReference.current.setSinkId(audioOutput?.deviceId);
       }
 

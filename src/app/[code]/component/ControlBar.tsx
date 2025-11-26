@@ -4,7 +4,7 @@ import { ReactNode, useCallback, useState } from 'react';
 
 import * as Icon from '@/asset/icon';
 import { Alert } from '@/component';
-import { useDevice2 } from '@/hook';
+import { useDevice } from '@/hook';
 import { checkBrowser } from '@/lib/checkBrowser';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { DeviceEnableType } from '@/type/streamType';
@@ -97,7 +97,7 @@ export default function ControlBar({
   ];
   const [isOpenModal, setIsOpenModal] = useState(false);
 
-  const { toggleAudioInput, toggleVideoInput } = useDevice2();
+  const { toggleAudioInput, toggleVideoInput } = useDevice();
 
   const handleModalClose = () => {
     setIsOpenModal(false);

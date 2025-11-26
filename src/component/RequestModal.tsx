@@ -2,7 +2,7 @@ import Image from 'next/image';
 import { MouseEvent } from 'react';
 
 import { permission } from '@/asset/image';
-import { useDevice2 } from '@/hook';
+import { useDevice } from '@/hook';
 
 interface RequestModalProperties {
   onSkipUpdateStream?: () => void;
@@ -10,7 +10,7 @@ interface RequestModalProperties {
 }
 
 export default function RequestModal({ onRequstError, onSkipUpdateStream }: RequestModalProperties) {
-  const { updateStream } = useDevice2();
+  const { updateStream } = useDevice();
   const handleRequestPermissionButtonClick = async () => {
     try {
       updateStream();

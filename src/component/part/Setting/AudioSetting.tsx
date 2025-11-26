@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 
 import * as Icon from '@/asset/icon';
 import { DeviceSelectBox, Visualizer } from '@/component';
-import { useDevice2 } from '@/hook';
+import { useDevice } from '@/hook';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { DeviceType } from '@/type/streamType';
 
@@ -12,7 +12,7 @@ export default function AudioSetting() {
   const timerReference = useRef<NodeJS.Timeout | null>(null);
   const [isPlay, setIsPlay] = useState(false);
 
-  const { changeTrack } = useDevice2();
+  const { changeTrack } = useDevice();
 
   const { audioInput, audioInputList, audioOuputList, audioOutput, permission, setAudioInput, setAudioOutput, stream } =
     useDeviceStore(

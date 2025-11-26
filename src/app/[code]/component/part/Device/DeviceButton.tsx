@@ -4,7 +4,7 @@ import { ReactNode, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import * as Icon from '@/asset/icon';
-import { useOutsideClick, useVolume } from '@/hook';
+import { useDevice, useOutsideClick, useVolume } from '@/hook';
 import { useDeviceStore } from '@/store/DeviceStore';
 
 import DeviceCard from './DeviceCard';
@@ -33,6 +33,8 @@ export default function DeviceButton({
   const { permission, stream, streamStatus } = useDeviceStore(
     useShallow((state) => ({ permission: state.permission, stream: state.stream, streamStatus: state.streamStatus })),
   );
+
+  const {changeTrack} = useDevice();
 
   const getDisabledStatus = () => {
     if (streamStatus === 'rejected') {
@@ -88,16 +90,7 @@ export default function DeviceButton({
       return;
     }
 
-    if (type === 'audioInput') {
-      setAudioInput(device);
-    }
-
-    if (type === 'videoInput') {
-      setVideoInput(device);
-    }
-    if (type === 'audioOutput') {
-      setAudioOutput(device);
-    }
+    changeTrack(device, type)
 
     if (onTrackChange) {
       await onTrackChange(device, type);

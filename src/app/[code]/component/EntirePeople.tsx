@@ -3,7 +3,6 @@
 import { usePathname } from 'next/navigation';
 import { useLayoutEffect, useState } from 'react';
 
-import { getParticipant } from '@/app/api/mongoAPI';
 import { ParticipantDataType } from '@/type/participantType';
 
 const MAX_NUM = 4;
@@ -17,8 +16,7 @@ export default function EntirePeople() {
       if (!sessionId) {
         return;
       }
-      const userData = await getParticipant(sessionId);
-      setData(userData);
+      /* 방 참가자 정보 가져오기 */
     };
     getData();
   }, [sessionId]);

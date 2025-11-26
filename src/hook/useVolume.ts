@@ -6,7 +6,7 @@ const useVolume = (stream: MediaStream | null | undefined) => {
   const animationReference = useRef<number | null>(null);
   const [volume, setVolume] = useState(0);
   const [isExpand, setIsExpand] = useState(false);
-  const dataArrayReference = useRef<Uint8Array | null>(null);
+  const dataArrayReference = useRef<Uint8Array<ArrayBuffer> | null>(null);
 
   useEffect(() => {
     if (!stream || stream.getAudioTracks().length === 0) {
@@ -29,7 +29,7 @@ const useVolume = (stream: MediaStream | null | undefined) => {
       if (!dataArrayReference.current) {
         return;
       }
-      analyser.getByteFrequencyData(dataArrayReference.current);
+      analyser.getByteFrequencyData(dataArrayReference.current!);
 
       const sum = dataArrayReference.current.reduce((a, b) => a + b, 0);
       const avg = sum / dataArray.length;

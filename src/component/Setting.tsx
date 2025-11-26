@@ -3,7 +3,8 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import * as Icon from '@/asset/icon';
-import { useCheckPermission, useDevice2 } from '@/hook';
+import { useDevice } from '@/hook';
+import { checkPermissionQuery } from '@/lib/mediaPermission';
 import { useDeviceStore } from '@/store/DeviceStore';
 
 import InitialRequestModal from './InitialRequestModal';
@@ -56,6 +57,9 @@ function SettingContent({ category }: SettingContentProperties) {
 
 function SettingModal({ onClose }: SettingModalProperties) {
   const [category, setCategory] = useState<Category>('audio');
+  const {audioOutput} = useDeviceStore(useShallow((state) => ({
+    audioOutput: state.audioOutput,
+  })))
   const handleCategoryButtonClick = (value: Category) => {
     setCategory(value);
   };
@@ -68,11 +72,11 @@ function SettingModal({ onClose }: SettingModalProperties) {
     const mediaElements = document.querySelectorAll('audio, video');
     mediaElements.forEach((element) => {
       const mediaElement = element as HTMLMediaElement;
-      if (mediaElement.setSinkId) {
-        mediaElement.setSinkId(useDeviceStore.getState().audioOutput?.deviceId);
+      if (mediaElement?.setSinkId && audioOutput) {
+        mediaElement.setSinkId(audioOutput.deviceId);
       }
     });
-  }, []);
+  }, [audioOutput]);
 
   return (
     <div
@@ -138,8 +142,7 @@ export default function Setting({ isOpen, onClose }: SettingProperties) {
     })),
   );
 
-  const { stopStream, updateStream: handleUpdateStream } = useDevice2();
-  const { checkPermissionQuery } = useCheckPermission();
+  const { stopStream, updateStream: handleUpdateStream } = useDevice();
 
   const updateStream = useCallback(async () => {
     if (timerReference.current) {
@@ -177,7 +180,7 @@ export default function Setting({ isOpen, onClose }: SettingProperties) {
     if (isOpen) {
       getPermission();
     }
-  }, [isOpen, checkPermissionQuery, updateStream]);
+  }, [isOpen, updateStream]);
 
   useEffect(() => {
     if (stream || streamStatus === 'rejected' || streamStatus === 'failed') {

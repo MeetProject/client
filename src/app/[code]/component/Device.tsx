@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 
 import * as Icon from '@/asset/icon';
 import { Visualizer } from '@/component';
-import { useDevice2 } from '@/hook';
+import { useDevice } from '@/hook';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { DeviceType } from '@/type/streamType';
 
@@ -43,13 +43,12 @@ export default function Device() {
     })),
   );
 
-  const { changeTrack, toggleAudioInput, toggleVideoInput, updateStream } = useDevice2();
+  const { changeTrack, toggleAudioInput, toggleVideoInput, updateStream } = useDevice();
   const { streamStatus } = useDeviceStore(
     useShallow((state) => ({
       streamStatus: state.streamStatus,
     })),
   );
-  /* const { stream, streamStatus, toggleVideoInput, toggleAudioInput, handleUpdateStream } = useDevice(); */
 
   const [isOpenModal, setIsOpenModal] = useState(false);
   const audioDisabled = streamStatus === 'rejected' || (permission && !permission.audio);
@@ -79,10 +78,6 @@ export default function Device() {
     }
   };
 
-  const handleTrackChange = async (device: MediaDeviceInfo, type: DeviceType) => {
-    changeTrack(device, type);
-  };
-
   const handleVideoButtonClick = () => {
     setIsOpenModal(true);
   };
@@ -102,11 +97,11 @@ export default function Device() {
     const mediaElements = document.querySelectorAll('audio, video');
     mediaElements.forEach((element) => {
       const mediaElement = element as HTMLMediaElement;
-      if (mediaElement.setSinkId) {
-        mediaElement.setSinkId(useDeviceStore.getState().audioOutput?.deviceId);
+      if (mediaElement?.setSinkId && audioOutput) {
+        mediaElement.setSinkId(audioOutput?.deviceId);
       }
     });
-  }, []);
+  }, [audioOutput]);
   return (
     <div className='w-full max-w-[764px] p-4 pr-2 lg:h-[284px] lg:pr-4'>
       <div
@@ -187,7 +182,6 @@ export default function Device() {
             currentDevice={audioInput}
             deviceList={audioInputList}
             type='audioInput'
-            onTrackChange={handleTrackChange}
           />
         )}
 
@@ -209,7 +203,6 @@ export default function Device() {
             currentDevice={audioOutput}
             deviceList={audioOutputList}
             type='audioOutput'
-            onTrackChange={handleTrackChange}
           />
         )}
 
@@ -229,7 +222,6 @@ export default function Device() {
             currentDevice={videoInput}
             deviceList={videoInputList}
             type='videoInput'
-            onTrackChange={handleTrackChange}
           />
         )}
       </div>

@@ -6,9 +6,9 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { Loading } from '@/component';
 import { ToggleContext } from '@/context/ToggleContext';
-import { useDevice2 } from '@/hook';
+import { useDevice } from '@/hook';
 import useWebRTC from '@/hook/useWebRTC/useWebRTC';
-import { timeDifferenceInMinutes } from '@/lib/getTimeDiff';
+import { timeDifferenceInMinutes } from '@/lib/date';
 import { useClientStore } from '@/store/ClientStore';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
@@ -55,7 +55,7 @@ export default function Meetting() {
     })),
   );
 
-  const { updateStream } = useDevice2();
+  const { updateStream } = useDevice();
 
   const handleChat = useCallback((data: ChatResponseType) => {
     const { participantsUserData: userData } = useWebRTCStore.getState();
@@ -100,8 +100,9 @@ export default function Meetting() {
     onError: handleError,
   });
 
-  const { deviceEnable, screenStream, stream } = useDeviceStore(
+  const { audioOutput, deviceEnable, screenStream, stream } = useDeviceStore(
     useShallow((state) => ({
+      audioOutput: state.audioOutput,
       deviceEnable: state.deviceEnable,
       permission: state.permission,
       screenStream: state.screenStream,
@@ -155,11 +156,11 @@ export default function Meetting() {
     const mediaElements = document.querySelectorAll('audio, video');
     mediaElements.forEach((element) => {
       const mediaElement = element as HTMLMediaElement;
-      if (mediaElement.setSinkId) {
-        mediaElement.setSinkId(useDeviceStore.getState().audioOutput?.deviceId);
+      if (mediaElement?.setSinkId && audioOutput) {
+        mediaElement.setSinkId(audioOutput.deviceId);
       }
     });
-  }, [isPending]);
+  }, [isPending, audioOutput]);
 
   return (
     <div className='relative flex h-screen w-screen flex-col overflow-hidden bg-[#202124]'>

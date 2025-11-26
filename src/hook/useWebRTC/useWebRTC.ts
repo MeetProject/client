@@ -8,7 +8,7 @@ import { ChatResponseType, EmojiResponseType } from '@/type/reactionType';
 import { ErrorResponseType, StreamType } from '@/type/signalType';
 import { DeviceEnableType } from '@/type/streamType';
 
-import { useDevice2 } from '..';
+import { useDevice } from '..';
 import usePeerConnection from './usePeerConnection';
 import useSignalSocket from './useSignalSocket';
 
@@ -41,7 +41,7 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
     updateParticipantsMediaOptions(id, value);
   }, []);
 
-  const { stopScreenStream, stopStream, updateScreenStream, updateStream } = useDevice2();
+  const { stopScreenStream, stopStream, updateScreenStream, updateStream } = useDevice();
 
   const onDisplayShareEnd = useCallback(() => {
     const { setScreenOwnerId } = useWebRTCStore.getState();

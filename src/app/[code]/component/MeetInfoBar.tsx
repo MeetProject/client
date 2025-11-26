@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 
 import { useCurrentDate } from '@/hook';
-import { formatTime } from '@/lib/formatDate';
+import { formatTime } from '@/lib/date';
 
 export default function MeetInfoBar() {
   const code = usePathname().slice(1);

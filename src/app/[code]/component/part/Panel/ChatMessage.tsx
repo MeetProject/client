@@ -1,6 +1,6 @@
 import { memo } from 'react';
 
-import { formatTime } from '@/lib/formatDate';
+import { formatTime } from '@/lib/date';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { ChatType } from '@/type/reactionType';
 
