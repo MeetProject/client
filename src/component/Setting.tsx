@@ -25,6 +25,7 @@ interface SettingContentProperties {
 }
 
 type Category = 'audio' | 'video' | 'general';
+type SettingModalState = 'loading' | 'initial-request' | 'request' | 'setting';
 
 interface CategoryButtonType {
   name: string;
@@ -75,7 +76,7 @@ function SettingModal({ onClose }: SettingModalProperties) {
 
   return (
     <div
-      className='relative flex h-[650px] w-[800px] overflow-hidden rounded-lg bg-white font-googleSans'
+      className='relative flex h-[650px] w-[800px] rounded-lg bg-white font-googleSans'
       style={{ maxWidth: 'calc(100vw - 32px)' }}
     >
       <div className='h-full w-[256px] border-r border-solid border-[#DADCE0] md:w-20'>
@@ -117,7 +118,7 @@ function SettingModal({ onClose }: SettingModalProperties) {
       >
         <Icon.Delete width={24} height={24} fill='#5F6368' />
       </button>
-      <div className='m-6 pt-[60px] md:w-settingContent-md'>
+      <div className='flex my-6 mx-12 pt-[60px] flex-1'>
         <SettingContent category={category} />
       </div>
     </div>
@@ -128,8 +129,7 @@ export default function Setting({ isOpen, onClose }: SettingProperties) {
   const timerReference = useRef<NodeJS.Timeout | null>(null);
   const pathname = usePathname();
 
-  const [isRequsetStream, setIsRequestStream] = useState(false);
-  const [isRenderSetting, setIsRenderSetting] = useState(false);
+  const [modalState, setModalState] = useState<SettingModalState>('loading');
 
   const { stream, streamStatus } = useDeviceStore(
     useShallow((state) => ({
@@ -156,20 +156,22 @@ export default function Setting({ isOpen, onClose }: SettingProperties) {
 
   useEffect(() => {
     const getPermission = async () => {
-      const { stream: mediaStream } = useDeviceStore.getState();
-      const value = await checkPermissionQuery();
+      setModalState('loading');
 
-      if (mediaStream) {
-        setIsRenderSetting(true);
+      const permission = await checkPermissionQuery();
+
+      if (permission === null) {
+        setModalState('initial-request');
         return;
       }
 
-      if (value === null) {
-        setIsRequestStream(true);
+      if (permission === false) {
+        setModalState('request');
         return;
       }
 
-      updateStream();
+      await updateStream();
+      setModalState('setting');
     };
 
     if (isOpen) {
@@ -179,21 +181,16 @@ export default function Setting({ isOpen, onClose }: SettingProperties) {
 
   useEffect(() => {
     if (stream || streamStatus === 'rejected' || streamStatus === 'failed') {
-      if (timerReference.current) {
-        clearTimeout(timerReference.current);
-        timerReference.current = null;
-      }
-      setIsRenderSetting(true);
+      setModalState('setting');
     }
   }, [stream, streamStatus]);
 
   const handleSkipUpdateStreamButtonClick = () => {
-    setIsRenderSetting(true);
+    setModalState('setting');
   };
 
   const handleModalClose = () => {
-    setIsRequestStream(false);
-    setIsRenderSetting(false);
+    setModalState('loading');
     onClose();
     if (pathname === '/landing') {
       stopStream();
@@ -202,13 +199,7 @@ export default function Setting({ isOpen, onClose }: SettingProperties) {
 
   return (
     <Modal isOpen={isOpen} onCloseModal={handleModalClose}>
-      {isRenderSetting ? (
-        <SettingModal onClose={handleModalClose} />
-      ) : isRequsetStream ? (
-        <InitialRequestModal />
-      ) : (
-        <RequestModal onSkipUpdateStream={handleSkipUpdateStreamButtonClick} />
-      )}
+      {modalState === 'setting' ? <SettingModal onClose={handleModalClose} /> : modalState === 'initial-request' ? <InitialRequestModal /> : modalState === 'request' ? <RequestModal onSkipUpdateStream={handleSkipUpdateStreamButtonClick} /> : null}
     </Modal>
   );
 }

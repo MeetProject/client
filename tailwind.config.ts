@@ -77,14 +77,7 @@ const config: Config = {
           },
         },
       },
-      screens: {
-        '2xl': '1535px',
-        lg: '1023px',
-        md: '800px',
-        sm: '480px', 
-        'sm-md': '600px', 
-        xl: '1279px',
-      },
+      screens: { '2xl': { max: '1535px' }, lg: { max: '1023px' }, md: { max: '800px' }, sm: { max: '480px' }, 'sm-md': { max: '600px' }, xl: { max: '1279px' }, },
       transformOrigin: {
         'top-right': '100% 0%',
       },

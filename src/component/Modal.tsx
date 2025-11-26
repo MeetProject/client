@@ -1,6 +1,6 @@
 'use client';
 
-import { PropsWithChildren, useState, useEffect, ReactNode } from 'react';
+import { PropsWithChildren, useState, useEffect, ReactNode, JSX } from 'react';
 import ReactDOM from 'react-dom';
 
 import { useOutsideClick } from '@/hook';

@@ -66,7 +66,7 @@ export default function DeviceSelectBox({
 
   return (
     <BoxWrapper disabled={disabled}>
-      <div className='relative  sm:w-deviceSelectBox-sm sm-md:w-deviceSelectBox-sm-md' ref={targetRef}>
+      <div className='relative w-full' ref={targetRef}>
         <button
           type='button'
           className={`relative flex h-14 w-full min-w-16 items-center gap-2 truncate rounded border border-solid ${disabled ? 'border-[#E7E8E8]' : 'border-[#80868B]'} pl-[10px] pr-[25px] ${!disabled && 'hover:bg-[#F6FAFE] active:border-[#1B77E4] active:bg-[#DBE9FB]'} `}

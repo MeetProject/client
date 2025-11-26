@@ -80,8 +80,8 @@ export default function AudioSetting() {
   }, []);
 
   return (
-    <div className='flex flex-col gap-6'>
-      <div className='flex items-center sm:block'>
+    <div className='flex flex-col gap-6 flex-1'>
+      <div className='flex items-center sm:block gap-4'>
         <div className='min-w-[100px]' style={{ flex: '1 1 100px' }}>
           <div>
             <p className='mb-2 text-sm font-medium text-[#1A73E8]'>마이크</p>
@@ -94,15 +94,13 @@ export default function AudioSetting() {
             disabled={permission?.audio ? false : '권한'}
           />
         </div>
-        <div className='ml-6 flex w-40 items-center justify-center pt-7 sm:ml-0 sm:w-full'>
-          {permission?.audio ? (
+        <div className='flex w-12 items-center justify-center pt-7 sm:ml-0 sm:w-full'>
+          {permission?.audio && (
             <Visualizer stream={stream} />
-          ) : (
-            <div className='flex h-14 items-center bg-[#F1F3F4] px-[6px] text-sm text-[#202124]'>마이크가 차단됨</div>
           )}
         </div>
       </div>
-      <div className='flex items-center sm:block'>
+      <div className='flex items-center sm:block gap-4'>
         <div className='min-w-[100px]' style={{ flex: '1 1 100px' }}>
           <div>
             <p className='mb-2 text-sm font-medium text-[#1A73E8]'>스피커</p>
@@ -115,12 +113,12 @@ export default function AudioSetting() {
             disabled={permission?.audio ? (audioOuputList.length === 0 ? '시스템' : false) : '권한'}
           />
         </div>
-        <div className='ml-6 flex w-40 items-center justify-center pt-7'>
+        <div className='flex items-center justify-center pt-7'>
           <button
             type='button'
             onClick={handleAudioTestButton}
             disabled={isPlay}
-            className='h-10 rounded-full px-3 text-sm text-[#444746] hover:bg-[#ECF2FC] hover:text-[#0B57D0] active:bg-[#D5E2F7]'
+            className='h-10 w-12 rounded-full text-sm text-[#444746] hover:bg-[#ECF2FC] hover:text-[#0B57D0] active:bg-[#D5E2F7]'
           >
             {isPlay ? '재생 중' : '테스트'}
           </button>

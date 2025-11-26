@@ -1,6 +1,6 @@
 'use client';
 
-import { PropsWithChildren, useState, useEffect, useRef } from 'react';
+import { PropsWithChildren, useState, useEffect, useRef, JSX } from 'react';
 import ReactDOM from 'react-dom';
 
 interface AlertProperties {

@@ -35,33 +35,33 @@ export default function VideoSetting() {
   }, [stream]);
 
   return (
-    <div className='flex items-center sm:block'>
-      <div className='min-w-[100px]' style={{ flex: '1 1 100px' }}>
-        <div>
-          <p className='mb-2 text-sm font-medium text-[#1A73E8]'>카메라</p>
-        </div>
-        <DeviceSelectBox
-          currentValue={videoInput}
-          deviceList={videoInputList}
-          onChange={handleVideoChange}
-          DeviceIcon={Icon.VideoOn}
-          disabled={permission?.video ? false : '권한'}
-        />
-      </div>
-      <div className='ml-6 flex w-40 items-center justify-center pt-7'>
-        {permission?.video ? (
-          <video
-            autoPlay
-            muted
-            ref={videoReference}
-            className='aspect-video h-[58px] object-cover'
-            style={{ transform: 'rotateY(180deg)' }}
-          />
-        ) : (
-          <div className='flex h-14 w-[160px] items-center justify-center bg-[#F1F3F4] text-sm text-[#202124]'>
-            카메라 차단됨
+    <div className='flex flex-col gap-6 flex-1'>
+      <div className='flex items-center sm:block gap-4'>
+        <div className='min-w-[100px]' style={{ flex: '1 1 100px' }}>
+          <div>
+            <p className='mb-2 text-sm font-medium text-[#1A73E8]'>카메라</p>
           </div>
-        )}
+          <div className='flex items-center gap-4 flex-1 sm:flex-col-reverse'>
+            <DeviceSelectBox
+              currentValue={videoInput}
+              deviceList={videoInputList}
+              onChange={handleVideoChange}
+              DeviceIcon={Icon.VideoOn}
+              disabled={permission?.video ? false : '권한'}
+            />
+            <div className='flex justify-center'>
+              {permission?.video && (
+                <video
+                  autoPlay
+                  muted
+                  ref={videoReference}
+                  className='aspect-video w-40 object-cover sm:w-full sm:rounded-md'
+                  style={{ transform: 'rotateY(180deg)' }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

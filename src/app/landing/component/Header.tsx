@@ -17,12 +17,14 @@ const ICON_PROPS = {
   width: 24,
 };
 
+const HELP_URL = 'https://github.com/armd482/meetproejct';
+
 const HELP_BUTTON = [
-  { href: 'https://github.com/armd482/meetproejct', name: '도움말' },
-  { href: 'https://github.com/armd482/meetproejct', name: '교육' },
-  { href: 'https://github.com/armd482/meetproejct', name: '서비스 약관' },
-  { href: 'https://github.com/armd482/meetproejct', name: '개인정보처리방침' },
-  { href: 'https://github.com/armd482/meetproejct', name: '약관 요약' },
+  { href: HELP_URL, name: '도움말' },
+  { href: HELP_URL, name: '교육' },
+  { href: HELP_URL, name: '서비스 약관' },
+  { href: HELP_URL, name: '개인정보처리방침' },
+  { href: HELP_URL, name: '약관 요약' },
 ];
 
 export default function Header() {
