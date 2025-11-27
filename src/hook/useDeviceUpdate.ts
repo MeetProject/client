@@ -245,84 +245,15 @@ const useDevice = () => {
 		[updateStream],
 	);
 
-	useEffect(() => {
-		const handleDeviceChange = async () => {
-			if (!deviceStream) {
-				return;
-			}
-			await updateDeviceStatus(deviceStream);
-		};
-
-		navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
-
-		return () => {
-			navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange);
-		};
-	}, [deviceStream, updateDeviceStatus]);
-
-	useEffect(() => {
-		if (!deviceStream) {
-			return;
-		}
-		const checkDevicePermission = async () => {
-			const isEnableCheckPermission = await checkPermissionOnchange('microphone');
-			if (isEnableCheckPermission) {
-				await addPermissionListener(async () => {
-					stopStream();
-					await updateStream();
-				});
-			} else {
-				timerReference.current = setInterval(async () => {
-					const tracks = deviceStream.getTracks();
-					const isDeny = tracks.some((track) => track.muted);
-					if (isDeny) {
-						stopStream();
-						await updateStream();
-					}
-				}, 1000);
-			}
-		};
-
-		checkDevicePermission();
-		return () => {
-			if (timerReference.current) {
-				clearInterval(timerReference.current);
-				timerReference.current = null;
-			}
-		};
-	}, [deviceStream, updateStream, stopStream]);
-
-	useEffect(() => {
-		if (!deviceStream) {
-			return;
-		}
-
-		const checkLiveState = () => {
-			const live = deviceStream.getTracks().some((track) => track.readyState === 'live');
-			if (!live) {
-				updateStream();
-			}
-		};
-
-		deviceStream.getTracks().forEach((track) => {
-			track.addEventListener('ended', checkLiveState);
-		});
-
-		checkLiveState();
-
-		return () => {
-			deviceStream.getTracks().forEach((track) => {
-				track.removeEventListener('ended', checkLiveState);
-			});
-		};
-	}, [deviceStream, updateStream]);
-
 	return {
-		changeTrack,
+		addPermissionListener,
+    changeTrack,
+    checkPermissionOnchange,
 		stopScreenStream,
 		stopStream,
-		toggleAudioInput,
+    toggleAudioInput,
 		toggleVideoInput,
+		updateDeviceStatus,
 		updateScreenStream,
 		updateStream,
 	};

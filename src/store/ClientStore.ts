@@ -6,11 +6,13 @@ interface ClientStoreType {
 	isClientReady: boolean;
 	subscriptions: Map<string, StompSubscription>;
 	roomSubscriptions: Map<string, StompSubscription>;
+	roomId: string | null;
 
 	setClient: (value: Client | null) => void;
 	setIsClientReady: (value: boolean | null) => void;
 	addSubscriptions: (id: string, sub: StompSubscription) => void;
 	removeSubscriptions: (id: string) => void;
+	setRoomId: (id: string | null) => void;
 	addRoomSubscriptions: (id: string, sub: StompSubscription) => void;
 	removeRoomSubscriptions: (id: string) => void;
 	clearSubscriptions: () => void;
@@ -35,7 +37,6 @@ export const useClientStore = create<ClientStoreType>((set, get) => ({
 
 	client: null,
 	isClientReady: null,
-
 	removeRoomSubscriptions: (id) => {
 		const sub = get().roomSubscriptions.get(id);
 		sub?.unsubscribe();
@@ -48,11 +49,15 @@ export const useClientStore = create<ClientStoreType>((set, get) => ({
 		get().subscriptions.delete(id);
 	},
 
+	roomId: null,
+
 	roomSubscriptions: new Map(),
 
 	setClient: (value) => set(() => ({ client: value })),
 
 	setIsClientReady: (value: boolean) => set({ isClientReady: value }),
+
+	setRoomId: (value: string | null) => set({ roomId: value }),
 
 	subscriptions: new Map(),
 }));

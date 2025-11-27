@@ -45,7 +45,6 @@ const useSignalSocket = ({ onChat, onDeleteParticipant, onEmoji, onError }: UseS
 			subscriptions: state.subscriptions,
 		})),
 	);
-	const currentRoomId = useRef<string | null>(null);
 
 	const parseMessage = <T>(message: IMessage) => {
 		const data = JSON.parse(message.body) as T;
@@ -55,7 +54,7 @@ const useSignalSocket = ({ onChat, onDeleteParticipant, onEmoji, onError }: UseS
 
 	const sendJoin = useCallback(
 		(roomId: string) => {
-			const { client } = useClientStore.getState();
+			const { client, setRoomId } = useClientStore.getState();
 			if (!useClientStore.getState().client || !useUserInfoStore.getState().id) {
 				return;
 			}
@@ -102,7 +101,7 @@ const useSignalSocket = ({ onChat, onDeleteParticipant, onEmoji, onError }: UseS
 			});
 			addRoomSubscriptions('device', deviceSub);
 
-			currentRoomId.current = roomId;
+			setRoomId(roomId);
 		},
 		[addRoomSubscriptions, onChat, onDeleteParticipant, onEmoji],
 	);
@@ -252,12 +251,12 @@ const useSignalSocket = ({ onChat, onDeleteParticipant, onEmoji, onError }: UseS
 						onError(response);
 					});
 					addSubscriptions('error', errorSub);
+					const { roomId, setClient } = useClientStore.getState();
 
-					useClientStore.getState().setClient(connectedClient);
-					console.log(connectedClient);
+					setClient(connectedClient);
 
-					if (currentRoomId.current) {
-						sendJoin(currentRoomId.current);
+					if (roomId) {
+						sendJoin(roomId);
 					}
 				},
 				webSocketFactory: () => new SockJS(`http://localhost:8080/ws?userId=${useUserInfoStore.getState().id}`),
@@ -268,14 +267,14 @@ const useSignalSocket = ({ onChat, onDeleteParticipant, onEmoji, onError }: UseS
 	);
 
 	const shareScreen = useCallback(() => {
-		const { client } = useClientStore.getState();
+		const { client, roomId } = useClientStore.getState();
 		const userId = useUserInfoStore.getState().id;
-		if (!client || !userId || !currentRoomId.current) {
+		if (!client || !userId || !roomId) {
 			return;
 		}
 
 		const payload: ScreenPayloadType = {
-			roomId: currentRoomId.current,
+			roomId,
 		};
 
 		client.publish({
@@ -286,16 +285,16 @@ const useSignalSocket = ({ onChat, onDeleteParticipant, onEmoji, onError }: UseS
 	}, []);
 
 	const stopScreenShare = useCallback(() => {
-		const { client } = useClientStore.getState();
+		const { client, roomId } = useClientStore.getState();
 		const userId = useUserInfoStore.getState().id;
 
-		if (!client || !userId || !currentRoomId.current) {
+		if (!client || !userId || !roomId) {
 			return;
 		}
 
 		const payload = {
 			ownerId: userId,
-			roomId: currentRoomId.current,
+			roomId,
 		};
 
 		client.publish({
@@ -306,15 +305,15 @@ const useSignalSocket = ({ onChat, onDeleteParticipant, onEmoji, onError }: UseS
 	}, []);
 
 	const sendChat = useCallback((message: string) => {
-		const { client } = useClientStore.getState();
+		const { client, roomId } = useClientStore.getState();
 
-		if (!client || !currentRoomId.current) {
+		if (!client || !roomId) {
 			return;
 		}
 
 		const payload = {
 			message,
-			roomId: currentRoomId.current,
+			roomId,
 		};
 
 		client.publish({
@@ -325,15 +324,15 @@ const useSignalSocket = ({ onChat, onDeleteParticipant, onEmoji, onError }: UseS
 	}, []);
 
 	const sendEmoji = useCallback((emoji: EmojiType) => {
-		const { client } = useClientStore.getState();
+		const { client, roomId } = useClientStore.getState();
 
-		if (!client || !currentRoomId.current) {
+		if (!client || !roomId) {
 			return;
 		}
 
 		const payload = {
 			emoji: emoji.toUpperCase(),
-			roomId: currentRoomId.current,
+			roomId,
 		};
 
 		client.publish({
@@ -344,14 +343,14 @@ const useSignalSocket = ({ onChat, onDeleteParticipant, onEmoji, onError }: UseS
 	}, []);
 
 	const sendHandUp = useCallback((value: boolean) => {
-		const { client } = useClientStore.getState();
+		const { client, roomId } = useClientStore.getState();
 
-		if (!client || !currentRoomId.current) {
+		if (!client || !roomId) {
 			return;
 		}
 
 		const payload = {
-			roomId: currentRoomId.current,
+			roomId,
 			value,
 		};
 
@@ -363,14 +362,14 @@ const useSignalSocket = ({ onChat, onDeleteParticipant, onEmoji, onError }: UseS
 	}, []);
 
 	const sendDevice = useCallback((mediaOption: DeviceEnableType) => {
-		const { client } = useClientStore.getState();
+		const { client, roomId } = useClientStore.getState();
 
-		if (!client || !currentRoomId.current) {
+		if (!client || !roomId) {
 			return;
 		}
 		const payload = {
 			mediaOption,
-			roomId: currentRoomId.current,
+			roomId,
 		};
 
 		client.publish({
@@ -381,13 +380,13 @@ const useSignalSocket = ({ onChat, onDeleteParticipant, onEmoji, onError }: UseS
 	}, []);
 
 	const sendLeave = useCallback((streamType: StreamType) => {
-		const { clearRoomSubscriptions, client } = useClientStore.getState();
-		if (!client || !useUserInfoStore.getState().id || !currentRoomId.current) {
+		const { clearRoomSubscriptions, client, roomId, setRoomId } = useClientStore.getState();
+		if (!client || !useUserInfoStore.getState().id || !roomId) {
 			return;
 		}
 
 		const payload: LeavePayloadType = {
-			roomId: currentRoomId.current,
+			roomId,
 			streamType,
 		};
 
@@ -399,7 +398,7 @@ const useSignalSocket = ({ onChat, onDeleteParticipant, onEmoji, onError }: UseS
 
 		if (streamType === 'USER') {
 			clearRoomSubscriptions();
-			currentRoomId.current = null;
+			setRoomId(null);
 		}
 	}, []);
 
