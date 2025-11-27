@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useShallow } from 'zustand/shallow';
 
 import * as Icon from '@/asset/icon';
-import { useOutsideClick } from '@/hook';
-import useWebRTC from '@/hook/useWebRTC/useWebRTC';
+import { useOutsideClick, useWebRTC } from '@/hook';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 
 export default function InfoMenu() {

@@ -6,8 +6,7 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { Loading } from '@/component';
 import { ToggleContext } from '@/context/ToggleContext';
-import { useDevice } from '@/hook';
-import useWebRTC from '@/hook/useWebRTC/useWebRTC';
+import { useDevice, useWebRTC } from '@/hook';
 import { timeDifferenceInMinutes } from '@/lib/date';
 import { useClientStore } from '@/store/ClientStore';
 import { useDeviceStore } from '@/store/DeviceStore';
