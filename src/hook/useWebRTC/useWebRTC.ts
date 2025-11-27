@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 
 import { useClientStore } from '@/store/ClientStore';
 import { useWebRTCStore } from '@/store/WebRTCStore';
-import { ChatResponseType, EmojiResponseType } from '@/type/reactionType';
+import { ChatResponseType, EmojiResponseType } from '@/type/signalType';
 import { ErrorResponseType, StreamType } from '@/type/signalType';
 import { DeviceEnableType } from '@/type/streamType';
 

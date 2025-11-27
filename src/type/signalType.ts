@@ -1,3 +1,6 @@
+import { EmojiType } from "./reactionType";
+import { DeviceEnableType } from './streamType';
+
 type ResponseType = 'REGISTER' | 'JOIN' | 'ANSWER' | 'OFFER' | 'ICE' | 'LEAVE' | 'SCREEN' | 'ERROR';
 export type StreamType = 'USER' | 'SCREEN';
 
@@ -77,6 +80,11 @@ export interface ScreenPayloadType {
 	roomId: string;
 }
 
+export interface ScreenStopPayloadType {
+	ownerId: string;
+	roomId: string;
+}
+
 export interface ScreenResponseType extends SignalResponseType {
 	participants: string[];
 }
@@ -84,4 +92,54 @@ export interface ScreenResponseType extends SignalResponseType {
 export interface ErrorResponseType extends SignalResponseType {
 	code: string;
 	message: string;
+}
+
+
+type TopicType = 'LEAVE' | 'CHAT' | 'EMOJI' | 'DEVICE' | 'HANDUP';
+
+interface TopicResponsType {
+	type: TopicType;
+	id: string;
+}
+
+export interface ChatPayloadType {
+	message: string;
+	roomId: string;
+}
+
+export interface ChatResponseType extends TopicResponsType {
+	userId: string;
+	message: string;
+	timestamp: string;
+}
+
+export interface EmojiPayloadType {
+	roomId: string,
+	emoji: EmojiType,
+}
+
+export interface EmojiResponseType extends TopicResponsType {
+	userId: string;
+	emoji: EmojiType;
+	timestamp: string;
+}
+
+export interface handUpPayloadType {
+	roomId: string;
+	value: boolean;
+}
+
+export interface HandUpResponseType extends TopicResponsType {
+	userId: string;
+	value: boolean;
+}
+
+export interface DevicePayloadType {
+	roomId: string;
+	mediaOption: DeviceEnableType;
+}
+
+export interface DeviceResponseType extends TopicResponsType {
+	userId: string;
+	mediaOption: DeviceEnableType;
 }

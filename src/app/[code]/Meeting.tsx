@@ -13,7 +13,8 @@ import { useDeviceStore } from '@/store/DeviceStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useWebRTCStore } from '@/store/WebRTCStore';
 import { UserListType } from '@/type/participantType';
-import { ChatResponseType, ChatType, EmojiResponseType } from '@/type/reactionType';
+import { ChatType } from '@/type/reactionType';
+import { ChatResponseType, EmojiResponseType } from '@/type/signalType';
 import { ErrorResponseType } from '@/type/signalType';
 
 import {
