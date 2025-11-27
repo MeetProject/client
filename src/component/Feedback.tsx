@@ -1,6 +1,6 @@
 'use client';
 
-import { PropsWithChildren, useState, useEffect } from 'react';
+import { PropsWithChildren, useState, useEffect, JSX } from 'react';
 import ReactDOM from 'react-dom';
 
 import { BaseContent, Header, Report, Suggest } from './part/Feedback';

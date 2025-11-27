@@ -12,6 +12,9 @@ import Modal from './Modal';
 import { AudioSetting, VideoSetting } from './part/Setting';
 import RequestModal from './RequestModal';
 
+type Category = 'audio' | 'video' | 'general';
+type SettingModalState = 'loading' | 'initial-request' | 'request' | 'setting';
+
 interface SettingProperties {
 	isOpen: boolean;
 	onClose: () => void;
@@ -24,9 +27,6 @@ interface SettingModalProperties {
 interface SettingContentProperties {
 	category: Category;
 }
-
-type Category = 'audio' | 'video' | 'general';
-type SettingModalState = 'loading' | 'initial-request' | 'request' | 'setting';
 
 interface CategoryButtonType {
 	name: string;

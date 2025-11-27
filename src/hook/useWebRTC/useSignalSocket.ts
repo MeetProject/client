@@ -10,6 +10,7 @@ import { useDeviceStore } from '@/store/DeviceStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useWebRTCStore } from '@/store/WebRTCStore';
 import { ChatResponseType, DeviceResponseType, EmojiResponseType, HandUpResponseType } from '@/type/reactionType';
+import { EmojiType } from '@/type/reactionType';
 import {
 	IcePayloadType,
 	JoinResponseType,
@@ -26,7 +27,6 @@ import {
 	AnswerResponseType,
 } from '@/type/signalType';
 import { DeviceEnableType } from '@/type/streamType';
-import { EmojiType } from '@/type/toggleType';
 
 interface UseSignalSocketProperties {
 	onDeleteParticipant: (targetId: string, streamType: StreamType) => void;
@@ -413,23 +413,6 @@ const useSignalSocket = ({ onChat, onDeleteParticipant, onEmoji, onError }: UseS
 		setClient(null);
 		setIsClientReady(null);
 	}, []);
-
-	/* useEffect(() => {
-    const handler = () => {
-      const userId = useUserInfoStore.getState().id;
-      const roomId = currentRoomId.current;
-      if (!userId || !roomId) return;
-
-      const data = new FormData();
-      data.append('userId', userId);
-      data.append('roomId', roomId);
-
-      navigator.sendBeacon('http://localhost:8080/api/leave', data);
-    };
-
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
-  }, []); */
 
 	return {
 		connectSocket,

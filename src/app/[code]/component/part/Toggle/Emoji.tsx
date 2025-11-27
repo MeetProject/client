@@ -1,7 +1,7 @@
 import { StaticImageData } from 'next/image';
 
 import * as image from '@/asset/image';
-import { EmojiType } from '@/type/toggleType';
+import { EmojiType } from '@/type/reactionType';
 
 import EmojiButton from './EmojiButton';
 

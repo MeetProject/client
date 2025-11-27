@@ -3,7 +3,7 @@
 import { useContext } from 'react';
 
 import { ToggleContext } from '@/context/ToggleContext';
-import { EmojiType } from '@/type/toggleType';
+import { EmojiType } from '@/type/reactionType';
 
 import { Caption, Emoji } from './part/Toggle';
 

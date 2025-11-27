@@ -8,7 +8,7 @@ import * as ImageSrc from '@/asset/image';
 import { Visualizer } from '@/component';
 import { useWebRTCStore } from '@/store/WebRTCStore';
 import { EmojiResponseType } from '@/type/reactionType';
-import { EmojiType } from '@/type/toggleType';
+import { EmojiType } from '@/type/reactionType';
 
 interface UserInfo extends Record<'id' | 'name' | 'color', string> {
 	audio: boolean;

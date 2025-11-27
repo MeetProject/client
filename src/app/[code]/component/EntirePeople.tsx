@@ -1,43 +1,30 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
-import { useLayoutEffect, useState } from 'react';
-
-import { ParticipantDataType } from '@/type/participantType';
+import { useWebRTCStore } from '@/store/WebRTCStore';
 
 const MAX_NUM = 4;
 
 export default function EntirePeople() {
-  const [data, setData] = useState<ParticipantDataType[]>([]);
-  const sessionId = usePathname().slice(1);
+  const { participantsUserData } = useWebRTCStore(); 
 
-  useLayoutEffect(() => {
-    const getData = async () => {
-      if (!sessionId) {
-        return;
-      }
-      /* 방 참가자 정보 가져오기 */
-    };
-    getData();
-  }, [sessionId]);
   return (
     <div className='flex flex-col items-center justify-center pt-2'>
       <div
         className='relative flex items-center'
-        style={{ width: data.length ? `${24 + 12 * (Math.min(data.length, 4) - 1)}px` : '0px' }}
+        style={{ width: participantsUserData.size ? `${24 + 12 * (Math.min(participantsUserData.size, 4) - 1)}px` : '0px' }}
       >
-        {data.slice(0, MAX_NUM).map((user, index) => (
-          <div key={user._id} className='relative' style={{ left: index === 0 ? '0px' : `${-12 * index}px` }}>
+        {Array.from(participantsUserData).slice(0, MAX_NUM).map(([userId, userData], index) => (
+          <div key={userId} className='relative' style={{ left: index === 0 ? '0px' : `${-12 * index}px` }}>
             <div
               className='flex size-6 items-center justify-center truncate rounded-full text-sm font-bold text-white'
-              style={{ backgroundColor: user.color }}
+              style={{ backgroundColor: userData.profileColor }}
             >
-              {user.userName.slice(0, 3)}
+              {userData.userName.slice(0, 3)}
             </div>
           </div>
         ))}
       </div>
-      {data.length > 0 && <p className='mt-1'>{`총 ${data.length}명`}</p>}
+      {participantsUserData.size > 0 && <p className='mt-1'>{`총 ${participantsUserData.size}명`}</p>}
     </div>
   );
 }

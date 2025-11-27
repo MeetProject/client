@@ -6,7 +6,7 @@ import * as Icon from '@/asset/icon';
 import { ButtonTag } from '@/component';
 import { PanelContext } from '@/context/PanelContext';
 import { useWebRTCStore } from '@/store/WebRTCStore';
-import { PanelType } from '@/type/panelType';
+import { PanelType } from '@/type/menuType';
 import { UserListType } from '@/type/participantType';
 import { ChatType } from '@/type/reactionType';
 

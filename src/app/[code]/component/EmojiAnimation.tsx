@@ -8,7 +8,7 @@ import * as webp from '@/asset/webp';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useWebRTCStore } from '@/store/WebRTCStore';
 import { EmojiResponseType } from '@/type/reactionType';
-import { EmojiType } from '@/type/toggleType';
+import { EmojiType } from '@/type/reactionType';
 
 interface EmojiAnimationProperties {
 	emoji: EmojiResponseType;

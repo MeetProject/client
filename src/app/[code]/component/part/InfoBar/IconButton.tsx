@@ -4,7 +4,7 @@ import { ReactNode, useContext } from 'react';
 
 import { ButtonTag } from '@/component';
 import { PanelContext } from '@/context/PanelContext';
-import { PanelType } from '@/type/panelType';
+import { PanelType } from '@/type/menuType';
 
 interface IconButtonProperties {
 	icon: ReactNode;

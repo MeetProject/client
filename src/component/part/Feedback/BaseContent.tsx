@@ -5,7 +5,7 @@ import { MouseEvent } from 'react';
 
 import * as Icon from '@/asset/icon';
 import * as image from '@/asset/image';
-import { CategoryType } from '@/type/feedbackType';
+import { CategoryType } from '@/type/menuType';
 
 interface BaseContentProperties {
 	onClick: (value: CategoryType) => void;

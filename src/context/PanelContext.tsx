@@ -1,6 +1,6 @@
 import { createContext, PropsWithChildren, useCallback, useMemo, useState } from 'react';
 
-import { PanelType } from '@/type/panelType';
+import { PanelType } from '@/type/menuType';
 
 interface PanelContextType {
 	panelType: null | PanelType;

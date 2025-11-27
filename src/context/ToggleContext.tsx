@@ -1,6 +1,6 @@
 import { createContext, PropsWithChildren, useCallback, useMemo, useState } from 'react';
 
-import { ToggleStatusType, ToggleType } from '@/type/toggleType';
+import { ToggleStatusType, ToggleType } from '@/type/menuType';
 
 interface ToggleContextType {
 	toggleStatus: ToggleStatusType;

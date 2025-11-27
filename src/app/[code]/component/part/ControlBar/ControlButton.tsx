@@ -5,7 +5,7 @@ import { ReactNode, useCallback, useContext } from 'react';
 import { ButtonTag } from '@/component';
 import { ToggleContext } from '@/context/ToggleContext';
 import { useShortcutKey } from '@/hook';
-import { ToggleType } from '@/type/toggleType';
+import { ToggleType } from '@/type/menuType';
 
 interface ControlButtonProperties {
 	icon: ReactNode;

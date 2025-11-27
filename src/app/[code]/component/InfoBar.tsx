@@ -4,7 +4,7 @@ import { ReactNode, useState } from 'react';
 
 import * as Icon from '@/asset/icon';
 import { useOutsideClick } from '@/hook';
-import { PanelType } from '@/type/panelType';
+import { PanelType } from '@/type/menuType';
 
 import { IconButton } from './part/InfoBar';
 

@@ -4,7 +4,7 @@ import { MouseEvent } from 'react';
 
 import * as Icon from '@/asset/icon';
 import ButtonTag from '@/component/ButtonTag';
-import { CategoryType } from '@/type/feedbackType';
+import { CategoryType } from '@/type/menuType';
 
 interface HeaderProperties {
 	type: CategoryType;

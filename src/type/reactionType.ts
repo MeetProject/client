@@ -1,5 +1,4 @@
 import { DeviceEnableType } from './streamType';
-import { EmojiType } from './toggleType';
 
 type TopicType = 'LEAVE' | 'CHAT' | 'EMOJI' | 'DEVICE' | 'HANDUP';
 
@@ -34,3 +33,14 @@ export interface DeviceResponseType extends TopicResponsType {
 	userId: string;
 	mediaOption: DeviceEnableType;
 }
+
+export type EmojiType =
+	| 'CLAP'
+	| 'CURIOUS'
+	| 'HEART'
+	| 'LAUGHTER'
+	| 'PARTYPOPPER'
+	| 'SAD'
+	| 'SURPRISE'
+	| 'THUMBDOWN'
+	| 'THUMBUP';

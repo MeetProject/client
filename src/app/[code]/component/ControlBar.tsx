@@ -7,8 +7,8 @@ import { Alert } from '@/component';
 import { useDevice } from '@/hook';
 import { checkBrowser } from '@/lib/checkBrowser';
 import { useDeviceStore } from '@/store/DeviceStore';
+import { ToggleType } from '@/type/menuType';
 import { DeviceEnableType } from '@/type/streamType';
-import { ToggleType } from '@/type/toggleType';
 
 import { ControlButton, MenuButton, OptionButton, CallEndButton } from './part/ControlBar';
 import { PermissionModal } from './part/Device';
