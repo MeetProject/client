@@ -1,3 +1,5 @@
+import { StompSubscription } from "@stomp/stompjs";
+
 import { EmojiType } from "./reactionType";
 import { DeviceEnableType } from './streamType';
 
@@ -142,4 +144,13 @@ export interface DevicePayloadType {
 export interface DeviceResponseType extends TopicResponsType {
 	userId: string;
 	mediaOption: DeviceEnableType;
+}
+
+export interface CreateSignalClientType {
+	connect: () => void;
+	disconnect: () => void;
+	publish: <T>(destination: string, payload: T) => void;
+	signalSub: <T>(destination: string, callback: (responset: T) => Promise<void> | void) => void;
+	subscribe: <T>(destination: string, callback: (responset: T) => Promise<void> | void) => StompSubscription | null;
+	topicSub: <T>(destination: string, callback: (responset: T) => Promise<void> | void) => void;
 }
