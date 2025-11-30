@@ -1,6 +1,6 @@
-import { StompSubscription } from "@stomp/stompjs";
+import { StompSubscription } from '@stomp/stompjs';
 
-import { EmojiType } from "./reactionType";
+import { EmojiType } from './reactionType';
 import { DeviceEnableType } from './streamType';
 
 type ResponseType = 'REGISTER' | 'JOIN' | 'ANSWER' | 'OFFER' | 'ICE' | 'LEAVE' | 'SCREEN' | 'ERROR';
@@ -96,7 +96,6 @@ export interface ErrorResponseType extends SignalResponseType {
 	message: string;
 }
 
-
 type TopicType = 'LEAVE' | 'CHAT' | 'EMOJI' | 'DEVICE' | 'HANDUP';
 
 interface TopicResponsType {
@@ -116,8 +115,8 @@ export interface ChatResponseType extends TopicResponsType {
 }
 
 export interface EmojiPayloadType {
-	roomId: string,
-	emoji: EmojiType,
+	roomId: string;
+	emoji: EmojiType;
 }
 
 export interface EmojiResponseType extends TopicResponsType {

@@ -7,8 +7,8 @@ import jsxA11yPlugin from "eslint-plugin-jsx-a11y";
 import unicornPlugin from "eslint-plugin-unicorn";
 import sonarjsPlugin from "eslint-plugin-sonarjs";
 import perfectionistPlugin from "eslint-plugin-perfectionist";
-import prettierPlugin from "eslint-plugin-prettier";
 import tailwindcssPlugin from "eslint-plugin-tailwindcss";
+import prettierPlugin from "eslint-plugin-prettier";
 import prettierConfig from "eslint-config-prettier";
 
 export default [
@@ -24,38 +24,38 @@ export default [
       },
     },
     plugins: {
-      ts: tsPlugin,
-      react: reactPlugin,
-      "react-hooks": reactHooksPlugin,
-      import: importPlugin,
-      jsxA11y: jsxA11yPlugin,
-      unicorn: unicornPlugin,
-      sonarjs: sonarjsPlugin,
-      perfectionist: perfectionistPlugin,
-      tailwindcss: tailwindcssPlugin,
+      ts: tsPlugin, 
+      react: reactPlugin, 
+      "react-hooks": reactHooksPlugin, 
+      import: importPlugin, 
+      jsxA11y: jsxA11yPlugin, 
+      unicorn: unicornPlugin, 
+      sonarjs: sonarjsPlugin, 
+      perfectionist: perfectionistPlugin, 
+      tailwindcss: tailwindcssPlugin, 
       prettier: prettierPlugin,
     },
     rules: {
-      "unicorn/no-unused-properties": "error",
+      ...prettierConfig.rules,
+      "prettier/prettier": "error",
 
-      "sonarjs/no-duplicate-string": "warn",
+      "unicorn/no-unused-properties": "error", 
+
+      "sonarjs/no-duplicate-string": "warn", 
       "sonarjs/no-identical-functions": "warn",
+
+      "react/react-in-jsx-scope": "off", 
+      "react/jsx-no-duplicate-props": "error", 
+      "react/jsx-curly-brace-presence": ["error", "never"], 
+      "react-hooks/rules-of-hooks": "error", 
+      "react-hooks/exhaustive-deps": "warn", 
+
+      "no-param-reassign": "error",
 
       "perfectionist/sort-imports": "error",
       "perfectionist/sort-objects": "error",
       "perfectionist/sort-array-includes": "error",
-
-      "react/react-in-jsx-scope": "off",
-      "react/jsx-no-duplicate-props": "error",
-      "react/jsx-curly-brace-presence": ["error", "never"],
-      "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "warn",
-
-      "no-param-reassign": "error",
-      indent: ["error", 2, { SwitchCase: 1 }],
       eqeqeq: ["error", "always"],
-
-      ...prettierConfig.rules,
     },
     settings: {
       react: { version: "detect" },

@@ -1,11 +1,9 @@
-import { DeviceProvider, WebSocketProvider } from "@/provider";
+import { DeviceProvider, WebSocketProvider } from '@/provider';
 
-export default function RootProvider({children}) {
-  return(
-    <WebSocketProvider>
-      <DeviceProvider>
-        {children}
-      </DeviceProvider>
-    </WebSocketProvider>
-  )
+export default function RootProvider({ children }) {
+	return (
+		<WebSocketProvider>
+			<DeviceProvider>{children}</DeviceProvider>
+		</WebSocketProvider>
+	);
 }

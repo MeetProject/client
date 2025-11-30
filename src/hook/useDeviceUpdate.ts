@@ -247,11 +247,11 @@ const useDevice = () => {
 
 	return {
 		addPermissionListener,
-    changeTrack,
-    checkPermissionOnchange,
+		changeTrack,
+		checkPermissionOnchange,
 		stopScreenStream,
 		stopStream,
-    toggleAudioInput,
+		toggleAudioInput,
 		toggleVideoInput,
 		updateDeviceStatus,
 		updateScreenStream,

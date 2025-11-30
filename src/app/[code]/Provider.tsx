@@ -8,12 +8,12 @@ import Meetting from './Meeting';
 import Setting from './Profile';
 
 export default function Provider() {
-  const { color, name } = useUserInfoStore(
-    useShallow((state) => ({
-      color: state.color,
-      name: state.name,
-    })),
-  );
+	const { color, name } = useUserInfoStore(
+		useShallow((state) => ({
+			color: state.color,
+			name: state.name,
+		})),
+	);
 
-  return name && color ? <Meetting /> : <Setting />;
+	return name && color ? <Meetting /> : <Setting />;
 }

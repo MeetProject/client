@@ -7,7 +7,17 @@ import { createSignalClient } from '@/lib/signalSocket';
 import { useClientStore } from '@/store/ClientStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { EmojiType } from '@/type/reactionType';
-import { ChatPayloadType, ChatResponseType, CreateSignalClientType, DevicePayloadType, DeviceResponseType, EmojiPayloadType, EmojiResponseType, handUpPayloadType, HandUpResponseType } from '@/type/signalType';
+import {
+	ChatPayloadType,
+	ChatResponseType,
+	CreateSignalClientType,
+	DevicePayloadType,
+	DeviceResponseType,
+	EmojiPayloadType,
+	EmojiResponseType,
+	handUpPayloadType,
+	HandUpResponseType,
+} from '@/type/signalType';
 import {
 	LeaveResponseType,
 	JoinPayloadType,
@@ -24,21 +34,35 @@ interface UseSignalSocketProperties {
 	onChat: (data: ChatResponseType) => void;
 	onEmoji: (data: EmojiResponseType) => void;
 	onHandUp: (data: HandUpResponseType) => void;
-	onLeave: (data: LeaveResponseType ) => void;
+	onLeave: (data: LeaveResponseType) => void;
 }
 
 const useSignalSocket = ({ onChat, onConnect, onDevice, onEmoji, onHandUp, onLeave }: UseSignalSocketProperties) => {
-	const socket =  useRef(createSignalClient({
-		baseUrl: 'http://localhost:8080/ws',
-		onConnect: () => {
-			onConnect(socket.current);
-		}
-	}));
+	const socket = useRef(
+		createSignalClient({
+			baseUrl: 'http://localhost:8080/ws',
+			onConnect: () => {
+				onConnect(socket.current);
+			},
+		}),
+	);
+
+	const subscribeRoomTopics = useCallback(
+		(roomId: string) => {
+			const { CHAT, DEVICE, EMOJI, HANDUP, LEAVE } = TOPIC_PATH.ROOM(roomId);
+			socket.current.topicSub<ChatResponseType>(CHAT, onChat);
+			socket.current.topicSub<EmojiResponseType>(EMOJI, onEmoji);
+			socket.current.topicSub<HandUpResponseType>(HANDUP, onHandUp);
+			socket.current.topicSub<DeviceResponseType>(DEVICE, onDevice);
+			socket.current.topicSub<LeaveResponseType>(LEAVE, onLeave);
+		},
+		[onChat, onEmoji, onHandUp, onDevice, onLeave],
+	);
 
 	const sendJoin = useCallback(
 		(roomId: string) => {
 			const { setRoomId } = useClientStore.getState();
-			if ( !useUserInfoStore.getState().id) {
+			if (!useUserInfoStore.getState().id) {
 				return;
 			}
 
@@ -47,25 +71,15 @@ const useSignalSocket = ({ onChat, onConnect, onDevice, onEmoji, onHandUp, onLea
 			};
 
 			socket.current.publish(APP_PATH.JOIN, payload);
-
-			const { CHAT, DEVICE, EMOJI, HANDUP, LEAVE } = TOPIC_PATH.ROOM(roomId);
-
-			socket.current.topicSub<LeaveResponseType>(LEAVE, onLeave)
-			socket.current.topicSub<ChatResponseType>(CHAT, onChat)
-			socket.current.topicSub<EmojiResponseType>(EMOJI, onEmoji)
-			socket.current.topicSub<HandUpResponseType>(HANDUP, onHandUp)
-			socket.current.topicSub<DeviceResponseType>(DEVICE, onDevice)
-
+			subscribeRoomTopics(roomId);
 			setRoomId(roomId);
 		},
-		[onChat, onEmoji, onLeave, onHandUp, onDevice],
+		[subscribeRoomTopics],
 	);
 
-	const connectSocket = useCallback(
-		() => {
-			socket.current.connect();
-		},[],
-	);
+	const connectSocket = useCallback(() => {
+		socket.current.connect();
+	}, []);
 
 	const shareScreen = useCallback(() => {
 		const { roomId } = useClientStore.getState();
@@ -85,7 +99,7 @@ const useSignalSocket = ({ onChat, onConnect, onDevice, onEmoji, onHandUp, onLea
 		const { roomId } = useClientStore.getState();
 		const userId = useUserInfoStore.getState().id;
 
-		if ( !userId || !roomId) {
+		if (!userId || !roomId) {
 			return;
 		}
 
@@ -140,7 +154,6 @@ const useSignalSocket = ({ onChat, onConnect, onDevice, onEmoji, onHandUp, onLea
 		};
 
 		socket.current.publish(APP_PATH.HAND_UP, payload);
-
 	}, []);
 
 	const sendDevice = useCallback((mediaOption: DeviceEnableType) => {

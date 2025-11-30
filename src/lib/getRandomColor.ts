@@ -1,5 +1,5 @@
 const getRandomValue = (start: number, end: number) => {
-  return Math.floor(Math.random() * (end - start) + start);
+	return Math.floor(Math.random() * (end - start) + start);
 };
 
 /* const calculateLuminance = (r: number, g: number, b: number) => {
@@ -13,10 +13,10 @@ const getRandomValue = (start: number, end: number) => {
 };
  */
 export const getRandomHexColor = (): string => {
-  const HEX = '0123456789abcdef';
-  const rr = `${HEX[getRandomValue(0, 15)]}${HEX[getRandomValue(0, 15)]}`;
-  const gg = `${HEX[getRandomValue(0, 15)]}${HEX[getRandomValue(0, 15)]}`;
-  const bb = `${HEX[getRandomValue(0, 15)]}${HEX[getRandomValue(0, 15)]}`;
+	const HEX = '0123456789abcdef';
+	const rr = `${HEX[getRandomValue(0, 15)]}${HEX[getRandomValue(0, 15)]}`;
+	const gg = `${HEX[getRandomValue(0, 15)]}${HEX[getRandomValue(0, 15)]}`;
+	const bb = `${HEX[getRandomValue(0, 15)]}${HEX[getRandomValue(0, 15)]}`;
 
-  return `#${rr}${gg}${bb}`;
+	return `#${rr}${gg}${bb}`;
 };
