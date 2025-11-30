@@ -1,7 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
-import { useShallow } from 'zustand/react/shallow';
+import { useCallback } from 'react';
 
 import { checkPermissionOnchange } from '@/lib/checkBrowser';
 import { getCurrentDeviceInfo } from '@/lib/getCurrentDeviceInfo';
@@ -11,15 +10,6 @@ import { useDeviceStore } from '@/store/DeviceStore';
 import { DeviceType } from '@/type/streamType';
 
 const useDevice = () => {
-	const timerReference = useRef<NodeJS.Timeout | null>(null);
-
-	const { deviceStream } = useDeviceStore(
-		useShallow((state) => ({
-			deviceStream: state.stream,
-			enable: state.deviceEnable,
-		})),
-	);
-
 	const stopStream = useCallback(() => {
 		const { setStream, setStreamStatus, stream } = useDeviceStore.getState();
 		if (!stream) {

@@ -18,7 +18,7 @@ export default function EntirePeople() {
 				{Array.from(participantsUserData)
 					.slice(0, MAX_NUM)
 					.map(([userId, userData], index) => (
-						<div key={userId} className='relative' style={{ left: index === 0 ? '0px' : `${-12 * index}px` }}>
+						<div className='relative' key={userId} style={{ left: index === 0 ? '0px' : `${-12 * index}px` }}>
 							<div
 								className='flex size-6 items-center justify-center truncate rounded-full text-sm font-bold text-white'
 								style={{ backgroundColor: userData.profileColor }}

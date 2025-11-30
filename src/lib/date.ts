@@ -5,9 +5,7 @@ export const timeDifferenceInMinutes = (date1: string, date2: string) => {
 	return Math.abs(firstDate - secondDate) / (1000 * 60);
 };
 
-const formatNumber = (number: number) => {
-	return number.toString().padStart(2, '0');
-};
+const formatNumber = (number: number) => number.toString().padStart(2, '0');
 
 export const formatTime = (date: Date | string | null) => {
 	if (date === null) {

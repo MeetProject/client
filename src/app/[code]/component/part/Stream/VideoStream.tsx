@@ -76,10 +76,10 @@ export default function VideoStream({
 		<div className='relative flex size-full items-center'>
 			<div className=' relative flex size-full items-center justify-center overflow-hidden rounded-lg bg-[#3C4043]'>
 				<video
-					ref={videoReference}
-					autoPlay
-					muted={muted}
+					autoPlay={true}
 					className={`absolute left-0 top-0 size-full ${isScreen ? 'object-contain' : 'object-cover'}`}
+					muted={muted}
+					ref={videoReference}
 				/>
 				{!user.video && (
 					<div className='absolute left-0 top-0 z-20 size-full bg-[#3C4043]'>
@@ -96,20 +96,20 @@ export default function VideoStream({
 						<Visualizer stream={stream} />
 					) : (
 						<div className='flex size-[26px] items-center justify-center rounded-full bg-[#34373A]'>
-							<Icon.MicOff width={18} height={18} fill='#ffffff' />
+							<Icon.MicOff fill='#ffffff' height={18} width={18} />
 						</div>
 					)}
 				</div>
 
 				{emojiIcon && (
 					<div className='absolute left-2 top-2 z-30 flex size-[26px] items-center justify-center rounded-full bg-[#34373A]'>
-						<Image alt={emojiIcon.emoji} src={EMOJI_IMAGE[emojiIcon.emoji]} width={16} height={16} />
+						<Image alt={emojiIcon.emoji} height={16} src={EMOJI_IMAGE[emojiIcon.emoji]} width={16} />
 					</div>
 				)}
 
 				{participantsHandUp && participantsHandUp.get(user.id) ? (
 					<div className='absolute bottom-2 left-2 z-30 flex h-6 max-w-full items-center justify-center gap-2 rounded-full bg-white pl-2 pr-3 font-googleSans text-sm text-[#202124]'>
-						<Icon.HandsUp width={14} height={14} fill='#202124' />
+						<Icon.HandsUp fill='#202124' height={14} width={14} />
 						<p className='truncate'>{user.name}</p>
 					</div>
 				) : (

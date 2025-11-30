@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
+import IconButton from './IconButton';
+
 import * as Icon from '@/asset/icon';
 import { useOutsideClick } from '@/hook';
-
-import IconButton from './IconButton';
 
 const HELP_URL = 'https://github.com/armd482/meetproejct';
 
@@ -41,18 +41,18 @@ export default function HelpMenu() {
 
 			{isOpen && (
 				<div
-					ref={targetRef}
 					className='absolute top-12 right-0 z-[5] w-[280px] rounded bg-white py-2'
+					ref={targetRef}
 					style={{
 						boxShadow: '0 3px 5px -1px rgba(0,0,0,.2),0 6px 10px 0 rgba(0,0,0,.14),0 1px 18px 0 rgba(0,0,0,.12)',
 					}}
 				>
 					{HELP_BUTTON.map((button) => (
 						<button
+							className='flex h-12 w-full items-center justify-center px-4 text-black hover:bg-[#F5F5F5] active:bg-[#D7D7D7]'
 							key={button.name}
 							type='button'
 							onClick={() => handleHelpButtonClick(button.href)}
-							className='flex h-12 w-full items-center justify-center px-4 text-black hover:bg-[#F5F5F5] active:bg-[#D7D7D7]'
 						>
 							{button.name}
 						</button>

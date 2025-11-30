@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useRef } from 'react';
 
+import UserListCard from './UserListCard';
+
 import * as Icon from '@/asset/icon';
 import { charMatcher } from '@/lib/filterKeyword';
 import { UserListType } from '@/type/participantType';
-
-import UserListCard from './UserListCard';
 
 interface UserPanelProperties {
 	filterValue?: string;
@@ -41,8 +41,8 @@ export default function UserPanel({ filterValue, userList }: UserPanelProperties
 	return (
 		<div>
 			<button
-				type='button'
 				className={`relative flex h-10 w-full items-center justify-between rounded-t-lg ${!isOpen && 'rounded-b-lg'} border border-solid border-[#DADCE0]`}
+				type='button'
 				onClick={handleClickButton}
 			>
 				<div className='flex flex-1 items-center justify-between px-5 font-googleSans text-sm text-[#202124]'>
@@ -51,10 +51,10 @@ export default function UserPanel({ filterValue, userList }: UserPanelProperties
 				</div>
 				<div className='flex size-10 items-center justify-center pr-2'>
 					<Icon.Chevron
-						width={12}
-						height={12}
-						fill='#202124'
 						className={`${isOpen && 'rotate-180'} stroke-[#202124] stroke-[8px] duration-150`}
+						fill='#202124'
+						height={12}
+						width={12}
 					/>
 				</div>
 			</button>
@@ -62,10 +62,10 @@ export default function UserPanel({ filterValue, userList }: UserPanelProperties
 				<div className='rounded-b-lg border border-t-0 border-solid border-[#DADCE0] py-2 pl-4 pr-1'>
 					{currentUser.map((user) => (
 						<UserListCard
-							key={user.id}
-							name={user.name}
 							color={user.color}
 							isMicOn={user.isMicOn}
+							key={user.id}
+							name={user.name}
 							stream={user.stream}
 						/>
 					))}

@@ -14,19 +14,18 @@ export default function AudioSetting() {
 
 	const { changeTrack } = useDevice();
 
-	const { audioInput, audioInputList, audioOuputList, audioOutput, permission, setAudioInput, setAudioOutput, stream } =
-		useDeviceStore(
-			useShallow((state) => ({
-				audioInput: state.audioInput,
-				audioInputList: state.audioInputList,
-				audioOuputList: state.audioOuputList,
-				audioOutput: state.audioOutput,
-				permission: state.permission,
-				setAudioInput: state.setAudioInput,
-				setAudioOutput: state.setAudioOutput,
-				stream: state.stream,
-			})),
-		);
+	const { audioInput, audioInputList, audioOuputList, audioOutput, permission, stream } = useDeviceStore(
+		useShallow((state) => ({
+			audioInput: state.audioInput,
+			audioInputList: state.audioInputList,
+			audioOuputList: state.audioOuputList,
+			audioOutput: state.audioOutput,
+			permission: state.permission,
+			setAudioInput: state.setAudioInput,
+			setAudioOutput: state.setAudioOutput,
+			stream: state.stream,
+		})),
+	);
 
 	const handleAudioChange = (device: MediaDeviceInfo, type: DeviceType) => {
 		changeTrack(device, type);
@@ -48,14 +47,15 @@ export default function AudioSetting() {
 		}, 4000);
 	};
 
-	useEffect(() => {
-		return () => {
+	useEffect(
+		() => () => {
 			if (timerReference.current) {
 				clearTimeout(timerReference.current);
 				timerReference.current = null;
 			}
-		};
-	}, []);
+		},
+		[],
+	);
 
 	return (
 		<div className='flex flex-col gap-6 flex-1'>
@@ -65,11 +65,11 @@ export default function AudioSetting() {
 						<p className='mb-2 text-sm font-medium text-[#1A73E8]'>마이크</p>
 					</div>
 					<DeviceSelectBox
+						DeviceIcon={Icon.MicOn}
 						currentValue={audioInput}
 						deviceList={audioInputList}
-						onChange={(device: MediaDeviceInfo) => handleAudioChange(device, 'audioInput')}
-						DeviceIcon={Icon.MicOn}
 						disabled={permission?.audio ? false : '권한'}
+						onChange={(device: MediaDeviceInfo) => handleAudioChange(device, 'audioInput')}
 					/>
 				</div>
 				<div className='flex w-12 items-center justify-center pt-7 sm:ml-0 sm:w-full'>
@@ -82,19 +82,19 @@ export default function AudioSetting() {
 						<p className='mb-2 text-sm font-medium text-[#1A73E8]'>스피커</p>
 					</div>
 					<DeviceSelectBox
+						DeviceIcon={Icon.Sound}
 						currentValue={audioOutput}
 						deviceList={audioOuputList}
-						onChange={(device: MediaDeviceInfo) => handleAudioChange(device, 'audioOutput')}
-						DeviceIcon={Icon.Sound}
 						disabled={permission?.audio ? (audioOuputList.length === 0 ? '시스템' : false) : '권한'}
+						onChange={(device: MediaDeviceInfo) => handleAudioChange(device, 'audioOutput')}
 					/>
 				</div>
 				<div className='flex items-center justify-center pt-7'>
 					<button
+						className='h-10 w-12 rounded-full text-sm text-[#444746] hover:bg-[#ECF2FC] hover:text-[#0B57D0] active:bg-[#D5E2F7]'
+						disabled={isPlay}
 						type='button'
 						onClick={handleAudioTestButton}
-						disabled={isPlay}
-						className='h-10 w-12 rounded-full text-sm text-[#444746] hover:bg-[#ECF2FC] hover:text-[#0B57D0] active:bg-[#D5E2F7]'
 					>
 						{isPlay ? '재생 중' : '테스트'}
 					</button>

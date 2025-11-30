@@ -1,6 +1,4 @@
-const getRandomValue = (start: number, end: number) => {
-	return Math.floor(Math.random() * (end - start) + start);
-};
+const getRandomValue = (start: number, end: number) => Math.floor(Math.random() * (end - start) + start);
 
 /* const calculateLuminance = (r: number, g: number, b: number) => {
   const [rNormalized, gNormalized, bNormalized] = [r, g, b].map((value) => value / 255);

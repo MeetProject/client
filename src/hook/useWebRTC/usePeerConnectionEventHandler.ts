@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useDeferredValue } from 'react';
+import { useCallback } from 'react';
+
+import useDevice from '../useDeviceUpdate';
 
 import { useWebRTCStore } from '@/store/WebRTCStore';
 import { StreamType } from '@/type/signalType';
 import { DeviceEnableType } from '@/type/streamType';
-
-import useDevice from '../useDeviceUpdate';
 
 const usePeerConnectionEventHandler = () => {
 	const { stopScreenStream } = useDevice();

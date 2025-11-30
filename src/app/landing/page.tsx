@@ -21,8 +21,8 @@ export default function Page() {
 					<div className='mt-8 w-full border-t border-solid border-[#747775] pt-4 text-xs'>
 						Project Meet에 관해{' '}
 						<Link
-							href='https://github.com/armd482/meetproejct'
 							className='border-solid border-[#0B57D5] text-[#0B57D5] hover:border-b'
+							href='https://github.com/armd482/meetproejct'
 						>
 							자세히 알아보세요.
 						</Link>

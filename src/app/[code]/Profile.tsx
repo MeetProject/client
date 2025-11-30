@@ -1,15 +1,15 @@
 import Link from 'next/link';
 
-import * as Icon from '@/asset/icon';
-
 import { Device, NameForm } from './component';
+
+import * as Icon from '@/asset/icon';
 
 export default function Profile() {
 	return (
 		<div className='flex h-screen w-screen flex-col bg-white'>
 			<header className='relative p-4'>
-				<Link href='/' className='flex items-center gap-2 whitespace-nowrap'>
-					<Icon.Logo width={36} height={36} />
+				<Link className='flex items-center gap-2 whitespace-nowrap' href='/'>
+					<Icon.Logo height={36} width={36} />
 					<p className='text-1.5xl font-semibold text-gray-600'>Project</p>
 					<p className='text-1.5xl font-medium text-gray-600'>Meet</p>
 				</Link>

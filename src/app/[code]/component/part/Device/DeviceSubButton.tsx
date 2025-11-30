@@ -44,9 +44,9 @@ export default function DeviceSubButton({ color, type, volume }: DeviceSubButton
 				<div className='flex h-10 items-center px-4'>
 					<div className='mr-4 flex size-6 items-center justify-center'>
 						{deviceEnable.audio ? (
-							<Icon.MicOn width={18} height={18} fill={color === 'black' ? '#E8EAED' : '#202124'} />
+							<Icon.MicOn fill={color === 'black' ? '#E8EAED' : '#202124'} height={18} width={18} />
 						) : (
-							<Icon.MicOff width={20} height={20} fill={color === 'black' ? '#E8EAED' : '#B5B6B7'} />
+							<Icon.MicOff fill={color === 'black' ? '#E8EAED' : '#B5B6B7'} height={20} width={20} />
 						)}
 					</div>
 					{deviceEnable.audio ? (
@@ -63,12 +63,12 @@ export default function DeviceSubButton({ color, type, volume }: DeviceSubButton
 				</div>
 			) : (
 				<button
-					type='button'
 					className={`flex h-10 w-full items-center px-4 ${color === 'black' ? 'hover:bg-[#37383B] active:bg-[#494A4D]' : 'hover:bg-[#F5F5F5] active:bg-[#D7D7D7]'} `}
+					type='button'
 					onClick={handleAudioButtonClick}
 				>
 					<div className='mr-4 flex size-6 items-center justify-center'>
-						<Icon.Sound width={18} height={18} fill={color === 'black' ? '#E8EAED' : '#202124'} />
+						<Icon.Sound fill={color === 'black' ? '#E8EAED' : '#202124'} height={18} width={18} />
 					</div>
 					<div className={`text-sm ${color === 'black' && 'text-white'}`}>스피커 테스트</div>
 				</button>

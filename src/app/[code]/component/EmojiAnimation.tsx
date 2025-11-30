@@ -51,7 +51,7 @@ function EmojiIcon({ deleteEmoji, emoji, maxWidth }: EmojiAnimationProperties) {
 			className='absolute bottom-0 flex animate-move-bottom-up flex-col items-center justify-center gap-2'
 			style={{ left: `${Math.random() * Math.min(Math.max(maxWidth - 36, 0), 250)}px` }}
 		>
-			<Image src={EMOJI_IMAGE[emoji.emoji]} width={36} height={36} alt={emoji.emoji} />
+			<Image alt={emoji.emoji} height={36} src={EMOJI_IMAGE[emoji.emoji]} width={36} />
 			<div
 				className={`max-w-28 truncate rounded-full px-2 text-sm ${emoji.userId === id ? 'bg-[#8AB4F8] text-[#48525F]' : 'bg-[#202124] text-white'} `}
 			>

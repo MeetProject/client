@@ -79,9 +79,9 @@ export default function Feedback({ isOpen, onClose }: FeedBackProperties) {
 
 							<div className='flex justify-end bg-white p-5 pb-4' style={{ boxShadow: '0 -1px 4px rgba(48,48,48,.3)' }}>
 								<button
-									type='button'
-									disabled={!isCompletedForm}
 									className={`h-9 rounded px-6 font-googleSans text-sm ${isCompletedForm ? 'bg-[#0B57D0] text-white' : 'bg-[#E4E4E4] text-[#555555]'}`}
+									disabled={!isCompletedForm}
+									type='button'
 								>
 									보내기
 								</button>

@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, ChangeEvent } from 'react';
 
+import { CaptureButton, StyleLink } from './index';
+
 import * as Icon from '@/asset/icon';
 import ButtonTag from '@/component/ButtonTag';
-
-import { CaptureButton, StyleLink } from './index';
 
 interface SuggestProperties {
 	onComplete: (value: boolean) => void;
@@ -46,15 +46,17 @@ export default function Suggest({ onComplete, onVisible }: SuggestProperties) {
 			<div className='flex flex-col gap-[10px]'>
 				<p className='text-sm text-custom-gray'>제안사항 설명</p>
 				<textarea
+					className='min-h-[122px] resize-none overflow-hidden rounded border border-solid border-[#444746] p-[15px] text-custom-gray outline-none placeholder:text-custom-gray'
+					placeholder='제품을 개선하는 데 도움이 될 만한 의견을 알려주세요'
+					ref={textareaReference}
 					value={text}
 					onChange={handleTextChange}
-					ref={textareaReference}
-					placeholder='제품을 개선하는 데 도움이 될 만한 의견을 알려주세요'
-					className='min-h-[122px] resize-none overflow-hidden rounded border border-solid border-[#444746] p-[15px] text-custom-gray outline-none placeholder:text-custom-gray'
 				/>
 				<div className='mt-[-2px] flex items-center gap-2'>
 					<p className='text-xs text-[#444746]'>민간함 정보는 포함하지 마세요.</p>
 					<ButtonTag
+						instant={true}
+						name='민감한 정보는 보호되어야 하는 모든 데이터를 의미합니다. 예를 들어 비밀번호, 신용카드 번호, 세부적인 개인 정보를 포함하지 마세요.'
 						style={{
 							height: '64px',
 							left: '-30px',
@@ -62,21 +64,19 @@ export default function Suggest({ onComplete, onVisible }: SuggestProperties) {
 							top: '100%',
 							width: '294px',
 						}}
-						instant
-						name='민감한 정보는 보호되어야 하는 모든 데이터를 의미합니다. 예를 들어 비밀번호, 신용카드 번호, 세부적인 개인 정보를 포함하지 마세요.'
 					>
-						<Icon.Help width={16} height={16} fill='#444746' className='group' />
+						<Icon.Help className='group' fill='#444746' height={16} width={16} />
 					</ButtonTag>
 				</div>
 			</div>
-			<CaptureButton imgSrc={imgSource} onVisible={onVisible} onImageChange={handleImageChange} />
+			<CaptureButton imgSrc={imgSource} onImageChange={handleImageChange} onVisible={onVisible} />
 			<div className='flex items-center gap-4 px-[6px] pt-[10px]'>
 				<button
+					className={`flex size-[18px] items-center justify-center rounded-sm ${isChecked ? 'bg-[#0B57D0]' : 'border-2 border-solid border-[#41474B]'}`}
 					type='button'
 					onClick={handleCheckButtonClick}
-					className={`flex size-[18px] items-center justify-center rounded-sm ${isChecked ? 'bg-[#0B57D0]' : 'border-2 border-solid border-[#41474B]'}`}
 				>
-					<Icon.Check width={18} height={18} fill='#ffffff' />
+					<Icon.Check fill='#ffffff' height={18} width={18} />
 				</button>
 
 				<p className='text-sm text-[#444746]'>추가 정보와 최신 소식이 담긴 이메일 전송에 동의</p>

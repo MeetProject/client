@@ -2,11 +2,11 @@
 
 import { ReactNode, useState } from 'react';
 
+import { IconButton } from './part/InfoBar';
+
 import * as Icon from '@/asset/icon';
 import { useOutsideClick } from '@/hook';
 import { PanelType } from '@/type/menuType';
-
-import { IconButton } from './part/InfoBar';
 
 interface ButtonType {
 	type: PanelType;
@@ -72,16 +72,16 @@ export default function InfoBar() {
 		<>
 			<div className='flex items-center justify-end md:hidden'>
 				{BUTTON_LIST.map((button, index) => (
-					<IconButton key={button.type} align={index === BUTTON_LIST.length - 1 ? 'right' : 'center'} {...button} />
+					<IconButton align={index === BUTTON_LIST.length - 1 ? 'right' : 'center'} key={button.type} {...button} />
 				))}
 			</div>
 			<div className='relative right-4 hidden size-12 justify-self-end md:block' ref={targetRef}>
 				<button
+					className='flex size-12 items-center justify-center rounded-full hover:bg-[#2F3033] active:bg-[#272F3F] '
 					type='button'
 					onClick={handleClickButton}
-					className='flex size-12 items-center justify-center rounded-full hover:bg-[#2F3033] active:bg-[#272F3F] '
 				>
-					<Icon.Chevron width={16} height={16} fill='#E3E3E3' className={`${!isClicked && 'rotate-180'}`} />
+					<Icon.Chevron className={`${!isClicked && 'rotate-180'}`} fill='#E3E3E3' height={16} width={16} />
 				</button>
 				{isClicked && (
 					<div
@@ -92,7 +92,7 @@ export default function InfoBar() {
 						}}
 					>
 						{BUTTON_LIST.map((button, index) => (
-							<IconButton key={button.type} align={index === BUTTON_LIST.length - 1 ? 'right' : 'center'} {...button} />
+							<IconButton align={index === BUTTON_LIST.length - 1 ? 'right' : 'center'} key={button.type} {...button} />
 						))}
 					</div>
 				)}

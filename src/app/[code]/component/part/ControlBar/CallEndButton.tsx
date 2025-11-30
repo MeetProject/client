@@ -18,11 +18,11 @@ export default function CallEndButton({ onClick }: CallEndButtonProperties) {
 	return (
 		<ButtonTag name='통화에서 나가기'>
 			<button
-				type='button'
 				className='flex h-12 w-[72px] items-center justify-center rounded-full bg-[#DC362E] hover:bg-[#DE4442] active:bg-[#E25B59]'
+				type='button'
 				onClick={handleButtonClick}
 			>
-				<Icon.CallEnd width={24} height={24} fill='#ffffff' />
+				<Icon.CallEnd fill='#ffffff' height={24} width={24} />
 			</button>
 		</ButtonTag>
 	);

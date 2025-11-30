@@ -2,15 +2,14 @@
 
 import { useContext } from 'react';
 
+import { UserPanel, InfoPanel, ChatPanel } from './part/Panel';
+
 import * as Icon from '@/asset/icon';
 import { ButtonTag } from '@/component';
 import { PanelContext } from '@/context/PanelContext';
-import { useWebRTCStore } from '@/store/WebRTCStore';
 import { PanelType } from '@/type/menuType';
 import { UserListType } from '@/type/participantType';
 import { ChatType } from '@/type/reactionType';
-
-import { UserPanel, InfoPanel, ChatPanel } from './part/Panel';
 
 interface PanelProperties {
 	userList: UserListType[];
@@ -59,8 +58,6 @@ export default function Panel({ chatList, onSendMessage, userList }: PanelProper
 		}
 	};
 
-	console.log(chatList, useWebRTCStore.getState().participantsUserData);
-
 	return (
 		<div className='h-full select-none'>
 			{isOpen && (
@@ -75,16 +72,16 @@ export default function Panel({ chatList, onSendMessage, userList }: PanelProper
 								<div className='absolute right-3 top-1/2 size-12 -translate-y-1/2'>
 									<ButtonTag name='닫기' position='bottom'>
 										<button
+											className='flex size-12 items-center justify-center rounded-full hover:bg-[#F0F1F1] active:bg-[#DEE0DF]'
 											type='button'
 											onClick={handleClickDeleteButton}
-											className='flex size-12 items-center justify-center rounded-full hover:bg-[#F0F1F1] active:bg-[#DEE0DF]'
 										>
-											<Icon.Delete width={24} height={24} fill='#444746' />
+											<Icon.Delete fill='#444746' height={24} width={24} />
 										</button>
 									</ButtonTag>
 								</div>
 							</div>
-							<CurrentPanel type={panelType} userList={userList} chatList={chatList} onSendMessage={onSendMessage} />
+							<CurrentPanel chatList={chatList} type={panelType} userList={userList} onSendMessage={onSendMessage} />
 						</div>
 					)}
 				</div>

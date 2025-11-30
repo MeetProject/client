@@ -14,7 +14,16 @@ import prettierConfig from "eslint-config-prettier";
 export default [
   {
     files: ["**/*.ts", "**/*.tsx"],
-    ignores: ["build/**", "dist/**", "public/**", "*.mjs", "*.json"],
+    ignores: [
+      "**/node_modules/**",
+      "**/.next/**",
+      "**/.next/**",
+      "**/build/**",
+      "**/dist/**",
+      "**/public/**",
+      "*.mjs",
+      "*.json"
+    ],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -39,23 +48,47 @@ export default [
       ...prettierConfig.rules,
       "prettier/prettier": "error",
 
-      "unicorn/no-unused-properties": "error", 
+      "unicorn/no-for-loop": "error",
+      "unicorn/no-useless-undefined": "error",
 
-      "sonarjs/no-duplicate-string": "warn", 
+      // SonarJS
+      "sonarjs/no-duplicate-string": "warn",
       "sonarjs/no-identical-functions": "warn",
 
-      "react/react-in-jsx-scope": "off", 
-      "react/jsx-no-duplicate-props": "error", 
-      "react/jsx-curly-brace-presence": ["error", "never"], 
-      "react-hooks/rules-of-hooks": "error", 
-      "react-hooks/exhaustive-deps": "warn", 
-
-      "no-param-reassign": "error",
-
-      "perfectionist/sort-imports": "error",
+      // Perfectionist
+      "perfectionist/sort-imports": "off",
       "perfectionist/sort-objects": "error",
       "perfectionist/sort-array-includes": "error",
+
+      // React
+      "react/jsx-boolean-value": ["error", "always"],
+      "react/jsx-sort-props": ["error", { shorthandFirst: true, callbacksLast: true }],
+      "react/react-in-jsx-scope": "off",
+      "react/jsx-no-duplicate-props": "error",
+      "react/jsx-curly-brace-presence": ["error", "never"],
+
+      // React Hooks
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
+
+      // General
+      "no-console": "warn",
+      "no-debugger": "error",
+      "ts/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_", ignoreRestSiblings: true }],
+      "no-shadow": "error",
+      "prefer-const": "error",
+      "arrow-body-style": ["error", "as-needed"],
+      "no-param-reassign": "error",
       eqeqeq: ["error", "always"],
+
+      "import/order": [
+        "error",
+        {
+          groups: ["builtin", "external", "internal", "parent", "sibling", "index"],
+          "newlines-between": "always",
+          alphabetize: { order: "asc", caseInsensitive: true },
+        },
+      ],
     },
     settings: {
       react: { version: "detect" },

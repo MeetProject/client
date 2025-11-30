@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
+import { CurrentDate, HelpMenu, IconButton, InfoMenu } from './part/Header';
+
 import * as Icon from '@/asset/icon';
 import { Feedback, Setting } from '@/component';
 import { useClientStore } from '@/store/ClientStore';
-
-import { CurrentDate, HelpMenu, IconButton, InfoMenu } from './part/Header';
 
 const ICON_PROPS = {
 	fill: '#5f6368',
@@ -70,10 +70,10 @@ export default function Header() {
 	return (
 		<div className='relative h-16'>
 			<Link
-				href='/'
 				className='absolute left-5 top-1/2 flex h-10 -translate-y-1/2 items-center gap-2 whitespace-nowrap'
+				href='/'
 			>
-				<Icon.Logo width={36} height={36} />
+				<Icon.Logo height={36} width={36} />
 				<p className='text-1.5xl font-semibold text-gray-600 sm:hidden'>Project</p>
 				<p className='text-1.5xl font-medium text-gray-600 sm:hidden'>Meet</p>
 			</Link>

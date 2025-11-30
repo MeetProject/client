@@ -1,9 +1,9 @@
 import React, { useState, MouseEvent, ReactNode } from 'react';
 
+import ButtonTag from './ButtonTag';
+
 import * as Icon from '@/asset/icon';
 import { useOutsideClick } from '@/hook';
-
-import ButtonTag from './ButtonTag';
 
 interface DeviceSelectBoxProperties {
 	currentValue: MediaDeviceInfo;
@@ -67,20 +67,20 @@ export default function DeviceSelectBox({
 		<BoxWrapper disabled={disabled}>
 			<div className='relative w-full' ref={targetRef}>
 				<button
-					type='button'
 					className={`relative flex h-14 w-full min-w-16 items-center gap-2 truncate rounded border border-solid ${disabled ? 'border-[#E7E8E8]' : 'border-[#80868B]'} pl-[10px] pr-[25px] ${!disabled && 'hover:bg-[#F6FAFE] active:border-[#1B77E4] active:bg-[#DBE9FB]'} `}
-					onClick={handleSelectButtonClick}
 					disabled={Boolean(disabled)}
+					type='button'
+					onClick={handleSelectButtonClick}
 				>
-					<DeviceIcon width={16} height={16} fill={disabled ? '#B5B6B7' : '#3C4043'} />
+					<DeviceIcon fill={disabled ? '#B5B6B7' : '#3C4043'} height={16} width={16} />
 					<p className={`w-full truncate text-left ${disabled ? 'text-[#B5B6B7]' : 'text-[#3C4043]'}`}>
 						{currentLabel}
 					</p>
 					<Icon.ChevronFill
-						width={18}
-						height={18}
-						fill={disabled ? '#B5B6B7' : '#3C4043'}
 						className='absolute right-3 top-5'
+						fill={disabled ? '#B5B6B7' : '#3C4043'}
+						height={18}
+						width={18}
 					/>
 				</button>
 				{isClicked && (
@@ -92,10 +92,10 @@ export default function DeviceSelectBox({
 					>
 						{deviceList.map((device) => (
 							<button
+								className='relative h-11 w-full truncate bg-white pl-14 pr-4 hover:bg-[#F5F5F5] active:bg-[#D7D7D7]'
 								key={device.deviceId}
 								type='button'
 								onClick={(e) => handleDeviceButtonClick(e, device)}
-								className='relative h-11 w-full truncate bg-white pl-14 pr-4 hover:bg-[#F5F5F5] active:bg-[#D7D7D7]'
 							>
 								<p
 									className={`w-full truncate ${device.deviceId === currentValue?.deviceId ? 'text-[#1A73E8]' : 'text-black'} text-left`}
@@ -103,7 +103,7 @@ export default function DeviceSelectBox({
 									{device.label}
 								</p>
 								{device.deviceId === currentValue?.deviceId && (
-									<Icon.Check width={24} height={24} fill='#1A73E8' className='absolute left-4 top-2.5 ' />
+									<Icon.Check className='absolute left-4 top-2.5 ' fill='#1A73E8' height={24} width={24} />
 								)}
 							</button>
 						))}

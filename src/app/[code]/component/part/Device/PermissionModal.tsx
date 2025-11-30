@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
+import { NotificationModal, RequestInfoModal } from './PermissionModal/index';
+
 import { Modal, InitialRequestModal, RequestModal } from '@/component';
 import { useDeviceStore } from '@/store/DeviceStore';
-
-import { NotificationModal, RequestInfoModal } from './PermissionModal/index';
 
 interface PermissionModalProperties {
 	isOpenModal: boolean;
@@ -38,7 +38,7 @@ function ModalContent({ onClose }: ModalContentProperties) {
 	}
 
 	if (!isDenied) {
-		<RequestModal onSkipUpdateStream={onClose} onRequstError={handleRequseError} />;
+		<RequestModal onRequstError={handleRequseError} onSkipUpdateStream={onClose} />;
 	}
 
 	return <RequestInfoModal onClose={onClose} />;
@@ -68,7 +68,9 @@ export default function PermissionModal({ isOpenModal, onClose }: PermissionModa
 				setIsTimeOut(true);
 			}
 		}, 2000);
-		return () => clearTimeout(timer);
+		return () => {
+			clearTimeout(timer);
+		};
 	}, [devicePermission]);
 
 	return (

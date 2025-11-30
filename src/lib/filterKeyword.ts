@@ -25,9 +25,8 @@ const OFFSET = '가'.charCodeAt(0);
 const FIRST_OFFSET_RANGE = 21 * 28;
 const MIDDLE_OFFSET_RANGE = 28;
 
-const charCode = (first: number, middle: number, last: number) => {
-	return String.fromCharCode(OFFSET + first * FIRST_OFFSET_RANGE + middle * MIDDLE_OFFSET_RANGE + last);
-};
+const charCode = (first: number, middle: number, last: number) =>
+	String.fromCharCode(OFFSET + first * FIRST_OFFSET_RANGE + middle * MIDDLE_OFFSET_RANGE + last);
 
 export const charMatcher = (search = '') => {
 	if (!search) {

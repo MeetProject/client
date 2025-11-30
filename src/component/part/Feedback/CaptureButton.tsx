@@ -64,18 +64,18 @@ export default function CaptureButton({ imgSrc, onImageChange, onVisible }: Capt
 				<>
 					<p>첨부된 스크린샷</p>
 					<div className='overflow-hidden rounded border border-solid border-[#757575]'>
-						<Image width={372} height={240} alt='capturedImage' src={imgSrc} />
+						<Image alt='capturedImage' height={240} src={imgSrc} width={372} />
 					</div>
 					<div />
 					<div className='absolute right-0 top-6'>
-						<ButtonTag name='스크린샷 삭제' style={{ left: 'auto', right: '-45px' }} instant>
+						<ButtonTag instant={true} name='스크린샷 삭제' style={{ left: 'auto', right: '-45px' }}>
 							<button
-								type='button'
-								onClick={handleRemoveButtonClick}
 								className='flex size-12 items-center justify-center rounded-full bg-white hover:bg-[#FCF7F6] active:bg-[#F5E5E4]'
 								style={{ boxShadow: '0 1px 3px 0 rgba(48,48,48,0.302),0 4px 8px 3px rgba(48,48,48,0.149)' }}
+								type='button'
+								onClick={handleRemoveButtonClick}
 							>
-								<Icon.Remove width={24} height={24} fill='#B3261E' />
+								<Icon.Remove fill='#B3261E' height={24} width={24} />
 							</button>
 						</ButtonTag>
 					</div>
@@ -84,12 +84,12 @@ export default function CaptureButton({ imgSrc, onImageChange, onVisible }: Capt
 				<>
 					<p>스크린샷을 주시면 문제를 더 정확하게 파악하는 데 도움이 됩니다.(선택사항)</p>
 					<button
-						type='button'
-						disabled={isClicked}
-						onClick={handleCaptureButtonClick}
 						className='flex h-9 w-full items-center justify-center gap-2 rounded border border-solid border-[#ABABAB] pl-[11px] pr-[15px] hover:bg-[#F5F8FD] active:bg-[#E1EAF9]'
+						disabled={isClicked}
+						type='button'
+						onClick={handleCaptureButtonClick}
 					>
-						<Icon.Capture width={18} height={18} fill='#0B57D0' />
+						<Icon.Capture fill='#0B57D0' height={18} width={18} />
 						<p className='text-sm text-[#0B57D0]'>스크린샷 캡처</p>
 					</button>
 				</>

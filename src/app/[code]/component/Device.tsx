@@ -3,12 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
+import { PermissionModal, VideoNotification, DeviceButton } from './part/Device';
+
 import * as Icon from '@/asset/icon';
 import { Visualizer } from '@/component';
 import { useDevice } from '@/hook';
 import { useDeviceStore } from '@/store/DeviceStore';
-
-import { PermissionModal, VideoNotification, DeviceButton } from './part/Device';
 
 export default function Device() {
 	const videoReference = useRef<HTMLVideoElement>(null);
@@ -101,9 +101,9 @@ export default function Device() {
 				}}
 			>
 				<video
-					autoPlay
-					ref={videoReference}
+					autoPlay={true}
 					className='aspect-video size-full object-cover'
+					ref={videoReference}
 					style={{ transform: 'rotateY(180deg)' }}
 				/>
 				<VideoNotification onClickButton={handleVideoButtonClick} />
@@ -116,18 +116,18 @@ export default function Device() {
 				<div className='absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-6 px-3'>
 					{streamStatus !== null && (
 						<button
+							className={`relative flex items-center justify-center border border-solid shadow-sm ${deviceEnable.audio && permission?.audio ? 'border-white' : 'border-[#EA4335] bg-[#EA4335]'} size-14 rounded-full`}
 							type='button'
 							onClick={handleMicButton}
-							className={`relative flex items-center justify-center border border-solid shadow-sm ${deviceEnable.audio && permission?.audio ? 'border-white' : 'border-[#EA4335] bg-[#EA4335]'} size-14 rounded-full`}
 						>
 							{deviceEnable.audio && permission?.audio ? (
-								<Icon.MicOn width={24} height={24} fill='#ffffff' />
+								<Icon.MicOn fill='#ffffff' height={24} width={24} />
 							) : (
-								<Icon.MicOff width={24} height={24} fill='#ffffff' />
+								<Icon.MicOff fill='#ffffff' height={24} width={24} />
 							)}
 							{audioDisabled && (
 								<div className='absolute right-0 top-0 size-3 rounded-full bg-white'>
-									<Icon.Warn width={20} height={20} fill='#FA7B17' className='relative -left-1 -top-1' />
+									<Icon.Warn className='relative -left-1 -top-1' fill='#FA7B17' height={20} width={20} />
 								</div>
 							)}
 						</button>
@@ -135,18 +135,18 @@ export default function Device() {
 
 					{streamStatus !== null && (
 						<button
+							className={`relative flex items-center justify-center border border-solid shadow-sm ${permission?.video ? 'border-white' : 'border-[#EA4335] bg-[#EA4335]'} size-14 rounded-full`}
 							type='button'
 							onClick={handleVideoButton}
-							className={`relative flex items-center justify-center border border-solid shadow-sm ${permission?.video ? 'border-white' : 'border-[#EA4335] bg-[#EA4335]'} size-14 rounded-full`}
 						>
 							{deviceEnable.video && permission?.video ? (
-								<Icon.VideoOn width={24} height={24} fill='#ffffff' />
+								<Icon.VideoOn fill='#ffffff' height={24} width={24} />
 							) : (
-								<Icon.VideoOff width={24} height={24} fill='#ffffff' />
+								<Icon.VideoOff fill='#ffffff' height={24} width={24} />
 							)}
 							{videoDisabled && (
 								<div className='absolute right-0 top-0 size-3 rounded-full bg-white'>
-									<Icon.Warn width={20} height={20} fill='#FA7B17' className='relative -left-1 -top-1' />
+									<Icon.Warn className='relative -left-1 -top-1' fill='#FA7B17' height={20} width={20} />
 								</div>
 							)}
 						</button>
@@ -156,10 +156,10 @@ export default function Device() {
 			<div className='mt-4 flex h-9 w-full items-center gap-1 lg:hidden'>
 				{streamStatus !== null && (
 					<DeviceButton
+						currentDevice={audioInput}
+						deviceList={audioInputList}
 						icon={
 							<Icon.MicOn
-								width={14}
-								height={14}
 								fill={
 									(streamStatus === 'failed' && !audioInput?.deviceId) ||
 									streamStatus === 'rejected' ||
@@ -167,20 +167,20 @@ export default function Device() {
 										? '#B5B6B7'
 										: '#5F6368'
 								}
+								height={14}
+								width={14}
 							/>
 						}
-						currentDevice={audioInput}
-						deviceList={audioInputList}
 						type='audioInput'
 					/>
 				)}
 
 				{streamStatus !== null && (
 					<DeviceButton
+						currentDevice={audioOutput}
+						deviceList={audioOutputList}
 						icon={
 							<Icon.Sound
-								width={14}
-								height={14}
 								fill={
 									(streamStatus === 'failed' && !audioOutput?.deviceId) ||
 									streamStatus === 'rejected' ||
@@ -188,29 +188,29 @@ export default function Device() {
 										? '#B5B6B7'
 										: '#5F6368'
 								}
+								height={14}
+								width={14}
 							/>
 						}
-						currentDevice={audioOutput}
-						deviceList={audioOutputList}
 						type='audioOutput'
 					/>
 				)}
 
 				{streamStatus !== null && (
 					<DeviceButton
+						currentDevice={videoInput}
+						deviceList={videoInputList}
 						icon={
 							<Icon.VideoOn
-								width={14}
-								height={14}
 								fill={
 									streamStatus === 'failed' || streamStatus === 'rejected' || (permission && !permission.video)
 										? '#B5B6B7'
 										: '#5F6368'
 								}
+								height={14}
+								width={14}
 							/>
 						}
-						currentDevice={videoInput}
-						deviceList={videoInputList}
 						type='videoInput'
 					/>
 				)}

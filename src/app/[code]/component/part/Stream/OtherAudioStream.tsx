@@ -60,7 +60,7 @@ export default function OtherAudioStream({ color, name, otherStreams }: OtherAud
 					{`외 ${otherStreams.length - 1}명`}
 				</p>
 			</div>
-			<audio ref={audioReference} autoPlay />
+			<audio autoPlay={true} ref={audioReference} />
 		</div>
 	);
 }

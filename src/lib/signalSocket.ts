@@ -15,11 +15,10 @@ interface CreateSignalClientProps {
 }
 
 export const createSignalClient = ({ baseUrl, onConnect }: CreateSignalClientProps): CreateSignalClientType => {
-	const { setClient, setIsClientReady } = useClientStore.getState();
+	const { clearSubscriptions, setClient, setIsClientReady } = useClientStore.getState();
 
 	const parseMessage = <T>(message: IMessage) => {
 		const data = JSON.parse(message.body) as T;
-		console.log(data);
 		return data;
 	};
 
@@ -31,7 +30,6 @@ export const createSignalClient = ({ baseUrl, onConnect }: CreateSignalClientPro
 
 		const client = new Client({
 			brokerURL: undefined,
-			debug: (msg) => console.log(msg),
 			onConnect: () => {
 				setClient(client);
 				setIsClientReady(true);
@@ -87,7 +85,7 @@ export const createSignalClient = ({ baseUrl, onConnect }: CreateSignalClientPro
 	};
 
 	const disconnect = () => {
-		const { clearSubscriptions, client, setClient, setIsClientReady } = useClientStore.getState();
+		const { client } = useClientStore.getState();
 		if (!client) {
 			return;
 		}

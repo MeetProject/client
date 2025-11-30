@@ -9,7 +9,7 @@ import { useDeviceStore } from '@/store/DeviceStore';
 export default function VideoSetting() {
 	const videoReference = useRef<HTMLVideoElement>(null);
 	const { changeTrack } = useDevice();
-	const { permission, setVideoInput, stream, videoInput, videoInputList } = useDeviceStore(
+	const { permission, stream, videoInput, videoInputList } = useDeviceStore(
 		useShallow((state) => ({
 			permission: state.permission,
 			setVideoInput: state.setVideoInput,
@@ -38,19 +38,19 @@ export default function VideoSetting() {
 					</div>
 					<div className='flex items-center gap-4 flex-1 sm:flex-col-reverse'>
 						<DeviceSelectBox
+							DeviceIcon={Icon.VideoOn}
 							currentValue={videoInput}
 							deviceList={videoInputList}
-							onChange={handleVideoChange}
-							DeviceIcon={Icon.VideoOn}
 							disabled={permission?.video ? false : '권한'}
+							onChange={handleVideoChange}
 						/>
 						<div className='flex justify-center bg-gray-700 overflow-hidden rounded-md w-fit'>
 							{permission?.video && (
 								<video
-									autoPlay
-									muted
-									ref={videoReference}
+									autoPlay={true}
 									className='aspect-video w-40 object-cover sm:w-full sm:rounded-md'
+									muted={true}
+									ref={videoReference}
 									style={{ transform: 'rotateY(180deg)' }}
 								/>
 							)}

@@ -6,7 +6,7 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start --webpack",
-    "lint": "eslint . --ext .ts,.tsx --fix"
+    "lint": "eslint \"**/*.{ts,tsx}\" --ignore-pattern .next --fix"
   },
   "dependencies": {
     "@stomp/stompjs": "^7.2.1",

@@ -2,15 +2,15 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
-import * as Icon from '@/asset/icon';
-import { useDevice } from '@/hook';
-import { checkPermissionQuery } from '@/lib/mediaPermission';
-import { useDeviceStore } from '@/store/DeviceStore';
-
 import InitialRequestModal from './InitialRequestModal';
 import Modal from './Modal';
 import { AudioSetting, VideoSetting } from './part/Setting';
 import RequestModal from './RequestModal';
+
+import * as Icon from '@/asset/icon';
+import { useDevice } from '@/hook';
+import { checkPermissionQuery } from '@/lib/mediaPermission';
+import { useDeviceStore } from '@/store/DeviceStore';
 
 type Category = 'audio' | 'video' | 'general';
 type SettingModalState = 'loading' | 'initial-request' | 'request' | 'setting';
@@ -92,16 +92,16 @@ function SettingModal({ onClose }: SettingModalProperties) {
 						const IconComponent = categoryButton.icon;
 						return (
 							<button
-								type='button'
-								key={categoryButton.value}
-								onClick={() => handleCategoryButtonClick(categoryButton.value)}
 								className={`group relative flex h-12 w-full items-center gap-3 rounded-r-full ${category === categoryButton.value ? 'z-10 bg-[#E8F0FE] hover:shadow-md' : 'bg-white hover:bg-[#F9F9F9]'} px-6`}
+								key={categoryButton.value}
+								type='button'
+								onClick={() => handleCategoryButtonClick(categoryButton.value)}
 							>
 								<IconComponent
-									width={24}
-									height={24}
-									fill={category === categoryButton.value ? '#1967D2' : '#5F6368'}
 									className={`group-hover:${category === categoryButton.value ? 'fill-[#174FA7]' : 'fill-[#232427]'}`}
+									fill={category === categoryButton.value ? '#1967D2' : '#5F6368'}
+									height={24}
+									width={24}
 								/>
 								<p
 									className={`${
@@ -118,11 +118,11 @@ function SettingModal({ onClose }: SettingModalProperties) {
 				</div>
 			</div>
 			<button
+				className='absolute right-3 top-[9px] flex size-12 items-center justify-center rounded-full hover:bg-[#F9F9F9] active:bg-[#E6E7E7]'
 				type='button'
 				onClick={handleDeleteButtonClick}
-				className='absolute right-3 top-[9px] flex size-12 items-center justify-center rounded-full hover:bg-[#F9F9F9] active:bg-[#E6E7E7]'
 			>
-				<Icon.Delete width={24} height={24} fill='#5F6368' />
+				<Icon.Delete fill='#5F6368' height={24} width={24} />
 			</button>
 			<div className='flex my-6 mx-12 pt-[60px] flex-1'>
 				<SettingContent category={category} />

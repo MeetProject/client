@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 
+import MenuCard from './MenuCard';
+
 import * as Icon from '@/asset/icon';
 import { ButtonTag, Feedback, Setting } from '@/component';
 import { useOutsideClick } from '@/hook';
-
-import MenuCard from './MenuCard';
 
 export default function MenuButton() {
 	const [isClickedButton, setIsClickedButton] = useState(false);
@@ -15,9 +15,7 @@ export default function MenuButton() {
 	const [isClickedFeedback, setIsClickedFeedback] = useState(false);
 	const [isClickedSetting, setIsClickedSetting] = useState(false);
 
-	const checkFullscreen = () => {
-		return document.fullscreenElement !== null;
-	};
+	const checkFullscreen = () => document.fullscreenElement !== null;
 
 	const enterFullscreen = () => {
 		const element = document.documentElement;
@@ -89,11 +87,11 @@ export default function MenuButton() {
 		<div className='relative' ref={targetRef}>
 			<ButtonTag name='옵션 더보기'>
 				<button
+					className='flex h-12 w-9 items-center justify-center rounded-full bg-[#393B3D] hover:bg-[#414345] active:bg-[#585A5C]'
 					type='button'
 					onClick={handleButtonClick}
-					className='flex h-12 w-9 items-center justify-center rounded-full bg-[#393B3D] hover:bg-[#414345] active:bg-[#585A5C]'
 				>
-					<Icon.Menu width={18} height={18} fill='#E3E3E3' className='rotate-90' />
+					<Icon.Menu className='rotate-90' fill='#E3E3E3' height={18} width={18} />
 				</button>
 			</ButtonTag>
 			{isClickedButton && (
@@ -101,24 +99,24 @@ export default function MenuButton() {
 					<MenuCard
 						icon={
 							isFullscreen ? (
-								<Icon.FullScreenOff width={24} height={24} fill='#C4C7C5' />
+								<Icon.FullScreenOff fill='#C4C7C5' height={24} width={24} />
 							) : (
-								<Icon.FullScreen width={24} height={24} fill='#C4C7C5' />
+								<Icon.FullScreen fill='#C4C7C5' height={24} width={24} />
 							)
 						}
-						onClick={toggleFullscreen}
 						name={isFullscreen ? '전체화면 종료' : '전체화면'}
+						onClick={toggleFullscreen}
 					/>
 					<hr className='my-2 w-full border-t border-[#444746]' />
 					<MenuCard
-						icon={<Icon.Feedback width={24} height={24} fill='#C4C7C5' />}
-						onClick={handleFeebackButtonClick}
+						icon={<Icon.Feedback fill='#C4C7C5' height={24} width={24} />}
 						name='문제 신고'
+						onClick={handleFeebackButtonClick}
 					/>
 					<MenuCard
-						icon={<Icon.Setting width={24} height={24} fill='#C4C7C5' />}
-						onClick={handleSettingButtonClick}
+						icon={<Icon.Setting fill='#C4C7C5' height={24} width={24} />}
 						name='설정'
+						onClick={handleSettingButtonClick}
 					/>
 				</div>
 			)}

@@ -2,6 +2,9 @@
 
 import { ReactNode, useCallback, useState } from 'react';
 
+import { ControlButton, MenuButton, OptionButton, CallEndButton } from './part/ControlBar';
+import { PermissionModal } from './part/Device';
+
 import * as Icon from '@/asset/icon';
 import { Alert } from '@/component';
 import { useDevice } from '@/hook';
@@ -9,9 +12,6 @@ import { checkBrowser } from '@/lib/checkBrowser';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { ToggleType } from '@/type/menuType';
 import { DeviceEnableType } from '@/type/streamType';
-
-import { ControlButton, MenuButton, OptionButton, CallEndButton } from './part/ControlBar';
-import { PermissionModal } from './part/Device';
 
 interface ControlBarProperties {
 	handleScreenShare: () => void;
@@ -127,20 +127,20 @@ export default function ControlBar({
 	return (
 		<div className='absolute left-1/2 top-1/2 z-30 flex h-12 shrink-0 -translate-x-1/2 -translate-y-1/2 items-center gap-2 bg-[#212121] sm-md:relative sm-md:left-auto sm-md:top-auto sm-md:translate-x-0 sm-md:translate-y-0'>
 			<OptionButton
-				type='audio'
-				onClickButton={handleButtonClick}
-				icon={<Icon.MicOn width={24} height={24} fill='#E3E3E3' />}
-				clickedIcon={<Icon.MicOff width={24} height={24} fill='#5F1312' />}
+				clickedIcon={<Icon.MicOff fill='#5F1312' height={24} width={24} />}
+				icon={<Icon.MicOn fill='#E3E3E3' height={24} width={24} />}
 				name={{ chevron: '오디오 설정', iconOff: '마이크 켜기(ctrl + d)', iconOn: '마이크 끄기(ctrl + d)' }}
 				shortcutKey={['Control', 'd']}
+				type='audio'
+				onClickButton={handleButtonClick}
 			/>
 			<OptionButton
-				type='video'
-				onClickButton={handleButtonClick}
-				icon={<Icon.VideoOn width={24} height={24} fill='#E3E3E3' />}
-				clickedIcon={<Icon.VideoOff width={24} height={24} fill='#5F1312' />}
+				clickedIcon={<Icon.VideoOff fill='#5F1312' height={24} width={24} />}
+				icon={<Icon.VideoOn fill='#E3E3E3' height={24} width={24} />}
 				name={{ chevron: '영상 설정', iconOff: '비디오 켜기(ctrl + e)', iconOn: '비디오 끄기(ctrl + e)' }}
 				shortcutKey={['Control', 'e']}
+				type='video'
+				onClickButton={handleButtonClick}
 			/>
 			{CONTROL_BUTTON.map((button) => (
 				<ControlButton key={button.type} {...button} />
@@ -148,7 +148,7 @@ export default function ControlBar({
 			<MenuButton />
 			<CallEndButton onClick={handleLeavSession} />
 			<PermissionModal isOpenModal={isOpenModal} onClose={handleModalClose} />
-			<Alert text='다른 사람이 화면 공유 중 입니다.' isOpen={isOpenAlert} onCloseAlert={handleAlertClose} />
+			<Alert isOpen={isOpenAlert} text='다른 사람이 화면 공유 중 입니다.' onCloseAlert={handleAlertClose} />
 		</div>
 	);
 }

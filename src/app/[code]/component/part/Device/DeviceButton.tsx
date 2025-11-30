@@ -3,12 +3,12 @@
 import { ReactNode, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
+import DeviceCard from './DeviceCard';
+import DeviceSubButton from './DeviceSubButton';
+
 import * as Icon from '@/asset/icon';
 import { useDevice, useOutsideClick, useVolume } from '@/hook';
 import { useDeviceStore } from '@/store/DeviceStore';
-
-import DeviceCard from './DeviceCard';
-import DeviceSubButton from './DeviceSubButton';
 
 interface DeviceButtonIcon {
 	icon: ReactNode;
@@ -73,14 +73,6 @@ export default function DeviceButton({
 
 	const { targetRef } = useOutsideClick<HTMLDivElement>(handleOutSideClick);
 
-	const { setAudioInput, setAudioOutput, setVideoInput } = useDeviceStore(
-		useShallow((state) => ({
-			setAudioInput: state.setAudioInput,
-			setAudioOutput: state.setAudioOutput,
-			setVideoInput: state.setVideoInput,
-		})),
-	);
-
 	const handleButtonClick = () => {
 		setIsOpen((previous) => !previous);
 	};
@@ -125,10 +117,10 @@ export default function DeviceButton({
 	return (
 		<div className='relative m-px font-googleSans' ref={targetRef}>
 			<button
+				className={`flex h-[34px] items-center rounded-full border-[0.8px] border-solid ${color === 'black' ? 'border-[#5F6368]' : isDisabled ? 'border-[#E7E8E8]' : 'border-white  hover:border-[#DADCE0] active:bg-[#F6FAFE]'} px-[10px]`}
+				disabled={isDisabled !== false}
 				type='button'
 				onClick={handleButtonClick}
-				disabled={isDisabled !== false}
-				className={`flex h-[34px] items-center rounded-full border-[0.8px] border-solid ${color === 'black' ? 'border-[#5F6368]' : isDisabled ? 'border-[#E7E8E8]' : 'border-white  hover:border-[#DADCE0] active:bg-[#F6FAFE]'} px-[10px]`}
 			>
 				<div className='mr-2 flex size-[18px] items-center justify-center'>{icon}</div>
 				<p
@@ -139,9 +131,9 @@ export default function DeviceButton({
 				</p>
 				<div className='w-[18px]'>
 					<Icon.Chevron
-						width={12}
-						height={12}
 						fill={color === 'black' ? '#8AB4F8' : isDisabled ? '#B5B6B7' : '#5F6368'}
+						height={12}
+						width={12}
 					/>
 				</div>
 			</button>
@@ -155,15 +147,15 @@ export default function DeviceButton({
 					<div>
 						{deviceList?.map((device) => (
 							<DeviceCard
-								key={device.deviceId}
+								color={color}
 								device={device}
 								isChoosed={device.deviceId === currentDevice?.deviceId}
+								key={device.deviceId}
 								onClick={handleCardClick}
-								color={color}
 							/>
 						))}
 					</div>
-					<DeviceSubButton type={type} volume={volume} color={color} />
+					<DeviceSubButton color={color} type={type} volume={volume} />
 				</div>
 			)}
 		</div>

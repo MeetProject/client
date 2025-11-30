@@ -2,10 +2,10 @@
 
 import { useShallow } from 'zustand/react/shallow';
 
-import { useUserInfoStore } from '@/store/UserInfoStore';
-
 import Meetting from './Meeting';
 import Setting from './Profile';
+
+import { useUserInfoStore } from '@/store/UserInfoStore';
 
 export default function Provider() {
 	const { color, name } = useUserInfoStore(

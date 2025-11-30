@@ -147,7 +147,7 @@ const useSignalEventHandler = ({
 
 			await createPeerConnection(
 				fromUserId,
-				(targetId, candidate, streamType) => offerIceCandidate(targetId, candidate, streamType, socket),
+				(targetId, candidate, type) => offerIceCandidate(targetId, candidate, type, socket),
 				streamType,
 				isScreenSender,
 			);

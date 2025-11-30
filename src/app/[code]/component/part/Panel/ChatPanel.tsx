@@ -2,10 +2,10 @@
 
 import { ChangeEvent, FormEvent, useRef, useState } from 'react';
 
+import { ChatMessage } from './ChatMessage';
+
 import * as Icon from '@/asset/icon';
 import { ChatType } from '@/type/reactionType';
-
-import { ChatMessage } from './ChatMessage';
 
 interface ChatPanelProperties {
 	chatList: ChatType[];
@@ -42,20 +42,20 @@ export default function ChatPanel({ chatList, onSendMessage }: ChatPanelProperti
 			</div>
 			<div className='w-full flex-1 pb-2'>
 				{chatList.map((message) => (
-					<ChatMessage key={message.id} chat={message} />
+					<ChatMessage chat={message} key={message.id} />
 				))}
 			</div>
 			<form className='relative m-[15px] flex items-center rounded-[25px] bg-[#F1F3F4] py-1' onSubmit={handleFormSubmt}>
 				<textarea
-					ref={textReference}
-					placeholder='메세지 보내기'
-					onChange={handleInputChage}
-					value={chat}
-					rows={1}
 					className='max-h-32 flex-1 resize-none bg-transparent px-4 outline-none'
+					placeholder='메세지 보내기'
+					ref={textReference}
+					rows={1}
+					value={chat}
+					onChange={handleInputChage}
 				/>
-				<button type='submit' className='flex size-10 items-center justify-center' disabled={Boolean(!chat)}>
-					<Icon.Submit width={24} height={24} fill={chat ? '#1A73E8' : '#ACAFB0'} />
+				<button className='flex size-10 items-center justify-center' disabled={Boolean(!chat)} type='submit'>
+					<Icon.Submit fill={chat ? '#1A73E8' : '#ACAFB0'} height={24} width={24} />
 				</button>
 			</form>
 		</div>

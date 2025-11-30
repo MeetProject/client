@@ -26,11 +26,11 @@ export default function IconButton({ align = 'center', clickedIcon, icon, name, 
 	};
 
 	return (
-		<ButtonTag name={name} align={align}>
+		<ButtonTag align={align} name={name}>
 			<button
+				className='flex size-12 items-center justify-center rounded-full bg-[#202124] hover:bg-[#2F3033]'
 				type='button'
 				onClick={handleButtonClick}
-				className='flex size-12 items-center justify-center rounded-full bg-[#202124] hover:bg-[#2F3033]'
 			>
 				{panelType !== type ? icon : clickedIcon}
 			</button>

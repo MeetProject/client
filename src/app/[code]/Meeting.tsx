@@ -4,6 +4,17 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useContext, useState, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
+import {
+	ControlBar,
+	EmojiAnimation,
+	InfoBar,
+	Panel,
+	Toggle,
+	MeetInfoBar,
+	StreamGridList,
+	StreamScreenList,
+} from './component';
+
 import { Loading } from '@/component';
 import { ToggleContext } from '@/context/ToggleContext';
 import { useDevice, useWebRTC } from '@/hook';
@@ -16,17 +27,6 @@ import { UserListType } from '@/type/participantType';
 import { ChatType } from '@/type/reactionType';
 import { ChatResponseType, EmojiResponseType } from '@/type/signalType';
 import { ErrorResponseType } from '@/type/signalType';
-
-import {
-	ControlBar,
-	EmojiAnimation,
-	InfoBar,
-	Panel,
-	Toggle,
-	MeetInfoBar,
-	StreamGridList,
-	StreamScreenList,
-} from './component';
 
 export default function Meetting() {
 	const pathname = usePathname();
@@ -170,7 +170,7 @@ export default function Meetting() {
 						className='relative flex flex-1 p-4'
 						style={{ height: `calc(100vh - ${barReference.current?.clientHeight}px)` }}
 					>
-						<div ref={wrapperReference} className='relative flex-1 overflow-hidden'>
+						<div className='relative flex-1 overflow-hidden' ref={wrapperReference}>
 							{screenSharingMediaStream || screenStream ? (
 								<StreamScreenList emojiList={emojiList} />
 							) : (
@@ -178,14 +178,15 @@ export default function Meetting() {
 							)}
 							{emojiList.map((emoji) => (
 								<EmojiAnimation
-									key={emoji.id}
-									emoji={emoji}
-									maxWidth={wrapperReference.current?.clientWidth ?? 0}
 									deleteEmoji={deleteEmoji}
+									emoji={emoji}
+									key={emoji.id}
+									maxWidth={wrapperReference.current?.clientWidth ?? 0}
 								/>
 							))}
 						</div>
 						<Panel
+							chatList={chatList}
 							userList={[
 								{
 									color,
@@ -197,23 +198,22 @@ export default function Meetting() {
 								},
 								...userList,
 							]}
-							chatList={chatList}
 							onSendMessage={sendChat}
 						/>
 					</div>
 					<div
-						ref={barReference}
 						className='relative w-full shrink-0 bg-[#202124] font-googleSans text-base text-white'
+						ref={barReference}
 					>
 						<Toggle onClickEmojiButton={sendEmoji} />
 						<div className='relative flex shrink-0 justify-between bg-[#212121] p-4'>
 							<MeetInfoBar />
 							<ControlBar
+								handleDeviceEnable={sendDevice}
+								handleHandUp={sendHandUp}
+								handleLeavSession={leaveRoom}
 								handleScreenShare={shareScreen}
 								handleStopScreenShare={stopShareScreen}
-								handleLeavSession={leaveRoom}
-								handleHandUp={sendHandUp}
-								handleDeviceEnable={sendDevice}
 							/>
 							<InfoBar />
 						</div>

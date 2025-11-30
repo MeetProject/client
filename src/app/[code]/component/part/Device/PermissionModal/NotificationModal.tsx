@@ -33,17 +33,17 @@ export default function NotificationModal({ onClose }: NotificationModalProperti
 				</div>
 				<div className='mt-[10px] flex content-end justify-end gap-1 text-sm'>
 					<button
+						className='my-[6px] h-9 w-[108px] rounded bg-[#1A73E8] px-6 text-white hover:bg-[#1B66C9] active:bg-[#1C58A8]'
+						disabled={isPending}
 						type='button'
 						onClick={handleRetryButtonClick}
-						disabled={isPending}
-						className='my-[6px] h-9 w-[108px] rounded bg-[#1A73E8] px-6 text-white hover:bg-[#1B66C9] active:bg-[#1C58A8]'
 					>
 						{isPending ? '로딩 중' : '다시 시도'}
 					</button>
 					<button
+						className='my-[5px] h-10 w-16 rounded-full px-3 text-[#0B57D0] hover:bg-[#DDE7F8] active:bg-[#C8D8F4]'
 						type='button'
 						onClick={onClose}
-						className='my-[5px] h-10 w-16 rounded-full px-3 text-[#0B57D0] hover:bg-[#DDE7F8] active:bg-[#C8D8F4]'
 					>
 						닫기
 					</button>
