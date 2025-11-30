@@ -56,7 +56,6 @@ export default [
       "sonarjs/no-identical-functions": "warn",
 
       // Perfectionist
-      "perfectionist/sort-imports": "off",
       "perfectionist/sort-objects": "error",
       "perfectionist/sort-array-includes": "error",
 
