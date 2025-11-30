@@ -32,7 +32,6 @@ interface UseWebRTCProperties {
 const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
 	const { stopScreenStream, stopStream, updateScreenStream, updateStream } = useDevice();
 	const { onDeviceEnableChange, onDisplayShareEnd, onTrack } = usePeerConnectionEventHandler();
-	
 	const {
 		createAnswerSdp,
 		createOfferSdp,

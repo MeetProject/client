@@ -3,39 +3,34 @@
 import { useRouter } from 'next/navigation';
 import { ChangeEvent, FormEvent, useState } from 'react';
 
+import { validateRoom } from '@/app/api/room';
 import * as Icon from '@/asset/icon';
 import { Alert, Loading } from '@/component';
 
 export default function ParticipateMeetingForm() {
 	const router = useRouter();
-	const [value, setValue] = useState<string>('');
+	const [roomId, setRoomId] = useState<string>('');
 	const [isPending, setIsPending] = useState<boolean>(false);
 	const [isFailed, setIsFailed] = useState<boolean>(false);
 
 	const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-		setValue(e.target.value);
+		setRoomId(e.target.value);
 	};
 
 	const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		if (!value) {
+		if (!roomId) {
 			return;
 		}
 		setIsPending(true);
 		try {
-			const roomResponse = await fetch(`http://localhost:8080/api/room/validate?roomId=${value}`);
-			if (!roomResponse.ok) {
-				alert('서버 오류. 다시 시도해주세요.');
-				throw new Error('방 id 검사 api 오류');
-			}
-
-			const { value: isValid } = await roomResponse.json();
+			const { value: isValid } = await validateRoom(roomId);
 
 			if (!isValid) {
 				alert('이미 닫힌 회의방입니다.');
 				throw new Error('유효하지 않은 id');
 			}
-			router.push(`/${value}`);
+			router.push(`/${roomId}`);
 		} catch {
 			setIsFailed(true);
 		} finally {
@@ -53,13 +48,13 @@ export default function ParticipateMeetingForm() {
 			<input
 				className='max-w-[246px] shrink rounded border border-solid border-[#80868B] py-[11px] pl-12 pr-4 text-[16px] text-[#3C4043] outline-[#1B77E4]'
 				placeholder='코드 또는 링크 입력'
-				value={value}
+				value={roomId}
 				onChange={handleInputChange}
 			/>
 			<button
 				type='submit'
-				className={`shrink-0 rounded px-4 py-3 text-[16px] ${value ? 'text-[#1A73E8]' : 'text-[#B5B6B7]'} ${value && 'hover:bg-[#F6FAFE]'}`}
-				disabled={!value}
+				className={`shrink-0 rounded px-4 py-3 text-[16px] ${roomId ? 'text-[#1A73E8]' : 'text-[#B5B6B7]'} ${roomId && 'hover:bg-[#F6FAFE]'}`}
+				disabled={!roomId}
 			>
 				참여
 			</button>

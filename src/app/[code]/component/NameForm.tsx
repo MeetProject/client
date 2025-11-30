@@ -4,9 +4,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ChangeEvent, FormEvent, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
+import { validateRoom } from '@/app/api/room';
+import { register } from '@/app/api/user';
 import { Alert, Loading } from '@/component';
 import { getRandomHexColor } from '@/lib/getRandomColor';
 import { useUserInfoStore } from '@/store/UserInfoStore';
+import { UserRegisterPayloadType } from '@/type/participantType';
 
 const MAX_SIZE = 60;
 
@@ -42,33 +45,14 @@ export default function NameForm() {
 		setIsPending(true);
 
 		const randomColor = getRandomHexColor();
+		const payload: UserRegisterPayloadType = {
+			userColor: randomColor,
+			userName: name,
+		};
 
 		try {
-			const payload = {
-				userColor: randomColor,
-				userName: name,
-			};
-
-			const response = await fetch('http://localhost:8080/api/user/register', {
-				body: JSON.stringify(payload),
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				method: 'POST',
-			});
-
-			if (!response.ok) {
-				throw new Error('회원 등록 실패');
-			}
-
-			const { userId } = await response.json();
-
-			const roomResponse = await fetch(`http://localhost:8080/api/room/validate?roomId=${sessionId}`);
-			if (!roomResponse.ok) {
-				throw new Error('방 id 검사 api 오류');
-			}
-
-			const { value } = await roomResponse.json();
+			const { userId } = await register(payload);
+			const { value } = await validateRoom(sessionId);
 
 			if (!value) {
 				alert('이미 닫힌 회의방입니다.');

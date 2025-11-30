@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { createRoom } from '@/app/api/room';
 import * as Icon from '@/asset/icon';
 import { Alert, Loading } from '@/component';
 
@@ -14,12 +15,7 @@ export default function AddNewMeetingButton() {
 	const handleButtonClick = async () => {
 		setIsPending(true);
 		try {
-			const response = await fetch('http://localhost:8080/api/room/create', { method: 'POST' });
-			if (!response.ok) {
-				throw new Error('api Error');
-			}
-
-			const { roomId: id } = (await response.json()) as { roomId: string };
+			const { roomId: id } = await createRoom();
 			router.push(`/${id}`);
 		} catch {
 			setIsFailed(true);

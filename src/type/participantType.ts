@@ -6,3 +6,20 @@ export interface UserListType {
 	isVideoOn: boolean;
 	stream: MediaStream | null;
 }
+
+export interface UserRegisterPayloadType {
+	userName: string;
+	userColor: string;
+}
+
+export interface UserReisgerResponseType {
+	userId: string;
+}
+
+export interface RoomValidateResponseType {
+	value: boolean;
+}
+
+export interface RoomCreateResponseType {
+	roomId: string;
+}
