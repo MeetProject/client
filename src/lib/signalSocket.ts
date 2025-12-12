@@ -4,9 +4,8 @@ import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
 import { useClientStore } from '@/store/ClientStore';
-import { useDeviceStore } from '@/store/DeviceStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
-import { CreateSignalClientType, SdpPayloadType, StreamType } from '@/type/signalType';
+import { CreateSignalClientType } from '@/type/signalType';
 
 interface CreateSignalClientProps {
 	baseUrl: string;
@@ -105,14 +104,3 @@ export const createSignalClient = ({ baseUrl, onConnect }: CreateSignalClientPro
 		topicSub,
 	};
 };
-
-export const getSdpPayload = (
-	targetId: string,
-	sdp: RTCSessionDescriptionInit,
-	streamType: StreamType,
-): SdpPayloadType => ({
-	fromUserSDP: JSON.stringify(sdp),
-	mediaOption: streamType === 'USER' ? useDeviceStore.getState().deviceEnable : null,
-	streamType,
-	toUserId: targetId,
-});

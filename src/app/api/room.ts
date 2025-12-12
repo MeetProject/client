@@ -1,6 +1,6 @@
 import { RoomCreateResponseType, RoomValidateResponseType } from '@/type/participantType';
 
-const DOMAIN = 'http://localhost:8080/';
+const DOMAIN = 'http://localhost:8080';
 
 export const createRoom = async () => {
 	const response = await fetch(`${DOMAIN}/api/room/create`, { method: 'POST' });

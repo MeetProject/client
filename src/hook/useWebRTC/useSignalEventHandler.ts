@@ -3,10 +3,10 @@
 import { useCallback } from 'react';
 
 import { APP_PATH } from '@/constant/signalPath';
-import { getSdpPayload } from '@/lib/signalSocket';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useWebRTCStore } from '@/store/WebRTCStore';
 import {
+	AnswerPayloadType,
 	AnswerResponseType,
 	CreateSignalClientType,
 	DeviceResponseType,
@@ -15,80 +15,49 @@ import {
 	IceResponseType,
 	JoinResponseType,
 	LeaveResponseType,
+	OfferPayloadType,
 	OfferResponseType,
-	ScreenResponseType,
-	StreamType,
 } from '@/type/signalType';
-import { DeviceEnableType } from '@/type/streamType';
 
 interface UseSignalEventHandlerProps {
-	disconnectPeerConnection: (targetId: string, streamType: StreamType) => void;
-	createPeerConnection: (
-		targetId: string,
-		onIceCandidate: (targetId: string, candidate: RTCIceCandidate, streamType: StreamType) => void,
-		streamType: 'SCREEN' | 'USER',
-		isScreenSender?: boolean,
-	) => Promise<void>;
-	createOfferSdp: (targetId: string, streamType: StreamType) => Promise<RTCSessionDescriptionInit>;
-	createAnswerSdp: (targetId: string, streamType: StreamType) => Promise<RTCSessionDescriptionInit>;
-	registerAnswerSdp: (
-		targetId: string,
-		targetSdp: RTCSessionDescriptionInit,
-		streamType: StreamType,
-		mediaOption?: DeviceEnableType,
-	) => Promise<void>;
-	registerOfferSdp: (targetId: string, sdp: RTCSessionDescriptionInit, streamType: StreamType) => Promise<void>;
-	registerRemoteIce: (targetId: string, targetIce: RTCIceCandidateInit, streamType: StreamType) => Promise<void>;
+	disconnectPeerConnection: () => void;
+	createPeerConnection: (onIceCandidate: (candidate: RTCIceCandidate) => void) => Promise<void>;
+	createOfferSdp: () => Promise<RTCSessionDescriptionInit>;
+	createAnswerSdp: () => Promise<RTCSessionDescriptionInit>;
+	registerRemoteSdp: (sdp: RTCSessionDescriptionInit) => Promise<void>;
+	registerLocalSdp: (sdp: RTCSessionDescriptionInit) => Promise<void>;
+	registerRemoteIce: (targetIce: RTCIceCandidateInit) => Promise<void>;
 }
 
 const useSignalEventHandler = ({
 	createAnswerSdp,
 	createOfferSdp,
 	createPeerConnection,
-	disconnectPeerConnection,
-	registerAnswerSdp,
-	registerOfferSdp,
+	registerLocalSdp,
 	registerRemoteIce,
+	registerRemoteSdp,
 }: UseSignalEventHandlerProps) => {
-	const offerIceCandidate = useCallback(
-		(targetId: string, candidate: RTCIceCandidate, streamType: StreamType, socket: CreateSignalClientType) => {
-			if (!useUserInfoStore.getState().id) {
-				return;
-			}
+	const offerIceCandidate = useCallback((candidate: RTCIceCandidate, socket: CreateSignalClientType) => {
+		const { id } = useUserInfoStore.getState();
+		if (!id) {
+			return;
+		}
 
-			const payload: IcePayloadType = {
-				fromCandidate: JSON.stringify(candidate),
-				streamType,
-				toUserId: targetId,
-			};
+		const payload: IcePayloadType = {
+			ice: JSON.stringify(candidate),
+			userId: id,
+		};
 
-			socket.publish(APP_PATH.ICE, payload);
-		},
-		[],
-	);
+		socket.publish(APP_PATH.ICE, payload);
+	}, []);
 
-	const handleLeaveResponse = useCallback(
-		(response: LeaveResponseType) => {
-			const { fromUserId, streamType } = response;
-			const {
-				deleteParticipantsMediaStream,
-				deleteParticipantsUserData,
-				setScreenOwnerId,
-				setScreenSharingMediaStream,
-			} = useWebRTCStore.getState();
-			disconnectPeerConnection(fromUserId, streamType);
+	const handleLeaveResponse = useCallback((response: LeaveResponseType) => {
+		const { userId } = response;
+		const { deleteParticipantsMediaStream, deleteParticipantsUserData } = useWebRTCStore.getState();
 
-			if (streamType === 'USER') {
-				deleteParticipantsUserData(fromUserId);
-				deleteParticipantsMediaStream(fromUserId);
-				return;
-			}
-
-			setScreenSharingMediaStream(null);
-			setScreenOwnerId(null);
-		},
-		[disconnectPeerConnection],
-	);
+		deleteParticipantsUserData(userId);
+		deleteParticipantsMediaStream(userId);
+	}, []);
 
 	const handleHandUpResponse = useCallback((response: HandUpResponseType) => {
 		const { userId, value } = response;
@@ -105,100 +74,58 @@ const useSignalEventHandler = ({
 	const handleJoin = useCallback(
 		async (response: JoinResponseType, socket: CreateSignalClientType) => {
 			const { updateParticipantsHandUp, updateParticipantsUserData } = useWebRTCStore.getState();
-			const { participants, screenId } = response;
+			const { participants, userId } = response;
 			participants.forEach(async (participant) => {
 				const { isHandUp, ...userData } = participant;
 				updateParticipantsUserData(participant.userId, userData);
 				updateParticipantsHandUp(participant.userId, isHandUp);
-				await createPeerConnection(
-					participant.userId,
-					(targetId, candidate, streamType) => offerIceCandidate(targetId, candidate, streamType, socket),
-					'USER',
-					false,
-				);
-				const sdp = await createOfferSdp(participant.userId, 'USER');
-				await registerOfferSdp(participant.userId, sdp, 'USER');
-				const payload = getSdpPayload(participant.userId, sdp, 'USER');
-				socket.publish(APP_PATH.OFFER, payload);
 			});
 
-			if (screenId) {
-				await createPeerConnection(
-					screenId,
-					(targetId, candidate, streamType) => offerIceCandidate(targetId, candidate, streamType, socket),
-					'SCREEN',
-					false,
-				);
-				const sdp = await createOfferSdp(screenId, 'SCREEN');
-				await registerOfferSdp(screenId, sdp, 'SCREEN');
-				const payload = getSdpPayload(screenId, sdp, 'SCREEN');
-				socket.publish(APP_PATH.OFFER, payload);
-			}
+			await createPeerConnection((candidate) => offerIceCandidate(candidate, socket));
+			const sdp = await createOfferSdp();
+			await registerLocalSdp(sdp);
+			const payload: OfferPayloadType = {
+				sdp: JSON.stringify(sdp),
+				userId,
+			};
+			socket.publish(APP_PATH.OFFER, payload);
 		},
-		[createOfferSdp, createPeerConnection, offerIceCandidate, registerOfferSdp],
+		[createOfferSdp, createPeerConnection, offerIceCandidate, registerLocalSdp],
 	);
 
 	const handleOffer = useCallback(
 		async (response: OfferResponseType, socket: CreateSignalClientType) => {
-			const { updateParticipantsHandUp, updateParticipantsUserData } = useWebRTCStore.getState();
-			const { fromUserId, fromUserSDP, isScreenSender, mediaOption, streamType, user } = response;
-			const { isHandUp, ...userData } = user;
-			const fromSDP = JSON.parse(fromUserSDP) as RTCSessionDescriptionInit;
+			const { sdp, userId } = response;
+			const parsedSdp = JSON.parse(sdp) as RTCSessionDescriptionInit;
+			await registerRemoteSdp(parsedSdp);
 
-			await createPeerConnection(
-				fromUserId,
-				(targetId, candidate, type) => offerIceCandidate(targetId, candidate, type, socket),
-				streamType,
-				isScreenSender,
-			);
-
-			updateParticipantsUserData(fromUserId, userData);
-			updateParticipantsHandUp(fromUserId, isHandUp);
-
-			await registerAnswerSdp(fromUserId, fromSDP, streamType, mediaOption);
-			const sdp = await createAnswerSdp(fromUserId, streamType);
-			await registerOfferSdp(fromUserId, sdp, streamType);
-			const payload = getSdpPayload(fromUserId, sdp, streamType);
+			const answerSdp = await createAnswerSdp();
+			await registerLocalSdp(answerSdp);
+			const payload: AnswerPayloadType = {
+				sdp: JSON.stringify(answerSdp),
+				userId,
+			};
 			socket.publish(APP_PATH.ANSWER, payload);
 		},
-		[createAnswerSdp, createPeerConnection, offerIceCandidate, registerAnswerSdp, registerOfferSdp],
+		[registerRemoteSdp, registerLocalSdp, createAnswerSdp],
 	);
 
 	const handleAnswer = useCallback(
 		async (response: AnswerResponseType) => {
-			const { fromUserId, fromUserSDP, streamType } = response;
-			const sdp = JSON.parse(fromUserSDP) as RTCSessionDescriptionInit;
-			await registerAnswerSdp(fromUserId, sdp, streamType);
+			const { sdp } = response;
+			const parsedSdp = JSON.parse(sdp) as RTCSessionDescriptionInit;
+			await registerRemoteSdp(parsedSdp);
 		},
-		[registerAnswerSdp],
+		[registerRemoteSdp],
 	);
 
 	const handleIce = useCallback(
 		async (response: IceResponseType) => {
-			const { fromUserIce, fromUserId, streamType } = response;
-			const candidate = JSON.parse(fromUserIce) as RTCLocalIceCandidateInit;
-			await registerRemoteIce(fromUserId, candidate, streamType);
+			const { ice } = response;
+			const candidate = JSON.parse(ice) as RTCLocalIceCandidateInit;
+			await registerRemoteIce(candidate);
 		},
 		[registerRemoteIce],
-	);
-
-	const handleScreen = useCallback(
-		async (response: ScreenResponseType, socket: CreateSignalClientType) => {
-			const { participants } = response;
-			participants.forEach(async (participant) => {
-				await createPeerConnection(
-					participant,
-					(targetId, candidate, streamType) => offerIceCandidate(targetId, candidate, streamType, socket),
-					'SCREEN',
-					true,
-				);
-				const sdp = await createOfferSdp(participant, 'SCREEN');
-				await registerOfferSdp(participant, sdp, 'SCREEN');
-				const payload = getSdpPayload(participant, sdp, 'SCREEN');
-				socket.publish(APP_PATH.OFFER, payload);
-			});
-		},
-		[createOfferSdp, createPeerConnection, offerIceCandidate, registerOfferSdp],
 	);
 
 	return {
@@ -209,7 +136,6 @@ const useSignalEventHandler = ({
 		handleJoin,
 		handleLeaveResponse,
 		handleOffer,
-		handleScreen,
 	};
 };
 

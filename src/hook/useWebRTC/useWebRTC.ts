@@ -20,7 +20,6 @@ import {
 	IceResponseType,
 	JoinResponseType,
 	OfferResponseType,
-	ScreenResponseType,
 } from '@/type/signalType';
 import { ErrorResponseType } from '@/type/signalType';
 
@@ -32,20 +31,16 @@ interface UseWebRTCProperties {
 
 const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
 	const { stopScreenStream, stopStream, updateScreenStream, updateStream } = useDevice();
-	const { onDeviceEnableChange, onDisplayShareEnd, onTrack } = usePeerConnectionEventHandler();
+	const { onTrack } = usePeerConnectionEventHandler();
 	const {
 		createAnswerSdp,
 		createOfferSdp,
 		createPeerConnection,
-		disconnectAllPeerConnection,
-		disconnectAllScreenPeerConnection,
 		disconnectPeerConnection,
-		registerAnswerSdp,
-		registerOfferSdp,
+		registerLocalSdp,
 		registerRemoteIce,
+		registerRemoteSdp,
 	} = usePeerConnection({
-		onDeviceEnableChange,
-		onDisplayShareEnd,
 		onTrack,
 	});
 
@@ -57,58 +52,44 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
 		handleJoin,
 		handleLeaveResponse,
 		handleOffer,
-		handleScreen,
 	} = useSignalEventHandler({
 		createAnswerSdp,
 		createOfferSdp,
 		createPeerConnection,
 		disconnectPeerConnection,
-		registerAnswerSdp,
-		registerOfferSdp,
+		registerLocalSdp,
 		registerRemoteIce,
+		registerRemoteSdp,
 	});
 
 	const handleSocketConnect = useCallback(
 		(socket: CreateSignalClientType) => {
 			useClientStore.getState().setIsClientReady(true);
-
-			socket.signalSub<JoinResponseType>(USER_PATH.JOIN, (response) => handleJoin(response, socket));
-			socket.signalSub<OfferResponseType>(USER_PATH.OFFER, (response) => handleOffer(response, socket));
+			socket.subscribe<JoinResponseType>(USER_PATH.JOIN, (response) => handleJoin(response, socket));
+			socket.subscribe<OfferResponseType>(USER_PATH.OFFER, (response) => handleOffer(response, socket));
 			socket.signalSub<AnswerResponseType>(USER_PATH.ANSWER, handleAnswer);
 			socket.signalSub<IceResponseType>(USER_PATH.ICE, handleIce);
-			socket.signalSub<ScreenResponseType>(USER_PATH.SCREEN, (response) => handleScreen(response, socket));
 			socket.signalSub<ErrorResponseType>(USER_PATH.ERROR, onError);
 		},
-		[handleAnswer, handleIce, onError, handleJoin, handleOffer, handleScreen],
+		[handleAnswer, handleIce, onError, handleJoin, handleOffer],
 	);
 
-	const {
-		connectSocket,
-		disconnectSocket,
-		sendChat,
-		sendDevice,
-		sendEmoji,
-		sendHandUp,
-		sendJoin,
-		sendLeave,
-		shareScreen: sharingScreen,
-	} = useSignalSocket({
-		onChat,
-		onConnect: handleSocketConnect,
-		onDevice: handleDeviceResponse,
-		onEmoji,
-		onHandUp: handleHandUpResponse,
-		onLeave: handleLeaveResponse,
-	});
+	const { connectSocket, disconnectSocket, sendChat, sendDevice, sendEmoji, sendHandUp, sendJoin, sendLeave } =
+		useSignalSocket({
+			onChat,
+			onConnect: handleSocketConnect,
+			onDevice: handleDeviceResponse,
+			onEmoji,
+			onHandUp: handleHandUpResponse,
+			onLeave: handleLeaveResponse,
+		});
 
 	const stopShareScreen = useCallback(() => {
 		const { setIsScreenShare, setScreenSharingMediaStream } = useWebRTCStore.getState();
-		sendLeave('SCREEN');
-		disconnectAllScreenPeerConnection();
 		setScreenSharingMediaStream(null);
 		stopScreenStream();
 		setIsScreenShare(false);
-	}, [sendLeave, disconnectAllScreenPeerConnection, stopScreenStream]);
+	}, [stopScreenStream]);
 
 	const joinSession = useCallback(async () => {
 		useClientStore.getState().setIsClientReady(false);
@@ -140,26 +121,24 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
 		const { screenSharingMediaStream, setIsScreenShare } = useWebRTCStore.getState();
 		if (screenSharingMediaStream) return;
 		await updateScreenStream(true);
-		sharingScreen();
 		setIsScreenShare(true);
-	}, [sharingScreen, updateScreenStream]);
+	}, [updateScreenStream]);
 
 	const clearPeerConnection = useCallback(() => {
+		disconnectPeerConnection();
 		const { setParticipantsMediaStream, setParticipantsUserData, setScreenSharingMediaStream } =
 			useWebRTCStore.getState();
-		disconnectAllPeerConnection();
-		disconnectAllScreenPeerConnection();
 		setParticipantsUserData(new Map());
 		setParticipantsMediaStream(new Map());
 		setScreenSharingMediaStream(null);
-	}, [disconnectAllPeerConnection, disconnectAllScreenPeerConnection]);
+	}, [disconnectPeerConnection]);
 
 	const leaveRoom = useCallback(() => {
 		const { isScreenShare } = useWebRTCStore.getState();
 		if (isScreenShare) {
 			stopShareScreen();
 		}
-		sendLeave('USER');
+		sendLeave();
 		clearPeerConnection();
 		stopStream();
 	}, [sendLeave, clearPeerConnection, stopStream, stopShareScreen]);

@@ -10,14 +10,6 @@ interface SignalResponseType {
 	type: ResponseType;
 }
 
-interface SdpResponseType extends SignalResponseType {
-	fromUserId: string;
-	fromUserSDP: string;
-	mediaOption?: Record<'audio' | 'video', boolean> | null;
-	streamType: 'SCREEN' | 'USER';
-	isScreenSender: boolean;
-}
-
 export interface ParticipantDataType {
 	userId: string;
 	userName: string;
@@ -35,60 +27,52 @@ export interface RegisterResponseType extends SignalResponseType {
 
 export interface JoinPayloadType {
 	roomId: string;
+	mediaOption: DeviceEnableType;
 }
 
 export interface JoinResponseType extends SignalResponseType {
+	userId: string;
 	roomId: string;
 	participants: ParticipantResponseType[];
-	screenId: string | null;
 }
 
-export interface SdpPayloadType {
-	toUserId: string;
-	fromUserSDP: string;
-	mediaOption: Record<'audio' | 'video', boolean> | null;
-	streamType: 'SCREEN' | 'USER';
+export interface OfferPayloadType {
+	userId: string;
+	sdp: string;
 }
 
-export interface AnswerResponseType extends SdpResponseType {}
+export interface OfferResponseType extends SignalResponseType {
+	userId: string;
+	roomId: string;
+	sdp: string;
+}
 
-export interface OfferResponseType extends SdpResponseType {
-	user: ParticipantResponseType;
+export interface AnswerPayloadType {
+	userId: string;
+	sdp: string;
+}
+
+export interface AnswerResponseType extends SignalResponseType {
+	userId: string;
+	sdp: string;
 }
 
 export interface IcePayloadType {
-	toUserId: string;
-	fromCandidate: string;
-	streamType: 'SCREEN' | 'USER';
+	userId: string;
+	ice: string;
 }
 
 export interface IceResponseType extends SignalResponseType {
-	fromUserId: string;
-	fromUserIce: string;
-	streamType: 'SCREEN' | 'USER';
-}
-
-export interface LeavePayloadType {
-	roomId: string;
-	streamType: StreamType;
+	userId: string;
+	ice: string;
 }
 
 export interface LeaveResponseType extends SignalResponseType {
-	fromUserId: string;
-	streamType: StreamType;
+	userId: string;
 }
 
 export interface ScreenPayloadType {
-	roomId: string;
-}
-
-export interface ScreenStopPayloadType {
-	ownerId: string;
-	roomId: string;
-}
-
-export interface ScreenResponseType extends SignalResponseType {
-	participants: string[];
+	trackId: string;
 }
 
 export interface ErrorResponseType extends SignalResponseType {
@@ -148,7 +132,7 @@ export interface DeviceResponseType extends TopicResponsType {
 export interface CreateSignalClientType {
 	connect: () => void;
 	disconnect: () => void;
-	publish: <T>(destination: string, payload: T) => void;
+	publish: <T>(destination: string, payload?: T) => void;
 	signalSub: <T>(destination: string, callback: (responset: T) => Promise<void> | void) => void;
 	subscribe: <T>(destination: string, callback: (responset: T) => Promise<void> | void) => StompSubscription | null;
 	topicSub: <T>(destination: string, callback: (responset: T) => Promise<void> | void) => void;

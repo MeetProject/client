@@ -5,6 +5,7 @@ import { useCallback, useRef } from 'react';
 import { APP_PATH, TOPIC_PATH } from '@/constant/signalPath';
 import { createSignalClient } from '@/lib/signalSocket';
 import { useClientStore } from '@/store/ClientStore';
+import { useDeviceStore } from '@/store/DeviceStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { EmojiType } from '@/type/reactionType';
 import {
@@ -17,15 +18,9 @@ import {
 	EmojiResponseType,
 	handUpPayloadType,
 	HandUpResponseType,
-} from '@/type/signalType';
-import {
-	LeaveResponseType,
-	JoinPayloadType,
-	LeavePayloadType,
-	StreamType,
 	ScreenPayloadType,
-	ScreenStopPayloadType,
 } from '@/type/signalType';
+import { LeaveResponseType, JoinPayloadType } from '@/type/signalType';
 import { DeviceEnableType } from '@/type/streamType';
 
 interface UseSignalSocketProperties {
@@ -62,11 +57,13 @@ const useSignalSocket = ({ onChat, onConnect, onDevice, onEmoji, onHandUp, onLea
 	const sendJoin = useCallback(
 		(roomId: string) => {
 			const { setRoomId } = useClientStore.getState();
+			const { deviceEnable } = useDeviceStore.getState();
 			if (!useUserInfoStore.getState().id) {
 				return;
 			}
 
 			const payload: JoinPayloadType = {
+				mediaOption: deviceEnable,
 				roomId,
 			};
 
@@ -81,7 +78,7 @@ const useSignalSocket = ({ onChat, onConnect, onDevice, onEmoji, onHandUp, onLea
 		socket.current.connect();
 	}, []);
 
-	const shareScreen = useCallback(() => {
+	const shareScreen = useCallback((trackId: string) => {
 		const { roomId } = useClientStore.getState();
 		const userId = useUserInfoStore.getState().id;
 		if (!userId || !roomId) {
@@ -89,7 +86,7 @@ const useSignalSocket = ({ onChat, onConnect, onDevice, onEmoji, onHandUp, onLea
 		}
 
 		const payload: ScreenPayloadType = {
-			roomId,
+			trackId,
 		};
 
 		socket.current.publish(APP_PATH.SCREEN, payload);
@@ -102,13 +99,6 @@ const useSignalSocket = ({ onChat, onConnect, onDevice, onEmoji, onHandUp, onLea
 		if (!userId || !roomId) {
 			return;
 		}
-
-		const payload: ScreenStopPayloadType = {
-			ownerId: userId,
-			roomId,
-		};
-
-		socket.current.publish(APP_PATH.LEAVE, payload);
 	}, []);
 
 	const sendChat = useCallback((message: string) => {
@@ -171,23 +161,16 @@ const useSignalSocket = ({ onChat, onConnect, onDevice, onEmoji, onHandUp, onLea
 		socket.current.publish(APP_PATH.DEVICE, payload);
 	}, []);
 
-	const sendLeave = useCallback((streamType: StreamType) => {
+	const sendLeave = useCallback(() => {
 		const { clearRoomSubscriptions, roomId, setRoomId } = useClientStore.getState();
 		if (!useUserInfoStore.getState().id || !roomId) {
 			return;
 		}
 
-		const payload: LeavePayloadType = {
-			roomId,
-			streamType,
-		};
+		socket.current.publish(APP_PATH.LEAVE);
 
-		socket.current.publish(APP_PATH.LEAVE, payload);
-
-		if (streamType === 'USER') {
-			clearRoomSubscriptions();
-			setRoomId(null);
-		}
+		clearRoomSubscriptions();
+		setRoomId(null);
 	}, []);
 
 	const disconnectSocket = useCallback(() => {
