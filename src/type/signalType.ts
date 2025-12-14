@@ -1,7 +1,7 @@
 import { StompSubscription } from '@stomp/stompjs';
 
-import { EmojiType } from './reactionType';
-import { DeviceEnableType } from './streamType';
+import { EmojiType } from '@/type/reactionType';
+import { DeviceEnableType, TrackInfoType } from '@/type/streamType';
 
 type ResponseType = 'REGISTER' | 'JOIN' | 'ANSWER' | 'OFFER' | 'ICE' | 'LEAVE' | 'SCREEN' | 'ERROR';
 export type StreamType = 'USER' | 'SCREEN';
@@ -65,6 +65,17 @@ export interface IcePayloadType {
 export interface IceResponseType extends SignalResponseType {
 	userId: string;
 	ice: string;
+}
+
+export interface TrackPayloadType {
+	userId: string;
+	track: Record<string, TrackInfoType>;
+}
+
+export interface TrackResponseType extends SignalResponseType {
+	userId: string;
+	roomId: string;
+	track: Record<string, TrackInfoType>;
 }
 
 export interface LeaveResponseType extends SignalResponseType {

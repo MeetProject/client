@@ -18,7 +18,6 @@ import {
 	EmojiResponseType,
 	handUpPayloadType,
 	HandUpResponseType,
-	ScreenPayloadType,
 } from '@/type/signalType';
 import { LeaveResponseType, JoinPayloadType } from '@/type/signalType';
 import { DeviceEnableType } from '@/type/streamType';
@@ -76,20 +75,6 @@ const useSignalSocket = ({ onChat, onConnect, onDevice, onEmoji, onHandUp, onLea
 
 	const connectSocket = useCallback(() => {
 		socket.current.connect();
-	}, []);
-
-	const shareScreen = useCallback((trackId: string) => {
-		const { roomId } = useClientStore.getState();
-		const userId = useUserInfoStore.getState().id;
-		if (!userId || !roomId) {
-			return;
-		}
-
-		const payload: ScreenPayloadType = {
-			trackId,
-		};
-
-		socket.current.publish(APP_PATH.SCREEN, payload);
 	}, []);
 
 	const stopScreenShare = useCallback(() => {
@@ -186,7 +171,6 @@ const useSignalSocket = ({ onChat, onConnect, onDevice, onEmoji, onHandUp, onLea
 		sendHandUp,
 		sendJoin,
 		sendLeave,
-		shareScreen,
 		stopScreenShare,
 	};
 };

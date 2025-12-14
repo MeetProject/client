@@ -7,8 +7,8 @@ import * as Icon from '@/asset/icon';
 import * as ImageSrc from '@/asset/image';
 import { Visualizer } from '@/component';
 import { useWebRTCStore } from '@/store/WebRTCStore';
-import { EmojiResponseType } from '@/type/reactionType';
 import { EmojiType } from '@/type/reactionType';
+import { EmojiResponseType } from '@/type/signalType';
 
 interface UserInfo extends Record<'id' | 'name' | 'color', string> {
 	audio: boolean;
@@ -48,6 +48,7 @@ export default function VideoStream({
 	const { participantsHandUp } = useWebRTCStore();
 
 	useEffect(() => {
+		console.log('rerender');
 		if (!videoReference.current || !stream) return;
 
 		const liveTracks = stream.getTracks().filter((t): t is MediaStreamTrack => t.readyState === 'live');

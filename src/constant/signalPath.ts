@@ -8,7 +8,7 @@ export const APP_PATH = {
 	JOIN: '/app/signal/join',
 	LEAVE: '/app/signal/leave',
 	OFFER: '/app/signal/offer',
-	SCREEN: '/app/signal/screen',
+	TRACK: '/app/signal/track',
 };
 
 export const USER_PATH = {
@@ -17,7 +17,7 @@ export const USER_PATH = {
 	ICE: '/user/queue/signal/ice',
 	JOIN: '/user/queue/signal/join',
 	OFFER: '/user/queue/signal/offer',
-	SCREEN: '/user/queue/signal/screen',
+	TRACK: '/user/queue/signal/track',
 };
 
 export const TOPIC_PATH = {

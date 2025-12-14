@@ -20,6 +20,7 @@ import {
 	IceResponseType,
 	JoinResponseType,
 	OfferResponseType,
+	TrackResponseType,
 } from '@/type/signalType';
 import { ErrorResponseType } from '@/type/signalType';
 
@@ -52,6 +53,7 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
 		handleJoin,
 		handleLeaveResponse,
 		handleOffer,
+		handleTrack,
 	} = useSignalEventHandler({
 		createAnswerSdp,
 		createOfferSdp,
@@ -69,9 +71,10 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
 			socket.subscribe<OfferResponseType>(USER_PATH.OFFER, (response) => handleOffer(response, socket));
 			socket.signalSub<AnswerResponseType>(USER_PATH.ANSWER, handleAnswer);
 			socket.signalSub<IceResponseType>(USER_PATH.ICE, handleIce);
+			socket.signalSub<TrackResponseType>(USER_PATH.TRACK, handleTrack);
 			socket.signalSub<ErrorResponseType>(USER_PATH.ERROR, onError);
 		},
-		[handleAnswer, handleIce, onError, handleJoin, handleOffer],
+		[handleAnswer, handleIce, onError, handleJoin, handleOffer, handleTrack],
 	);
 
 	const { connectSocket, disconnectSocket, sendChat, sendDevice, sendEmoji, sendHandUp, sendJoin, sendLeave } =

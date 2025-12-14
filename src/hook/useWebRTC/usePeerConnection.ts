@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
+import { APP_PATH } from '@/constant/signalPath';
 import { useDeviceStore } from '@/store/DeviceStore';
+import { useUserInfoStore } from '@/store/UserInfoStore';
+import { CreateSignalClientType, TrackPayloadType } from '@/type/signalType';
+import { TrackInfoType } from '@/type/streamType';
 
 interface UsePeerConnectionProperties {
 	onTrack: (event: RTCTrackEvent) => void;
@@ -30,7 +34,7 @@ const usePeerConnection = ({ onTrack }: UsePeerConnectionProperties) => {
 	);
 
 	const createPeerConnection = useCallback(
-		async (onIceCandidate: (candidate: RTCIceCandidate) => void) => {
+		async (socket: CreateSignalClientType, onIceCandidate: (candidate: RTCIceCandidate) => void) => {
 			if (peerConnections.current.pc) {
 				peerConnections.current.pc.close();
 				peerConnections.current = {
@@ -58,10 +62,21 @@ const usePeerConnection = ({ onTrack }: UsePeerConnectionProperties) => {
 			pc.onnegotiationneeded = () => {};
 
 			const { stream: mediaStream } = useDeviceStore.getState();
+			const { id } = useUserInfoStore.getState();
+
+			const trackInfo = new Map<string, TrackInfoType>();
 
 			mediaStream?.getTracks().forEach((track) => {
-				pc.addTrack(track, mediaStream);
+				pc.addTransceiver(track);
+				trackInfo.set(track.id, { streamType: 'USER', userId: id });
 			});
+
+			const payload: TrackPayloadType = {
+				track: Object.fromEntries(trackInfo),
+				userId: id,
+			};
+
+			socket.publish(APP_PATH.TRACK, payload);
 
 			peerConnections.current.pc = pc;
 		},

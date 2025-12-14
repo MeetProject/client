@@ -3,6 +3,8 @@
 import { useCallback } from 'react';
 
 import { APP_PATH } from '@/constant/signalPath';
+import { setScreenStream, setUserStream } from '@/lib/mediaStream';
+import { usePendingTrackStore } from '@/store/TrackInfoStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useWebRTCStore } from '@/store/WebRTCStore';
 import {
@@ -17,11 +19,15 @@ import {
 	LeaveResponseType,
 	OfferPayloadType,
 	OfferResponseType,
+	TrackResponseType,
 } from '@/type/signalType';
 
 interface UseSignalEventHandlerProps {
 	disconnectPeerConnection: () => void;
-	createPeerConnection: (onIceCandidate: (candidate: RTCIceCandidate) => void) => Promise<void>;
+	createPeerConnection: (
+		socket: CreateSignalClientType,
+		onIceCandidate: (candidate: RTCIceCandidate) => void,
+	) => Promise<void>;
 	createOfferSdp: () => Promise<RTCSessionDescriptionInit>;
 	createAnswerSdp: () => Promise<RTCSessionDescriptionInit>;
 	registerRemoteSdp: (sdp: RTCSessionDescriptionInit) => Promise<void>;
@@ -81,7 +87,7 @@ const useSignalEventHandler = ({
 				updateParticipantsHandUp(participant.userId, isHandUp);
 			});
 
-			await createPeerConnection((candidate) => offerIceCandidate(candidate, socket));
+			await createPeerConnection(socket, (candidate) => offerIceCandidate(candidate, socket));
 			const sdp = await createOfferSdp();
 			await registerLocalSdp(sdp);
 			const payload: OfferPayloadType = {
@@ -128,6 +134,27 @@ const useSignalEventHandler = ({
 		[registerRemoteIce],
 	);
 
+	const handleTrack = useCallback(async (response: TrackResponseType) => {
+		console.log(response);
+		const { track } = response;
+
+		Object.entries(track).forEach(([trackId, { streamType, userId }]) => {
+			const { deletePendingTrack, pendingTrack, setPendingTrack } = usePendingTrackStore.getState();
+			if (pendingTrack.has(trackId)) {
+				const { track: mediaTrack } = pendingTrack.get(trackId);
+				deletePendingTrack(trackId);
+				if (streamType === 'USER') {
+					setUserStream(userId, mediaTrack);
+					return;
+				}
+
+				setScreenStream(userId, mediaTrack);
+				return;
+			}
+			setPendingTrack(trackId, { streamType, userId });
+		});
+	}, []);
+
 	return {
 		handleAnswer,
 		handleDeviceResponse,
@@ -136,6 +163,7 @@ const useSignalEventHandler = ({
 		handleJoin,
 		handleLeaveResponse,
 		handleOffer,
+		handleTrack,
 	};
 };
 
