@@ -3,15 +3,9 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
-import { APP_PATH } from '@/constant/signalPath';
+import usePeerConnectionEventHandler from '@/hook/useWebRTC/usePeerConnectionEventHandler';
 import { useDeviceStore } from '@/store/DeviceStore';
-import { useUserInfoStore } from '@/store/UserInfoStore';
-import { CreateSignalClientType, OfferPayloadType, TrackPayloadType } from '@/type/signalType';
-import { TrackInfoType } from '@/type/streamType';
-
-interface UsePeerConnectionProperties {
-	onTrack: (event: RTCTrackEvent) => void;
-}
+import { CreateSignalClientType } from '@/type/signalType';
 
 interface PeerConnectionData {
 	pc: RTCPeerConnection;
@@ -19,7 +13,9 @@ interface PeerConnectionData {
 	remoteSet: boolean;
 }
 
-const usePeerConnection = ({ onTrack }: UsePeerConnectionProperties) => {
+const usePeerConnection = () => {
+	const { onIceCandidate, onNegotiation, onTrack, registerTrack } = usePeerConnectionEventHandler();
+
 	const isMakingOffer = useRef<boolean>(false);
 	const peerConnections = useRef<PeerConnectionData>({
 		iceQueue: [],
@@ -35,7 +31,7 @@ const usePeerConnection = ({ onTrack }: UsePeerConnectionProperties) => {
 	);
 
 	const createPeerConnection = useCallback(
-		async (socket: CreateSignalClientType, userId: string, onIceCandidate: (candidate: RTCIceCandidate) => void) => {
+		async (socket: CreateSignalClientType, userId: string) => {
 			if (peerConnections.current.pc) {
 				peerConnections.current.pc.close();
 				peerConnections.current = {
@@ -50,14 +46,11 @@ const usePeerConnection = ({ onTrack }: UsePeerConnectionProperties) => {
 			});
 
 			pc.onicecandidate = async (event) => {
-				if (event.candidate) {
-					await onIceCandidate(event.candidate);
-				}
+				await onIceCandidate(event.candidate, socket);
 			};
 
 			pc.ontrack = async (event) => {
 				onTrack(event);
-				console.log(event);
 			};
 
 			pc.onnegotiationneeded = async () => {
@@ -65,38 +58,15 @@ const usePeerConnection = ({ onTrack }: UsePeerConnectionProperties) => {
 					return;
 				}
 
-				console.log('negotiation');
-
 				isMakingOffer.current = true;
-				const sdp = await pc.createOffer();
-				await pc.setLocalDescription(sdp);
-				const payload: OfferPayloadType = {
-					sdp: JSON.stringify(sdp),
-					userId,
-				};
-				socket.publish(APP_PATH.OFFER, payload);
+				onNegotiation(pc, socket, userId);
 			};
 
-			const { stream: mediaStream } = useDeviceStore.getState();
-			const { id } = useUserInfoStore.getState();
-
-			const trackInfo = new Map<string, TrackInfoType>();
-
-			mediaStream?.getTracks().forEach((track) => {
-				pc.addTransceiver(track);
-				trackInfo.set(track.id, { streamType: 'USER', userId: id });
-			});
-
-			const payload: TrackPayloadType = {
-				track: Object.fromEntries(trackInfo),
-				userId: id,
-			};
-
-			socket.publish(APP_PATH.TRACK, payload);
+			registerTrack(pc, socket);
 
 			peerConnections.current.pc = pc;
 		},
-		[onTrack],
+		[onTrack, onNegotiation, registerTrack, onIceCandidate],
 	);
 
 	const createOfferSdp = useCallback(async () => {

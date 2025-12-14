@@ -5,7 +5,6 @@ import { useCallback } from 'react';
 import { APP_PATH } from '@/constant/signalPath';
 import { setScreenStream, setUserStream } from '@/lib/mediaStream';
 import { usePendingTrackStore } from '@/store/TrackInfoStore';
-import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useWebRTCStore } from '@/store/WebRTCStore';
 import {
 	AnswerPayloadType,
@@ -13,7 +12,6 @@ import {
 	CreateSignalClientType,
 	DeviceResponseType,
 	HandUpResponseType,
-	IcePayloadType,
 	IceResponseType,
 	JoinResponseType,
 	LeaveResponseType,
@@ -23,11 +21,7 @@ import {
 
 interface UseSignalEventHandlerProps {
 	disconnectPeerConnection: () => void;
-	createPeerConnection: (
-		socket: CreateSignalClientType,
-		userId: string,
-		onIceCandidate: (candidate: RTCIceCandidate) => void,
-	) => Promise<void>;
+	createPeerConnection: (socket: CreateSignalClientType, userId: string) => Promise<void>;
 	createOfferSdp: () => Promise<RTCSessionDescriptionInit>;
 	createAnswerSdp: () => Promise<RTCSessionDescriptionInit>;
 	registerRemoteSdp: (sdp: RTCSessionDescriptionInit) => Promise<void>;
@@ -42,20 +36,6 @@ const useSignalEventHandler = ({
 	registerRemoteIce,
 	registerRemoteSdp,
 }: UseSignalEventHandlerProps) => {
-	const offerIceCandidate = useCallback((candidate: RTCIceCandidate, socket: CreateSignalClientType) => {
-		const { id } = useUserInfoStore.getState();
-		if (!id) {
-			return;
-		}
-
-		const payload: IcePayloadType = {
-			ice: JSON.stringify(candidate),
-			userId: id,
-		};
-
-		socket.publish(APP_PATH.ICE, payload);
-	}, []);
-
 	const handleLeaveResponse = useCallback((response: LeaveResponseType) => {
 		const { userId } = response;
 		const { deleteParticipantsMediaStream, deleteParticipantsUserData } = useWebRTCStore.getState();
@@ -86,9 +66,9 @@ const useSignalEventHandler = ({
 				updateParticipantsHandUp(participant.userId, isHandUp);
 			});
 
-			await createPeerConnection(socket, userId, (candidate) => offerIceCandidate(candidate, socket));
+			await createPeerConnection(socket, userId);
 		},
-		[createPeerConnection, offerIceCandidate],
+		[createPeerConnection],
 	);
 
 	const handleOffer = useCallback(

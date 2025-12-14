@@ -5,7 +5,6 @@ import { useCallback } from 'react';
 import { useDevice } from '..';
 
 import usePeerConnection from './usePeerConnection';
-import usePeerConnectionEventHandler from './usePeerConnectionEventHandler';
 import useSignalEventHandler from './useSignalEventHandler';
 import useSignalSocket from './useSignalSocket';
 
@@ -32,7 +31,6 @@ interface UseWebRTCProperties {
 
 const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
 	const { stopScreenStream, stopStream, updateScreenStream, updateStream } = useDevice();
-	const { onTrack } = usePeerConnectionEventHandler();
 	const {
 		createAnswerSdp,
 		createOfferSdp,
@@ -41,9 +39,7 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
 		registerLocalSdp,
 		registerRemoteIce,
 		registerRemoteSdp,
-	} = usePeerConnection({
-		onTrack,
-	});
+	} = usePeerConnection();
 
 	const {
 		handleAnswer,
