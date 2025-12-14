@@ -46,6 +46,9 @@ const usePeerConnection = () => {
 			});
 
 			pc.onicecandidate = async (event) => {
+				if (!event.candidate) {
+					return;
+				}
 				await onIceCandidate(event.candidate, socket);
 			};
 
@@ -59,6 +62,7 @@ const usePeerConnection = () => {
 				}
 
 				isMakingOffer.current = true;
+				peerConnections.current.remoteSet = false;
 				onNegotiation(pc, socket, userId);
 			};
 
