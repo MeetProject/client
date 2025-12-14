@@ -12,7 +12,6 @@ const usePeerConnectionEventHandler = () => {
 
 	const onTrack = useCallback((event: RTCTrackEvent) => {
 		console.log(event.transceiver.mid);
-		console.log(event.track);
 		const trackId = event.track.id;
 		const { deletePendingTrack, pendingTrack, setPendingTrack } = usePendingTrackStore.getState();
 		if (pendingTrack.has(trackId)) {

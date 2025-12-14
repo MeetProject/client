@@ -15,7 +15,6 @@ interface StreamGridListProperties {
 }
 
 export default function StreamGridList({ emojiList }: StreamGridListProperties) {
-	console.log('grid render');
 	const [maxRow, setMaxRow] = useState(Math.min(Math.floor((window.innerWidth - 400) / 166), 1));
 
 	const { color, id, name } = useUserInfoStore(

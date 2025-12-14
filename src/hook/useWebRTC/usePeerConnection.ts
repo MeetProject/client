@@ -6,7 +6,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { APP_PATH } from '@/constant/signalPath';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
-import { CreateSignalClientType, TrackPayloadType } from '@/type/signalType';
+import { CreateSignalClientType, OfferPayloadType, TrackPayloadType } from '@/type/signalType';
 import { TrackInfoType } from '@/type/streamType';
 
 interface UsePeerConnectionProperties {
@@ -20,6 +20,7 @@ interface PeerConnectionData {
 }
 
 const usePeerConnection = ({ onTrack }: UsePeerConnectionProperties) => {
+	const isMakingOffer = useRef<boolean>(false);
 	const peerConnections = useRef<PeerConnectionData>({
 		iceQueue: [],
 		pc: null,
@@ -34,7 +35,7 @@ const usePeerConnection = ({ onTrack }: UsePeerConnectionProperties) => {
 	);
 
 	const createPeerConnection = useCallback(
-		async (socket: CreateSignalClientType, onIceCandidate: (candidate: RTCIceCandidate) => void) => {
+		async (socket: CreateSignalClientType, userId: string, onIceCandidate: (candidate: RTCIceCandidate) => void) => {
 			if (peerConnections.current.pc) {
 				peerConnections.current.pc.close();
 				peerConnections.current = {
@@ -59,7 +60,22 @@ const usePeerConnection = ({ onTrack }: UsePeerConnectionProperties) => {
 				console.log(event);
 			};
 
-			pc.onnegotiationneeded = () => {};
+			pc.onnegotiationneeded = async () => {
+				if (pc.signalingState !== 'stable' || isMakingOffer.current) {
+					return;
+				}
+
+				console.log('negotiation');
+
+				isMakingOffer.current = true;
+				const sdp = await pc.createOffer();
+				await pc.setLocalDescription(sdp);
+				const payload: OfferPayloadType = {
+					sdp: JSON.stringify(sdp),
+					userId,
+				};
+				socket.publish(APP_PATH.OFFER, payload);
+			};
 
 			const { stream: mediaStream } = useDeviceStore.getState();
 			const { id } = useUserInfoStore.getState();
@@ -117,6 +133,7 @@ const usePeerConnection = ({ onTrack }: UsePeerConnectionProperties) => {
 			await target.pc.addIceCandidate(new RTCIceCandidate(ice));
 		});
 		target.iceQueue = [];
+		isMakingOffer.current = false;
 	}, []);
 
 	const registerRemoteIce = useCallback(async (targetIce: RTCIceCandidateInit) => {

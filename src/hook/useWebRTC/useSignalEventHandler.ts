@@ -17,7 +17,6 @@ import {
 	IceResponseType,
 	JoinResponseType,
 	LeaveResponseType,
-	OfferPayloadType,
 	OfferResponseType,
 	TrackResponseType,
 } from '@/type/signalType';
@@ -26,6 +25,7 @@ interface UseSignalEventHandlerProps {
 	disconnectPeerConnection: () => void;
 	createPeerConnection: (
 		socket: CreateSignalClientType,
+		userId: string,
 		onIceCandidate: (candidate: RTCIceCandidate) => void,
 	) => Promise<void>;
 	createOfferSdp: () => Promise<RTCSessionDescriptionInit>;
@@ -37,7 +37,6 @@ interface UseSignalEventHandlerProps {
 
 const useSignalEventHandler = ({
 	createAnswerSdp,
-	createOfferSdp,
 	createPeerConnection,
 	registerLocalSdp,
 	registerRemoteIce,
@@ -87,16 +86,9 @@ const useSignalEventHandler = ({
 				updateParticipantsHandUp(participant.userId, isHandUp);
 			});
 
-			await createPeerConnection(socket, (candidate) => offerIceCandidate(candidate, socket));
-			const sdp = await createOfferSdp();
-			await registerLocalSdp(sdp);
-			const payload: OfferPayloadType = {
-				sdp: JSON.stringify(sdp),
-				userId,
-			};
-			socket.publish(APP_PATH.OFFER, payload);
+			await createPeerConnection(socket, userId, (candidate) => offerIceCandidate(candidate, socket));
 		},
-		[createOfferSdp, createPeerConnection, offerIceCandidate, registerLocalSdp],
+		[createPeerConnection, offerIceCandidate],
 	);
 
 	const handleOffer = useCallback(

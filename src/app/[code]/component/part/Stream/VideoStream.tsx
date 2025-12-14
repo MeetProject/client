@@ -48,7 +48,6 @@ export default function VideoStream({
 	const { participantsHandUp } = useWebRTCStore();
 
 	useEffect(() => {
-		console.log('rerender');
 		if (!videoReference.current || !stream) return;
 
 		const liveTracks = stream.getTracks().filter((t): t is MediaStreamTrack => t.readyState === 'live');
