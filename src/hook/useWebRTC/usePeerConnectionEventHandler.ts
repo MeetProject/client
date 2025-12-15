@@ -4,20 +4,18 @@ import { useCallback } from 'react';
 
 import { APP_PATH } from '@/constant/signalPath';
 import { setScreenStream, setUserStream } from '@/lib/mediaStream';
-import { useDeviceStore } from '@/store/DeviceStore';
-import { usePendingTrackStore } from '@/store/TrackInfoStore';
+import { usePendingTrackStore } from '@/store/PendingTrackStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
-import { CreateSignalClientType, IcePayloadType, OfferPayloadType, TrackPayloadType } from '@/type/signalType';
-import { TrackInfoType } from '@/type/streamType';
+import { CreateSignalClientType, IcePayloadType, OfferPayloadType, StreamType } from '@/type/signalType';
+import { getTrackType } from '@/util/trackType';
 
 const usePeerConnectionEventHandler = () => {
 	const onTrack = useCallback((event: RTCTrackEvent) => {
-		console.log(event.transceiver.mid);
-		const trackId = event.track.id;
+		const mid = event.transceiver.mid;
 		const { deletePendingTrack, pendingTrack, setPendingTrack } = usePendingTrackStore.getState();
-		if (pendingTrack.has(trackId)) {
-			const { streamType, userId } = pendingTrack.get(trackId);
-			deletePendingTrack(trackId);
+		if (pendingTrack.has(mid)) {
+			const { streamType, userId } = pendingTrack.get(mid);
+			deletePendingTrack(mid);
 
 			if (streamType === 'USER') {
 				setUserStream(userId, event.track);
@@ -26,15 +24,19 @@ const usePeerConnectionEventHandler = () => {
 			setScreenStream(userId, event.track);
 			return;
 		}
-		setPendingTrack(trackId, { track: event.track });
+		setPendingTrack(mid, { track: event.track });
 	}, []);
 
-	const onNegotiation = useCallback(async (pc: RTCPeerConnection, socket: CreateSignalClientType, userId: string) => {
+	const onNegotiation = useCallback(async (pc: RTCPeerConnection, socket: CreateSignalClientType) => {
+		const { id } = useUserInfoStore.getState();
+		if (!id) {
+			return;
+		}
 		const sdp = await pc.createOffer();
 		await pc.setLocalDescription(sdp);
 		const payload: OfferPayloadType = {
 			sdp: JSON.stringify(sdp),
-			userId,
+			userId: id,
 		};
 		socket.publish(APP_PATH.OFFER, payload);
 	}, []);
@@ -53,27 +55,15 @@ const usePeerConnectionEventHandler = () => {
 		socket.publish(APP_PATH.ICE, payload);
 	}, []);
 
-	const registerTrack = useCallback((pc: RTCPeerConnection, socket: CreateSignalClientType) => {
-		const { stream: mediaStream } = useDeviceStore.getState();
-		const { id } = useUserInfoStore.getState();
+	const registerTrack = (stream: MediaStream, pc: RTCPeerConnection, streamType: StreamType) => {
+		const { setTransceiver } = usePendingTrackStore.getState();
 
-		const trackInfo = new Map<string, TrackInfoType>();
-		mediaStream?.getTracks().forEach((track) => {
-			pc.addTransceiver(track);
-			trackInfo.set(track.id, { streamType: 'USER', userId: id });
+		stream?.getTracks().forEach((track) => {
+			const transceiver = pc.addTransceiver(track, { direction: 'sendonly' });
+			const trackType = getTrackType(streamType, track.kind);
+			setTransceiver(trackType, transceiver);
 		});
-
-		if (trackInfo.size === 0) {
-			return;
-		}
-
-		const payload: TrackPayloadType = {
-			track: Object.fromEntries(trackInfo),
-			userId: id,
-		};
-
-		socket.publish(APP_PATH.TRACK, payload);
-	}, []);
+	};
 
 	return {
 		onIceCandidate,

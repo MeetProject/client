@@ -14,7 +14,7 @@ interface PeerConnectionData {
 }
 
 const usePeerConnection = () => {
-	const { onIceCandidate, onNegotiation, onTrack, registerTrack } = usePeerConnectionEventHandler();
+	const { onIceCandidate, onNegotiation, onTrack, registerTrack: registerOwnerTrack } = usePeerConnectionEventHandler();
 
 	const isMakingOffer = useRef<boolean>(false);
 	const peerConnections = useRef<PeerConnectionData>({
@@ -31,7 +31,7 @@ const usePeerConnection = () => {
 	);
 
 	const createPeerConnection = useCallback(
-		async (socket: CreateSignalClientType, userId: string) => {
+		async (socket: CreateSignalClientType) => {
 			if (peerConnections.current.pc) {
 				peerConnections.current.pc.close();
 				peerConnections.current = {
@@ -63,14 +63,15 @@ const usePeerConnection = () => {
 
 				isMakingOffer.current = true;
 				peerConnections.current.remoteSet = false;
-				onNegotiation(pc, socket, userId);
+				await onNegotiation(pc, socket);
 			};
 
-			registerTrack(pc, socket);
+			const { stream: mediaStream } = useDeviceStore.getState();
+			registerOwnerTrack(mediaStream, pc, 'USER');
 
 			peerConnections.current.pc = pc;
 		},
-		[onTrack, onNegotiation, registerTrack, onIceCandidate],
+		[onTrack, onNegotiation, onIceCandidate, registerOwnerTrack],
 	);
 
 	const createOfferSdp = useCallback(async () => {
@@ -123,6 +124,10 @@ const usePeerConnection = () => {
 		}
 	}, []);
 
+	const registerTrack = useCallback((track: MediaStreamTrack) => {
+		peerConnections.current.pc.addTransceiver(track, { direction: 'sendonly' });
+	}, []);
+
 	const disconnectPeerConnection = useCallback(() => {
 		const target = peerConnections.current;
 		if (!target.pc) {
@@ -169,6 +174,7 @@ const usePeerConnection = () => {
 		registerLocalSdp,
 		registerRemoteIce,
 		registerRemoteSdp,
+		registerTrack,
 	};
 };
 

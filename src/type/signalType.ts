@@ -55,6 +55,7 @@ export interface AnswerPayloadType {
 export interface AnswerResponseType extends SignalResponseType {
 	userId: string;
 	sdp: string;
+	roomId: string;
 }
 
 export interface IcePayloadType {
@@ -69,13 +70,13 @@ export interface IceResponseType extends SignalResponseType {
 
 export interface TrackPayloadType {
 	userId: string;
-	track: Record<string, TrackInfoType>;
+	transceiver: Record<string, TrackInfoType>;
 }
 
 export interface TrackResponseType extends SignalResponseType {
 	userId: string;
 	roomId: string;
-	track: Record<string, TrackInfoType>;
+	transceiver: Record<string, TrackInfoType>;
 }
 
 export interface LeaveResponseType extends SignalResponseType {
@@ -137,6 +138,12 @@ export interface DevicePayloadType {
 
 export interface DeviceResponseType extends TopicResponsType {
 	userId: string;
+	mediaOption: DeviceEnableType;
+}
+
+export interface ParticipantResponseType extends TopicResponsType {
+	userId: string;
+	user: ParticipantDataType;
 	mediaOption: DeviceEnableType;
 }
 

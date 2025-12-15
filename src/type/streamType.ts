@@ -24,3 +24,5 @@ export interface StreamTrackType {
 	audio: boolean;
 	video: boolean;
 }
+
+export type TrackType = 'audio' | 'video' | 'screenAudio' | 'screenVideo';

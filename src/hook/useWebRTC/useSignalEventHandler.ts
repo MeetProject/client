@@ -4,7 +4,8 @@ import { useCallback } from 'react';
 
 import { APP_PATH } from '@/constant/signalPath';
 import { setScreenStream, setUserStream } from '@/lib/mediaStream';
-import { usePendingTrackStore } from '@/store/TrackInfoStore';
+import { usePendingTrackStore } from '@/store/PendingTrackStore';
+import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useWebRTCStore } from '@/store/WebRTCStore';
 import {
 	AnswerPayloadType,
@@ -16,8 +17,11 @@ import {
 	JoinResponseType,
 	LeaveResponseType,
 	OfferResponseType,
+	ParticipantResponseType,
+	TrackPayloadType,
 	TrackResponseType,
 } from '@/type/signalType';
+import { TrackInfoType } from '@/type/streamType';
 
 interface UseSignalEventHandlerProps {
 	disconnectPeerConnection: () => void;
@@ -56,6 +60,13 @@ const useSignalEventHandler = ({
 		updateParticipantsMediaOptions(userId, mediaOption);
 	}, []);
 
+	const handleParticipantResponse = useCallback((response: ParticipantResponseType) => {
+		const { mediaOption, user, userId } = response;
+		const { updateParticipantsMediaOptions, updateParticipantsUserData } = useWebRTCStore.getState();
+		updateParticipantsUserData(userId, user);
+		updateParticipantsMediaOptions(userId, mediaOption);
+	}, []);
+
 	const handleJoin = useCallback(
 		async (response: JoinResponseType, socket: CreateSignalClientType) => {
 			const { updateParticipantsHandUp, updateParticipantsUserData } = useWebRTCStore.getState();
@@ -89,10 +100,35 @@ const useSignalEventHandler = ({
 	);
 
 	const handleAnswer = useCallback(
-		async (response: AnswerResponseType) => {
+		async (response: AnswerResponseType, client: CreateSignalClientType) => {
 			const { sdp } = response;
 			const parsedSdp = JSON.parse(sdp) as RTCSessionDescriptionInit;
 			await registerRemoteSdp(parsedSdp);
+
+			const { id } = useUserInfoStore.getState();
+			const { clearTransceiver, transceiver } = usePendingTrackStore.getState();
+
+			const track = new Map<string, TrackInfoType>();
+
+			Object.entries(transceiver).forEach(([type, t]) => {
+				if (t?.mid) {
+					track.set(t.mid, {
+						streamType: type === 'audio' || type === 'video' ? 'USER' : 'SCREEN',
+						userId: id,
+					});
+				}
+			});
+
+			if (track.size === 0) {
+				return;
+			}
+
+			clearTransceiver();
+			const payload: TrackPayloadType = {
+				transceiver: Object.fromEntries(track),
+				userId: id,
+			};
+			client.publish(APP_PATH.TRACK, payload);
 		},
 		[registerRemoteSdp],
 	);
@@ -107,14 +143,13 @@ const useSignalEventHandler = ({
 	);
 
 	const handleTrack = useCallback(async (response: TrackResponseType) => {
-		console.log(response);
-		const { track } = response;
+		const { transceiver } = response;
 
-		Object.entries(track).forEach(([trackId, { streamType, userId }]) => {
+		Object.entries(transceiver).forEach(([mid, { streamType, userId }]) => {
 			const { deletePendingTrack, pendingTrack, setPendingTrack } = usePendingTrackStore.getState();
-			if (pendingTrack.has(trackId)) {
-				const { track: mediaTrack } = pendingTrack.get(trackId);
-				deletePendingTrack(trackId);
+			if (pendingTrack.has(mid)) {
+				const { track: mediaTrack } = pendingTrack.get(mid);
+				deletePendingTrack(mid);
 				if (streamType === 'USER') {
 					setUserStream(userId, mediaTrack);
 					return;
@@ -123,7 +158,7 @@ const useSignalEventHandler = ({
 				setScreenStream(userId, mediaTrack);
 				return;
 			}
-			setPendingTrack(trackId, { streamType, userId });
+			setPendingTrack(mid, { streamType, userId });
 		});
 	}, []);
 
@@ -135,6 +170,7 @@ const useSignalEventHandler = ({
 		handleJoin,
 		handleLeaveResponse,
 		handleOffer,
+		handleParticipantResponse,
 		handleTrack,
 	};
 };

@@ -27,5 +27,6 @@ export const TOPIC_PATH = {
 		EMOJI: `/topic/room/${roomId}/emoji`,
 		HANDUP: `/topic/room/${roomId}/handup`,
 		LEAVE: `/topic/room/${roomId}/leave`,
+		PARTICIPANT: `/topic/room/${roomId}/participant`,
 	}),
 };

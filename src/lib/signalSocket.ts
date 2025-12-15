@@ -42,8 +42,8 @@ export const createSignalClient = ({ baseUrl, onConnect }: CreateSignalClientPro
 	};
 
 	const publish = <T>(destination: string, payload: T) => {
-		const { client } = useClientStore.getState();
-		if (!client) {
+		const { client, isClientReady } = useClientStore.getState();
+		if (!client || !client.connected || !isClientReady) {
 			return;
 		}
 
