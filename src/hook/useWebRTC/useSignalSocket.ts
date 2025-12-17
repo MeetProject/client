@@ -2,7 +2,7 @@
 
 import { useCallback, useRef } from 'react';
 
-import { APP_PATH, TOPIC_PATH } from '@/constant/signalPath';
+import { SIGNAL_PATH, TOPIC_PATH } from '@/constant/signalPath';
 import { createSignalClient } from '@/lib/signalSocket';
 import { useClientStore } from '@/store/ClientStore';
 import { useDeviceStore } from '@/store/DeviceStore';
@@ -45,25 +45,22 @@ const useSignalSocket = ({
 }: UseSignalSocketProperties) => {
 	const socket = useRef(
 		createSignalClient({
-			baseUrl: 'http://localhost:8080/ws',
+			baseUrl: 'http://localhost:8080',
+			debug: true,
 			onConnect: () => {
 				onConnect(socket.current);
 			},
 		}),
 	);
 
-	const subscribeRoomTopics = useCallback(
-		(roomId: string) => {
-			const { CHAT, DEVICE, EMOJI, HANDUP, LEAVE, PARTICIPANT } = TOPIC_PATH.ROOM(roomId);
-			socket.current.topicSub<ParticipantResponseType>(PARTICIPANT, onParticipant);
-			socket.current.topicSub<ChatResponseType>(CHAT, onChat);
-			socket.current.topicSub<EmojiResponseType>(EMOJI, onEmoji);
-			socket.current.topicSub<HandUpResponseType>(HANDUP, onHandUp);
-			socket.current.topicSub<DeviceResponseType>(DEVICE, onDevice);
-			socket.current.topicSub<LeaveResponseType>(LEAVE, onLeave);
-		},
-		[onChat, onEmoji, onHandUp, onDevice, onLeave, onParticipant],
-	);
+	const subscribeRoomTopics = useCallback(() => {
+		socket.current.topicSub<ParticipantResponseType>(TOPIC_PATH.PARTICIPANT, onParticipant);
+		socket.current.topicSub<ChatResponseType>(TOPIC_PATH.CHAT, onChat);
+		socket.current.topicSub<EmojiResponseType>(TOPIC_PATH.EMOJI, onEmoji);
+		socket.current.topicSub<HandUpResponseType>(TOPIC_PATH.HAND_UP, onHandUp);
+		socket.current.topicSub<DeviceResponseType>(TOPIC_PATH.DEVICE, onDevice);
+		socket.current.topicSub<LeaveResponseType>(TOPIC_PATH.LEAVE, onLeave);
+	}, [onChat, onEmoji, onHandUp, onDevice, onLeave, onParticipant]);
 
 	const sendJoin = useCallback(
 		(roomId: string) => {
@@ -78,8 +75,8 @@ const useSignalSocket = ({
 				roomId,
 			};
 
-			socket.current.publish(APP_PATH.JOIN, payload);
-			subscribeRoomTopics(roomId);
+			socket.current.publish('signal', SIGNAL_PATH.JOIN, payload);
+			subscribeRoomTopics();
 			setRoomId(roomId);
 		},
 		[subscribeRoomTopics],
@@ -96,7 +93,7 @@ const useSignalSocket = ({
 			userId: id,
 		};
 
-		socket.current.publish(APP_PATH.TRACK, payload);
+		socket.current.publish('signal', SIGNAL_PATH.TRACK, payload);
 	}, []);
 
 	const stopScreenShare = useCallback(() => {
@@ -120,7 +117,7 @@ const useSignalSocket = ({
 			roomId,
 		};
 
-		socket.current.publish(APP_PATH.CHAT, payload);
+		socket.current.publish('topic', TOPIC_PATH.CHAT, payload);
 	}, []);
 
 	const sendEmoji = useCallback((emoji: EmojiType) => {
@@ -135,7 +132,7 @@ const useSignalSocket = ({
 			roomId,
 		};
 
-		socket.current.publish(APP_PATH.EMOJI, payload);
+		socket.current.publish('topic', TOPIC_PATH.EMOJI, payload);
 	}, []);
 
 	const sendHandUp = useCallback((value: boolean) => {
@@ -150,7 +147,7 @@ const useSignalSocket = ({
 			value,
 		};
 
-		socket.current.publish(APP_PATH.HAND_UP, payload);
+		socket.current.publish('topic', TOPIC_PATH.HAND_UP, payload);
 	}, []);
 
 	const sendDevice = useCallback((mediaOption: DeviceEnableType) => {
@@ -165,7 +162,7 @@ const useSignalSocket = ({
 			roomId,
 		};
 
-		socket.current.publish(APP_PATH.DEVICE, payload);
+		socket.current.publish('topic', TOPIC_PATH.DEVICE, payload);
 	}, []);
 
 	const sendLeave = useCallback(() => {
@@ -174,7 +171,7 @@ const useSignalSocket = ({
 			return;
 		}
 
-		socket.current.publish(APP_PATH.LEAVE);
+		socket.current.publish('signal', SIGNAL_PATH.LEAVE);
 
 		clearRoomSubscriptions();
 		setRoomId(null);

@@ -1,51 +1,62 @@
-import { Client, StompSubscription } from '@stomp/stompjs';
 import { create } from 'zustand';
 
 interface ClientStoreType {
-	client: Client | null;
+	client: WebSocket | null;
 	isClientReady: boolean;
-	subscriptions: Map<string, StompSubscription>;
-	roomSubscriptions: Map<string, StompSubscription>;
+	subscriptions: Map<string, Set<(payload: any) => void | Promise<void>>>;
+	roomSubscriptions: Map<string, Set<(payload: any) => void | Promise<void>>>;
 	roomId: string | null;
 
-	setClient: (value: Client | null) => void;
+	setClient: (value: WebSocket | null) => void;
 	setIsClientReady: (value: boolean | null) => void;
-	addSubscriptions: (id: string, sub: StompSubscription) => void;
+	addSubscriptions: (id: string, callback: (payload: any) => Promise<void> | void) => void;
 	removeSubscriptions: (id: string) => void;
 	setRoomId: (id: string | null) => void;
-	addRoomSubscriptions: (id: string, sub: StompSubscription) => void;
+	addRoomSubscriptions: (id: string, sub: (payload: any) => Promise<void> | void) => void;
 	removeRoomSubscriptions: (id: string) => void;
 	clearSubscriptions: () => void;
 	clearRoomSubscriptions: () => void;
 }
 
 export const useClientStore = create<ClientStoreType>((set, get) => ({
-	addRoomSubscriptions: (id, sub) => {
-		get().roomSubscriptions.set(id, sub);
-	},
-	addSubscriptions: (id, sub) => {
-		get().subscriptions.set(id, sub);
-	},
+	addRoomSubscriptions: (id, callback) =>
+		set((state) => {
+			const roomSubscriptions = new Map(state.roomSubscriptions);
+
+			if (!roomSubscriptions.has(id)) {
+				roomSubscriptions.set(id, new Set());
+			}
+
+			roomSubscriptions.get(id)!.add(callback);
+
+			return { roomSubscriptions };
+		}),
+	addSubscriptions: (id: string, callback: (payload: any) => void) =>
+		set((state) => {
+			const subscriptions = new Map(state.subscriptions);
+
+			if (!subscriptions.has(id)) {
+				subscriptions.set(id, new Set());
+			}
+
+			subscriptions.get(id)!.add(callback);
+
+			return { subscriptions };
+		}),
 	clearRoomSubscriptions: () => {
-		get().roomSubscriptions.forEach((sub) => sub.unsubscribe());
 		get().roomSubscriptions.clear();
 	},
 	clearSubscriptions: () => {
-		get().subscriptions.forEach((sub) => sub.unsubscribe());
 		get().subscriptions.clear();
 	},
 
 	client: null,
 	isClientReady: null,
 	removeRoomSubscriptions: (id) => {
-		const sub = get().roomSubscriptions.get(id);
-		sub?.unsubscribe();
-		get().roomSubscriptions.delete(id);
+		get().subscriptions.delete(id);
 	},
 
 	removeSubscriptions: (id) => {
-		const sub = get().subscriptions.get(id);
-		sub?.unsubscribe();
 		get().subscriptions.delete(id);
 	},
 

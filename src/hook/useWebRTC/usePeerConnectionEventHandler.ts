@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 
-import { APP_PATH } from '@/constant/signalPath';
+import { SIGNAL_PATH } from '@/constant/signalPath';
 import { setScreenStream, setUserStream } from '@/lib/mediaStream';
 import { usePendingTrackStore } from '@/store/PendingTrackStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
@@ -38,7 +38,8 @@ const usePeerConnectionEventHandler = () => {
 			sdp: JSON.stringify(sdp),
 			userId: id,
 		};
-		socket.publish(APP_PATH.OFFER, payload);
+		socket.publish('signal', SIGNAL_PATH.OFFER, payload);
+		console.log('sending offer', payload);
 	}, []);
 
 	const onIceCandidate = useCallback((candidate: RTCIceCandidate, socket: CreateSignalClientType) => {
@@ -52,7 +53,7 @@ const usePeerConnectionEventHandler = () => {
 			userId: id,
 		};
 
-		socket.publish(APP_PATH.ICE, payload);
+		socket.publish('signal', SIGNAL_PATH.ICE, payload);
 	}, []);
 
 	const registerTrack = (stream: MediaStream, pc: RTCPeerConnection, streamType: StreamType) => {

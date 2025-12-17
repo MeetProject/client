@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 
-import { APP_PATH } from '@/constant/signalPath';
+import { SIGNAL_PATH } from '@/constant/signalPath';
 import { setScreenStream, setUserStream } from '@/lib/mediaStream';
 import { usePendingTrackStore } from '@/store/PendingTrackStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
@@ -94,7 +94,7 @@ const useSignalEventHandler = ({
 				sdp: JSON.stringify(answerSdp),
 				userId,
 			};
-			socket.publish(APP_PATH.ANSWER, payload);
+			socket.publish('signal', SIGNAL_PATH.ANSWER, payload);
 		},
 		[registerRemoteSdp, registerLocalSdp, createAnswerSdp],
 	);
@@ -128,7 +128,7 @@ const useSignalEventHandler = ({
 				transceiver: Object.fromEntries(track),
 				userId: id,
 			};
-			client.publish(APP_PATH.TRACK, payload);
+			client.publish('signal', SIGNAL_PATH.TRACK, payload);
 		},
 		[registerRemoteSdp],
 	);

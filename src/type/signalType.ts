@@ -1,5 +1,3 @@
-import { StompSubscription } from '@stomp/stompjs';
-
 import { EmojiType } from '@/type/reactionType';
 import { DeviceEnableType, TrackInfoType } from '@/type/streamType';
 
@@ -147,7 +145,21 @@ export interface ParticipantResponseType extends TopicResponsType {
 	mediaOption: DeviceEnableType;
 }
 
+export interface SignalEventType<T> {
+	type: 'signal' | 'topic';
+	path: string;
+	payload: T;
+}
+
 export interface CreateSignalClientType {
+	connect: () => void;
+	disconnect: () => void;
+	publish: <T>(type: 'signal' | 'topic', path: string, payload?: T) => void;
+	signalSub: <T>(path: string, callback: (responset: T) => Promise<void> | void) => void;
+	topicSub: <T>(destination: string, callback: (responset: T) => Promise<void> | void) => void;
+}
+
+/* export interface CreateSignalClientType {
 	connect: () => void;
 	disconnect: () => void;
 	publish: <T>(destination: string, payload?: T) => void;
@@ -155,3 +167,4 @@ export interface CreateSignalClientType {
 	subscribe: <T>(destination: string, callback: (responset: T) => Promise<void> | void) => StompSubscription | null;
 	topicSub: <T>(destination: string, callback: (responset: T) => Promise<void> | void) => void;
 }
+ */

@@ -1,24 +1,29 @@
 'use client';
 
-import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
-
 import { useClientStore } from '@/store/ClientStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
-import { CreateSignalClientType } from '@/type/signalType';
+import { CreateSignalClientType, SignalEventType } from '@/type/signalType';
 
 interface CreateSignalClientProps {
 	baseUrl: string;
 	onConnect?: () => void;
 	onError?: () => void;
+	debug?: boolean;
 }
 
-export const createSignalClient = ({ baseUrl, onConnect }: CreateSignalClientProps): CreateSignalClientType => {
+export const createSignalClient = ({ baseUrl, debug, onConnect }: CreateSignalClientProps): CreateSignalClientType => {
 	const { clearSubscriptions, setClient, setIsClientReady } = useClientStore.getState();
 
-	const parseMessage = <T>(message: IMessage) => {
-		const data = JSON.parse(message.body) as T;
-		return data;
+	const getRawData = (e: MessageEvent) => {
+		if (e.data instanceof ArrayBuffer) {
+			return new TextDecoder('utf-8').decode(e.data);
+		}
+
+		if (typeof e.data === 'string') {
+			return e.data;
+		}
+
+		throw new Error('unspoorted message type');
 	};
 
 	const connect = () => {
@@ -26,61 +31,75 @@ export const createSignalClient = ({ baseUrl, onConnect }: CreateSignalClientPro
 		if (useClientStore.getState().client || !id) {
 			return;
 		}
+		setIsClientReady(false);
 
-		const client = new Client({
-			brokerURL: undefined,
-			onConnect: () => {
-				setClient(client);
-				setIsClientReady(true);
+		const ws = new WebSocket(`${baseUrl}/ws?userId=${id}`);
 
-				onConnect?.();
-			},
-			webSocketFactory: () => new SockJS(`${baseUrl}?userId=${id}`),
-		});
+		ws.binaryType = 'arraybuffer';
 
-		client.activate();
+		ws.onopen = () => {
+			if (debug) {
+				console.log('socket connect!');
+			}
+			setClient(ws);
+			setIsClientReady(true);
+			onConnect?.();
+		};
+
+		ws.onmessage = async (e) => {
+			const raw = getRawData(e);
+			const data = JSON.parse(raw) as SignalEventType<any>;
+			const { path, payload, type } = data;
+			console.log(path, type, data);
+
+			if (debug) {
+				console.log();
+				console.log('<< get Message');
+				console.log('type: ', type);
+				console.log('path: ', path);
+				console.log('payload: ');
+				console.log(payload);
+				console.log();
+			}
+
+			const { roomSubscriptions, subscriptions } = useClientStore.getState();
+			const subscription = type === 'signal' ? subscriptions.get(path) : roomSubscriptions.get(path);
+
+			if (!subscription || subscription.size === 0) {
+				return;
+			}
+
+			await Promise.all([...subscription].map((callback) => callback(payload)));
+		};
 	};
 
-	const publish = <T>(destination: string, payload: T) => {
+	const publish = <T>(type: 'signal' | 'topic', path: string, payload: T) => {
 		const { client, isClientReady } = useClientStore.getState();
-		if (!client || !client.connected || !isClientReady) {
+		if (!client || client.readyState !== WebSocket.OPEN || !isClientReady) {
 			return;
 		}
 
-		client.publish({
-			body: JSON.stringify(payload),
-			destination,
-			headers: {
-				'content-type': 'application/json',
-			},
-		});
+		if (debug) {
+			console.log();
+			console.log('send Message >>');
+			console.log('type: ', type);
+			console.log('path: ', path);
+			console.log('payload: ');
+			console.log(payload);
+			console.log();
+		}
+
+		client.send(Buffer.from(JSON.stringify({ path, payload, type })));
 	};
 
-	const subscribe = <T>(
-		destination: string,
-		callback: (responset: T) => Promise<void> | void,
-	): StompSubscription | null => {
-		const { client } = useClientStore.getState();
-		if (!client) return null;
-
-		const sub = client.subscribe(destination, async (message: IMessage) => {
-			const response = parseMessage<T>(message);
-			await callback(response);
-			return sub;
-		});
-		return sub;
-	};
-
-	const signalSub = async <T>(destination: string, callback: (responset: T) => Promise<void> | void) => {
+	const signalSub = async <T>(path: string, callback: (responset: T) => Promise<void> | void) => {
 		const { addSubscriptions } = useClientStore.getState();
-		const sub = subscribe(destination, callback);
-		addSubscriptions(destination, sub);
+		addSubscriptions(path, callback);
 	};
 
-	const topicSub = <T>(destination: string, callback: (response: T) => Promise<void> | void) => {
+	const topicSub = <T>(path: string, callback: (response: T) => Promise<void> | void) => {
 		const { addRoomSubscriptions } = useClientStore.getState();
-		const sub = subscribe(destination, callback);
-		addRoomSubscriptions(destination, sub);
+		addRoomSubscriptions(path, callback);
 	};
 
 	const disconnect = () => {
@@ -90,9 +109,9 @@ export const createSignalClient = ({ baseUrl, onConnect }: CreateSignalClientPro
 		}
 
 		clearSubscriptions();
-		client.deactivate();
+		client.close();
 		setClient(null);
-		setIsClientReady(null);
+		setIsClientReady(false);
 	};
 
 	return {
@@ -100,7 +119,6 @@ export const createSignalClient = ({ baseUrl, onConnect }: CreateSignalClientPro
 		disconnect,
 		publish,
 		signalSub,
-		subscribe,
 		topicSub,
 	};
 };

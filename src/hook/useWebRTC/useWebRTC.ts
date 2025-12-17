@@ -8,7 +8,7 @@ import usePeerConnection from './usePeerConnection';
 import useSignalEventHandler from './useSignalEventHandler';
 import useSignalSocket from './useSignalSocket';
 
-import { USER_PATH } from '@/constant/signalPath';
+import { SIGNAL_PATH } from '@/constant/signalPath';
 import { useClientStore } from '@/store/ClientStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useWebRTCStore } from '@/store/WebRTCStore';
@@ -67,12 +67,12 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
 	const handleSocketConnect = useCallback(
 		(socket: CreateSignalClientType) => {
 			useClientStore.getState().setIsClientReady(true);
-			socket.subscribe<JoinResponseType>(USER_PATH.JOIN, (response) => handleJoin(response, socket));
-			socket.subscribe<OfferResponseType>(USER_PATH.OFFER, (response) => handleOffer(response, socket));
-			socket.signalSub<AnswerResponseType>(USER_PATH.ANSWER, (response) => handleAnswer(response, socket));
-			socket.signalSub<IceResponseType>(USER_PATH.ICE, handleIce);
-			socket.signalSub<TrackResponseType>(USER_PATH.TRACK, handleTrack);
-			socket.signalSub<ErrorResponseType>(USER_PATH.ERROR, onError);
+			socket.signalSub<JoinResponseType>(SIGNAL_PATH.JOIN, (response) => handleJoin(response, socket));
+			socket.signalSub<OfferResponseType>(SIGNAL_PATH.OFFER, (response) => handleOffer(response, socket));
+			socket.signalSub<AnswerResponseType>(SIGNAL_PATH.ANSWER, (response) => handleAnswer(response, socket));
+			socket.signalSub<IceResponseType>(SIGNAL_PATH.ICE, handleIce);
+			socket.signalSub<TrackResponseType>(SIGNAL_PATH.TRACK, handleTrack);
+			socket.signalSub<ErrorResponseType>(SIGNAL_PATH.ERROR, onError);
 		},
 		[handleAnswer, handleIce, onError, handleJoin, handleOffer, handleTrack],
 	);
@@ -131,7 +131,10 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
 	);
 
 	const shareScreen = useCallback(async () => {
-		const { setIsScreenShare } = useWebRTCStore.getState();
+		const { isScreenShare, setIsScreenShare } = useWebRTCStore.getState();
+		if (isScreenShare) {
+			return;
+		}
 		const { id } = useUserInfoStore.getState();
 		const screemStream = await updateScreenStream(true);
 		setIsScreenShare(true);

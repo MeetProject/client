@@ -9,12 +9,10 @@
     "lint": "eslint \"**/*.{ts,tsx}\" --ignore-pattern .next --fix"
   },
   "dependencies": {
-    "@stomp/stompjs": "^7.2.1",
     "mongodb": "^6.8.0",
     "next": "^16.0.7",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "sockjs-client": "^1.6.1",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
@@ -22,7 +20,6 @@
     "@svgr/webpack": "^8.1.0",
     "@types/node": "^20.19.25",
     "@types/react": "^19.2.7",
-    "@types/sockjs-client": "^1.5.4",
     "@typescript-eslint/eslint-plugin": "^8.48.0",
     "@typescript-eslint/parser": "^8.48.0",
     "autoprefixer": "^10.4.20",

@@ -23,6 +23,8 @@ const usePeerConnection = () => {
 		remoteSet: false,
 	});
 
+	const negotiationTimer = useRef<NodeJS.Timeout | null>(null);
+
 	const { deviceEnable, stream } = useDeviceStore(
 		useShallow((state) => ({
 			deviceEnable: state.deviceEnable,
@@ -57,13 +59,26 @@ const usePeerConnection = () => {
 			};
 
 			pc.onnegotiationneeded = async () => {
-				if (pc.signalingState !== 'stable' || isMakingOffer.current) {
+				if (pc.signalingState !== 'stable') {
 					return;
 				}
 
-				isMakingOffer.current = true;
-				peerConnections.current.remoteSet = false;
-				await onNegotiation(pc, socket);
+				console.log('negotiation');
+
+				if (negotiationTimer.current) {
+					clearTimeout(negotiationTimer.current);
+				}
+
+				negotiationTimer.current = setTimeout(async () => {
+					negotiationTimer.current = null;
+					if (isMakingOffer.current) {
+						return;
+					}
+					console.log('aaa');
+					isMakingOffer.current = true;
+					peerConnections.current.remoteSet = false;
+					await onNegotiation(pc, socket);
+				}, 100);
 			};
 
 			const { stream: mediaStream } = useDeviceStore.getState();
