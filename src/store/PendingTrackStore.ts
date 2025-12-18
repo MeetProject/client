@@ -1,28 +1,28 @@
 import { create } from 'zustand';
 
-import { PendingTrackType, TrackType } from '@/type/streamType';
+import { PendingTrackType, TrackInfoType } from '@/type/streamType';
 
 interface PendingTrackState {
-	transceiver: Record<TrackType, RTCRtpTransceiver | null>;
-	pendingTrack: Map<string, PendingTrackType>;
+	senderTrack: Map<string, TrackInfoType>; //key: trackId
 
-	setTransceiver: (type: TrackType, t: RTCRtpTransceiver | null) => void;
-	clearTransceiver: () => void;
+	pendingTrack: Map<string, PendingTrackType>; //key: mid
 
-	setPendingTrack: (mid: string, value: Partial<PendingTrackType>) => void;
+	setPendingTrack: (mid: string, value: PendingTrackType) => void;
 	deletePendingTrack: (mid: string) => void;
+
+	addSenderTrack: (trackId: string, trackInfo: TrackInfoType) => void;
+	clearSenderTrack: () => void;
 }
 
 export const usePendingTrackStore = create<PendingTrackState>((set) => ({
-	clearTransceiver: () =>
-		set(() => ({
-			transceiver: {
-				audio: null,
-				screenAudio: null,
-				screenVideo: null,
-				video: null,
-			},
-		})),
+	addSenderTrack: (trackId, trackInfo) =>
+		set((state) => {
+			const newMap = new Map(state.senderTrack);
+			newMap.set(trackId, trackInfo);
+			return { senderTrack: newMap };
+		}),
+
+	clearSenderTrack: () => set(() => ({ senderTrack: new Map() })),
 
 	deletePendingTrack: (mid) =>
 		set((state) => {
@@ -30,26 +30,13 @@ export const usePendingTrackStore = create<PendingTrackState>((set) => ({
 			newMap.delete(mid);
 			return { pendingTrack: newMap };
 		}),
-
 	pendingTrack: new Map(),
+
+	senderTrack: new Map(),
 	setPendingTrack: (mid, value) =>
 		set((state) => {
 			const newMap = new Map(state.pendingTrack);
-			const prev = state.pendingTrack.get(mid) ?? {};
-			newMap.set(mid, { ...prev, ...value });
+			newMap.set(mid, value);
 			return { pendingTrack: newMap };
 		}),
-
-	setTransceiver: (type: TrackType, t: RTCRtpTransceiver) =>
-		set((state) => {
-			const prev = state.transceiver;
-			return { transceiver: { ...prev, [type]: t } };
-		}),
-
-	transceiver: {
-		audio: null,
-		screenAudio: null,
-		screenVideo: null,
-		video: null,
-	},
 }));

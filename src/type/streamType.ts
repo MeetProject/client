@@ -1,5 +1,3 @@
-import { StreamType } from '@/type/signalType';
-
 type StatusType = null | 'failed' | 'success' | 'rejected';
 
 export type StreamStatusType = StatusType | 'pending';
@@ -10,13 +8,12 @@ export type DeviceType = 'audioInput' | 'videoInput' | 'audioOutput';
 
 export interface TrackInfoType {
 	userId: string;
-	streamType: StreamType;
+	trackType: TrackType;
 }
 
 export interface PendingTrackType {
-	streamType?: StreamType;
-	track?: MediaStreamTrack;
-	userId?: string;
+	trackType: TrackType;
+	userId: string;
 }
 
 export interface StreamTrackType {

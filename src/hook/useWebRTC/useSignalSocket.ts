@@ -19,12 +19,12 @@ import {
 	handUpPayloadType,
 	HandUpResponseType,
 	ParticipantResponseType,
-	TrackPayloadType,
 } from '@/type/signalType';
 import { LeaveResponseType, JoinPayloadType } from '@/type/signalType';
-import { DeviceEnableType, TrackInfoType } from '@/type/streamType';
+import { DeviceEnableType } from '@/type/streamType';
 
 interface UseSignalSocketProperties {
+	createPeerConnection: (socket: CreateSignalClientType, userId: string) => Promise<void>;
 	onConnect: (socket: CreateSignalClientType) => void;
 	onDevice: (data: DeviceResponseType) => void;
 	onChat: (data: ChatResponseType) => void;
@@ -35,6 +35,7 @@ interface UseSignalSocketProperties {
 }
 
 const useSignalSocket = ({
+	createPeerConnection,
 	onChat,
 	onConnect,
 	onDevice,
@@ -46,7 +47,6 @@ const useSignalSocket = ({
 	const socket = useRef(
 		createSignalClient({
 			baseUrl: 'http://localhost:8080',
-			debug: true,
 			onConnect: () => {
 				onConnect(socket.current);
 			},
@@ -64,9 +64,10 @@ const useSignalSocket = ({
 
 	const sendJoin = useCallback(
 		(roomId: string) => {
+			const { id } = useUserInfoStore.getState();
 			const { setRoomId } = useClientStore.getState();
 			const { deviceEnable } = useDeviceStore.getState();
-			if (!useUserInfoStore.getState().id) {
+			if (!id) {
 				return;
 			}
 
@@ -78,22 +79,14 @@ const useSignalSocket = ({
 			socket.current.publish('signal', SIGNAL_PATH.JOIN, payload);
 			subscribeRoomTopics();
 			setRoomId(roomId);
+
+			createPeerConnection(socket.current, id);
 		},
-		[subscribeRoomTopics],
+		[subscribeRoomTopics, createPeerConnection],
 	);
 
 	const connectSocket = useCallback(() => {
 		socket.current.connect();
-	}, []);
-
-	const sendTrack = useCallback((transceiver: Record<string, TrackInfoType>) => {
-		const { id } = useUserInfoStore.getState();
-		const payload: TrackPayloadType = {
-			transceiver,
-			userId: id,
-		};
-
-		socket.current.publish('signal', SIGNAL_PATH.TRACK, payload);
 	}, []);
 
 	const stopScreenShare = useCallback(() => {
@@ -165,6 +158,10 @@ const useSignalSocket = ({
 		socket.current.publish('topic', TOPIC_PATH.DEVICE, payload);
 	}, []);
 
+	const sendNegotiation = useCallback(() => {
+		socket.current.publish('signal', SIGNAL_PATH.NEGOTIATION);
+	}, []);
+
 	const sendLeave = useCallback(() => {
 		const { clearRoomSubscriptions, roomId, setRoomId } = useClientStore.getState();
 		if (!useUserInfoStore.getState().id || !roomId) {
@@ -190,7 +187,7 @@ const useSignalSocket = ({
 		sendHandUp,
 		sendJoin,
 		sendLeave,
-		sendTrack,
+		sendNegotiation,
 		stopScreenShare,
 	};
 };

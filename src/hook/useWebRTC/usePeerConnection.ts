@@ -1,36 +1,29 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
-import { useShallow } from 'zustand/react/shallow';
+import { useCallback, useRef } from 'react';
 
 import usePeerConnectionEventHandler from '@/hook/useWebRTC/usePeerConnectionEventHandler';
 import { useDeviceStore } from '@/store/DeviceStore';
+import { usePendingTrackStore } from '@/store/PendingTrackStore';
+import { useUserInfoStore } from '@/store/UserInfoStore';
 import { CreateSignalClientType } from '@/type/signalType';
+import { TrackType } from '@/type/streamType';
 
 interface PeerConnectionData {
 	pc: RTCPeerConnection;
-	iceQueue: RTCIceCandidateInit[];
-	remoteSet: boolean;
+	iceQueue: RTCIceCandidate[];
 }
 
 const usePeerConnection = () => {
-	const { onIceCandidate, onNegotiation, onTrack, registerTrack: registerOwnerTrack } = usePeerConnectionEventHandler();
+	const { onIceCandidate, onNegotiation, onTrack } = usePeerConnectionEventHandler();
 
 	const isMakingOffer = useRef<boolean>(false);
 	const peerConnections = useRef<PeerConnectionData>({
 		iceQueue: [],
 		pc: null,
-		remoteSet: false,
 	});
 
 	const negotiationTimer = useRef<NodeJS.Timeout | null>(null);
-
-	const { deviceEnable, stream } = useDeviceStore(
-		useShallow((state) => ({
-			deviceEnable: state.deviceEnable,
-			stream: state.stream,
-		})),
-	);
 
 	const createPeerConnection = useCallback(
 		async (socket: CreateSignalClientType) => {
@@ -39,7 +32,6 @@ const usePeerConnection = () => {
 				peerConnections.current = {
 					iceQueue: [],
 					pc: null,
-					remoteSet: false,
 				};
 			}
 
@@ -51,11 +43,27 @@ const usePeerConnection = () => {
 				if (!event.candidate) {
 					return;
 				}
+
+				if (pc.signalingState !== 'stable') {
+					peerConnections.current.iceQueue.push(event.candidate);
+					return;
+				}
+
+				if (peerConnections.current.iceQueue.length !== 0) {
+					await Promise.all(
+						peerConnections.current.iceQueue.map(async (ice) => {
+							await onIceCandidate(ice, socket);
+						}),
+					);
+					peerConnections.current.iceQueue = [];
+				}
+
 				await onIceCandidate(event.candidate, socket);
 			};
 
 			pc.ontrack = async (event) => {
 				onTrack(event);
+				console.log('getTrack');
 			};
 
 			pc.onnegotiationneeded = async () => {
@@ -76,17 +84,24 @@ const usePeerConnection = () => {
 					}
 					console.log('aaa');
 					isMakingOffer.current = true;
-					peerConnections.current.remoteSet = false;
-					await onNegotiation(pc, socket);
+					await onNegotiation(socket);
 				}, 100);
 			};
 
+			const { id } = useUserInfoStore.getState();
 			const { stream: mediaStream } = useDeviceStore.getState();
-			registerOwnerTrack(mediaStream, pc, 'USER');
+			const { addSenderTrack } = usePendingTrackStore.getState();
+
+			mediaStream.getTracks().forEach((track) => {
+				addSenderTrack(track.id, {
+					trackType: track.kind as TrackType,
+					userId: id,
+				});
+			});
 
 			peerConnections.current.pc = pc;
 		},
-		[onTrack, onNegotiation, onIceCandidate, registerOwnerTrack],
+		[onTrack, onNegotiation, onIceCandidate],
 	);
 
 	const createOfferSdp = useCallback(async () => {
@@ -111,13 +126,18 @@ const usePeerConnection = () => {
 			return;
 		}
 		await target.pc.setLocalDescription(sdp);
+
+		peerConnections.current.pc.getTransceivers().forEach((t) => {
+			console.log(
+				`Mid: ${t.mid}, Direction: ${t.direction}, Current: ${t.currentDirection}, Track: ${t.sender.track?.label}`,
+			);
+		});
 	};
 
 	const registerRemoteSdp = useCallback(async (targetSdp: RTCSessionDescriptionInit) => {
 		const target = peerConnections.current;
 
 		await target.pc.setRemoteDescription(targetSdp);
-		target.remoteSet = true;
 
 		target.iceQueue.forEach(async (ice) => {
 			await target.pc.addIceCandidate(new RTCIceCandidate(ice));
@@ -132,16 +152,31 @@ const usePeerConnection = () => {
 			return;
 		}
 
-		if (!target.remoteSet) {
-			target.iceQueue.push(targetIce);
-		} else {
-			await target.pc.addIceCandidate(new RTCIceCandidate(targetIce));
-		}
+		await target.pc.addIceCandidate(new RTCIceCandidate(targetIce));
 	}, []);
 
-	const registerTrack = useCallback((track: MediaStreamTrack) => {
-		peerConnections.current.pc.addTransceiver(track, { direction: 'sendonly' });
-	}, []);
+	const registerTrack = async (track: MediaStreamTrack) => {
+		const pc = peerConnections.current.pc;
+		console.log('송출 전 트랙 상태:', track.label, track.readyState, track.enabled);
+
+		const transceiver = pc
+			.getTransceivers()
+			.find(
+				(t) =>
+					t.mid !== null &&
+					t.direction === 'recvonly' &&
+					t.sender.track === null &&
+					t.receiver.track.kind === track.kind,
+			);
+
+		if (!transceiver) {
+			throw new Error(`No available ${track.kind} sendonly transceiver`);
+		}
+
+		transceiver.direction = 'sendonly';
+		await transceiver.sender.replaceTrack(track);
+		return transceiver.mid!;
+	};
 
 	const disconnectPeerConnection = useCallback(() => {
 		const target = peerConnections.current;
@@ -154,11 +189,15 @@ const usePeerConnection = () => {
 		peerConnections.current = {
 			iceQueue: [],
 			pc: null,
-			remoteSet: false,
 		};
 	}, []);
 
-	useEffect(() => {
+	const getTrack = (mid: string) => {
+		const transceiver = peerConnections.current.pc.getTransceivers().find((t) => t.mid === mid && t.receiver.track);
+		return transceiver?.receiver.track;
+	};
+
+	/* useEffect(() => {
 		peerConnections.current.pc?.getSenders().forEach((sender) => {
 			if (sender.track?.kind === 'video') sender.track.enabled = deviceEnable.video;
 			if (sender.track?.kind === 'audio') sender.track.enabled = deviceEnable.audio;
@@ -178,13 +217,14 @@ const usePeerConnection = () => {
 		};
 
 		replaceTracks();
-	}, [stream]);
+	}, [stream]); */
 
 	return {
 		createAnswerSdp,
 		createOfferSdp,
 		createPeerConnection,
 		disconnectPeerConnection,
+		getTrack,
 		peerConnections,
 		registerLocalSdp,
 		registerRemoteIce,

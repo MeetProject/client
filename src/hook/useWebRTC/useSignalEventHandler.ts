@@ -4,12 +4,11 @@ import { useCallback } from 'react';
 
 import { SIGNAL_PATH } from '@/constant/signalPath';
 import { setScreenStream, setUserStream } from '@/lib/mediaStream';
+import { useDeviceStore } from '@/store/DeviceStore';
 import { usePendingTrackStore } from '@/store/PendingTrackStore';
-import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useWebRTCStore } from '@/store/WebRTCStore';
 import {
 	AnswerPayloadType,
-	AnswerResponseType,
 	CreateSignalClientType,
 	DeviceResponseType,
 	HandUpResponseType,
@@ -18,28 +17,47 @@ import {
 	LeaveResponseType,
 	OfferResponseType,
 	ParticipantResponseType,
-	TrackPayloadType,
-	TrackResponseType,
 } from '@/type/signalType';
 import { TrackInfoType } from '@/type/streamType';
 
 interface UseSignalEventHandlerProps {
-	disconnectPeerConnection: () => void;
-	createPeerConnection: (socket: CreateSignalClientType, userId: string) => Promise<void>;
-	createOfferSdp: () => Promise<RTCSessionDescriptionInit>;
 	createAnswerSdp: () => Promise<RTCSessionDescriptionInit>;
 	registerRemoteSdp: (sdp: RTCSessionDescriptionInit) => Promise<void>;
 	registerLocalSdp: (sdp: RTCSessionDescriptionInit) => Promise<void>;
 	registerRemoteIce: (targetIce: RTCIceCandidateInit) => Promise<void>;
+	registerTrack: (track: MediaStreamTrack) => Promise<string>;
+	getTrack: (mid: string) => MediaStreamTrack;
 }
 
 const useSignalEventHandler = ({
 	createAnswerSdp,
-	createPeerConnection,
+	getTrack,
 	registerLocalSdp,
 	registerRemoteIce,
 	registerRemoteSdp,
+	registerTrack,
 }: UseSignalEventHandlerProps) => {
+	const registerPendingTrack = useCallback(
+		(trackInfo: Record<string, TrackInfoType>) => {
+			const { setPendingTrack } = usePendingTrackStore.getState();
+
+			Object.entries(trackInfo).forEach(([mid, { trackType, userId }]) => {
+				const track = getTrack(mid);
+
+				if (track) {
+					if (trackType === 'audio' || trackType === 'video') {
+						setUserStream(userId, track);
+						return;
+					}
+					setScreenStream(userId, track);
+					return;
+				}
+				setPendingTrack(mid, { trackType, userId });
+			});
+		},
+		[getTrack],
+	);
+
 	const handleLeaveResponse = useCallback((response: LeaveResponseType) => {
 		const { userId } = response;
 		const { deleteParticipantsMediaStream, deleteParticipantsUserData } = useWebRTCStore.getState();
@@ -67,70 +85,58 @@ const useSignalEventHandler = ({
 		updateParticipantsMediaOptions(userId, mediaOption);
 	}, []);
 
-	const handleJoin = useCallback(
-		async (response: JoinResponseType, socket: CreateSignalClientType) => {
-			const { updateParticipantsHandUp, updateParticipantsUserData } = useWebRTCStore.getState();
-			const { participants, userId } = response;
-			participants.forEach(async (participant) => {
-				const { isHandUp, ...userData } = participant;
-				updateParticipantsUserData(participant.userId, userData);
-				updateParticipantsHandUp(participant.userId, isHandUp);
-			});
-
-			await createPeerConnection(socket, userId);
-		},
-		[createPeerConnection],
-	);
+	const handleJoin = useCallback(async (response: JoinResponseType) => {
+		const { updateParticipantsHandUp, updateParticipantsUserData } = useWebRTCStore.getState();
+		const { participants } = response;
+		participants.forEach(async (participant) => {
+			const { isHandUp, ...userData } = participant;
+			updateParticipantsUserData(participant.userId, userData);
+			updateParticipantsHandUp(participant.userId, isHandUp);
+		});
+	}, []);
 
 	const handleOffer = useCallback(
 		async (response: OfferResponseType, socket: CreateSignalClientType) => {
-			const { sdp, userId } = response;
+			const { sdp, trackInfo, userId: user } = response;
+			registerPendingTrack(trackInfo);
+			console.log('getOffer');
 			const parsedSdp = JSON.parse(sdp) as RTCSessionDescriptionInit;
 			await registerRemoteSdp(parsedSdp);
+
+			const { clearSenderTrack, senderTrack } = usePendingTrackStore.getState();
+
+			const tracks = new Map<string, TrackInfoType>();
+
+			await Promise.all(
+				Array.from(senderTrack.entries()).map(async ([trackId, senderTrackInfo]) => {
+					const { screenStream, stream } = useDeviceStore.getState();
+					if (senderTrackInfo.trackType === 'audio' || senderTrackInfo.trackType === 'video') {
+						const track = stream.getTrackById(trackId);
+						if (!track) {
+							return;
+						}
+						const mid = await registerTrack(track);
+						tracks.set(mid, senderTrackInfo);
+						return;
+					}
+					const track = screenStream.getTrackById(trackId);
+					const mid = await registerTrack(track);
+					tracks.set(mid, senderTrackInfo);
+				}),
+			);
+			clearSenderTrack();
 
 			const answerSdp = await createAnswerSdp();
 			await registerLocalSdp(answerSdp);
+
 			const payload: AnswerPayloadType = {
 				sdp: JSON.stringify(answerSdp),
-				userId,
+				trackInfo: Object.fromEntries(tracks),
+				userId: user,
 			};
 			socket.publish('signal', SIGNAL_PATH.ANSWER, payload);
 		},
-		[registerRemoteSdp, registerLocalSdp, createAnswerSdp],
-	);
-
-	const handleAnswer = useCallback(
-		async (response: AnswerResponseType, client: CreateSignalClientType) => {
-			const { sdp } = response;
-			const parsedSdp = JSON.parse(sdp) as RTCSessionDescriptionInit;
-			await registerRemoteSdp(parsedSdp);
-
-			const { id } = useUserInfoStore.getState();
-			const { clearTransceiver, transceiver } = usePendingTrackStore.getState();
-
-			const track = new Map<string, TrackInfoType>();
-
-			Object.entries(transceiver).forEach(([type, t]) => {
-				if (t?.mid) {
-					track.set(t.mid, {
-						streamType: type === 'audio' || type === 'video' ? 'USER' : 'SCREEN',
-						userId: id,
-					});
-				}
-			});
-
-			if (track.size === 0) {
-				return;
-			}
-
-			clearTransceiver();
-			const payload: TrackPayloadType = {
-				transceiver: Object.fromEntries(track),
-				userId: id,
-			};
-			client.publish('signal', SIGNAL_PATH.TRACK, payload);
-		},
-		[registerRemoteSdp],
+		[registerRemoteSdp, registerLocalSdp, createAnswerSdp, registerTrack, registerPendingTrack],
 	);
 
 	const handleIce = useCallback(
@@ -142,28 +148,7 @@ const useSignalEventHandler = ({
 		[registerRemoteIce],
 	);
 
-	const handleTrack = useCallback(async (response: TrackResponseType) => {
-		const { transceiver } = response;
-
-		Object.entries(transceiver).forEach(([mid, { streamType, userId }]) => {
-			const { deletePendingTrack, pendingTrack, setPendingTrack } = usePendingTrackStore.getState();
-			if (pendingTrack.has(mid)) {
-				const { track: mediaTrack } = pendingTrack.get(mid);
-				deletePendingTrack(mid);
-				if (streamType === 'USER') {
-					setUserStream(userId, mediaTrack);
-					return;
-				}
-
-				setScreenStream(userId, mediaTrack);
-				return;
-			}
-			setPendingTrack(mid, { streamType, userId });
-		});
-	}, []);
-
 	return {
-		handleAnswer,
 		handleDeviceResponse,
 		handleHandUpResponse,
 		handleIce,
@@ -171,7 +156,6 @@ const useSignalEventHandler = ({
 		handleLeaveResponse,
 		handleOffer,
 		handleParticipantResponse,
-		handleTrack,
 	};
 };
 

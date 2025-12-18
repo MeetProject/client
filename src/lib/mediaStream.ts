@@ -22,7 +22,6 @@ export const setUserStream = (userId: string, track: MediaStreamTrack) => {
 		updateParticipantsMediaStream(userId, getStream(track, participantsMediaStream.get(userId)));
 		return;
 	}
-
 	updateParticipantsMediaStream(userId, getStream(track));
 };
 

@@ -4,6 +4,7 @@ export const SIGNAL_PATH = {
 	ICE: 'ICE',
 	JOIN: 'JOIN',
 	LEAVE: 'LEAVE',
+	NEGOTIATION: 'NEGOTIATION',
 	OFFER: 'OFFER',
 	TRACK: 'TRACK',
 };

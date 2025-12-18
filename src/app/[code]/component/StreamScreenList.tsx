@@ -7,7 +7,7 @@ import { VideoStream, OtherAudioStream } from './part/Stream';
 import { useDeviceStore } from '@/store/DeviceStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useWebRTCStore } from '@/store/WebRTCStore';
-import { EmojiResponseType } from '@/type/reactionType';
+import { EmojiResponseType } from '@/type/signalType';
 
 interface StreamScreenListProperties {
 	emojiList: EmojiResponseType[];

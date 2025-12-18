@@ -34,26 +34,17 @@ export interface JoinResponseType extends SignalResponseType {
 	participants: ParticipantResponseType[];
 }
 
-export interface OfferPayloadType {
-	userId: string;
-	sdp: string;
-}
-
 export interface OfferResponseType extends SignalResponseType {
 	userId: string;
 	roomId: string;
 	sdp: string;
+	trackInfo: Record<string, TrackInfoType>;
 }
 
 export interface AnswerPayloadType {
 	userId: string;
 	sdp: string;
-}
-
-export interface AnswerResponseType extends SignalResponseType {
-	userId: string;
-	sdp: string;
-	roomId: string;
+	trackInfo: Record<string, TrackInfoType>;
 }
 
 export interface IcePayloadType {

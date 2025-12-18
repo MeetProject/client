@@ -46,11 +46,14 @@ export const createSignalClient = ({ baseUrl, debug, onConnect }: CreateSignalCl
 			onConnect?.();
 		};
 
+		ws.onerror = (e) => {
+			console.log(e);
+		};
+
 		ws.onmessage = async (e) => {
 			const raw = getRawData(e);
 			const data = JSON.parse(raw) as SignalEventType<any>;
 			const { path, payload, type } = data;
-			console.log(path, type, data);
 
 			if (debug) {
 				console.log();

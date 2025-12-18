@@ -11,7 +11,7 @@ export default function DeviceProvider({ children }: PropsWithChildren) {
 
 	const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-	useEffect(() => {
+	/* useEffect(() => {
 		const handleDeviceChange = async () => {
 			if (!stream) {
 				return;
@@ -81,6 +81,6 @@ export default function DeviceProvider({ children }: PropsWithChildren) {
 				track.removeEventListener('ended', checkLiveState);
 			});
 		};
-	}, [stream, updateStream]);
+	}, [stream, updateStream]); */
 	return children;
 }

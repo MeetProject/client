@@ -10,20 +10,19 @@ import useSignalSocket from './useSignalSocket';
 
 import { SIGNAL_PATH } from '@/constant/signalPath';
 import { useClientStore } from '@/store/ClientStore';
+import { usePendingTrackStore } from '@/store/PendingTrackStore';
 import { useUserInfoStore } from '@/store/UserInfoStore';
 import { useWebRTCStore } from '@/store/WebRTCStore';
 import {
-	AnswerResponseType,
 	ChatResponseType,
 	CreateSignalClientType,
 	EmojiResponseType,
 	IceResponseType,
 	JoinResponseType,
 	OfferResponseType,
-	TrackResponseType,
 } from '@/type/signalType';
 import { ErrorResponseType } from '@/type/signalType';
-import { TrackInfoType } from '@/type/streamType';
+import { getTrackType } from '@/util/trackType';
 
 interface UseWebRTCProperties {
 	onChat?: (data: ChatResponseType) => void;
@@ -35,9 +34,9 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
 	const { stopScreenStream, stopStream, updateScreenStream, updateStream } = useDevice();
 	const {
 		createAnswerSdp,
-		createOfferSdp,
 		createPeerConnection,
 		disconnectPeerConnection,
+		getTrack,
 		registerLocalSdp,
 		registerRemoteIce,
 		registerRemoteSdp,
@@ -45,7 +44,6 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
 	} = usePeerConnection();
 
 	const {
-		handleAnswer,
 		handleDeviceResponse,
 		handleHandUpResponse,
 		handleIce,
@@ -53,28 +51,24 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
 		handleLeaveResponse,
 		handleOffer,
 		handleParticipantResponse,
-		handleTrack,
 	} = useSignalEventHandler({
 		createAnswerSdp,
-		createOfferSdp,
-		createPeerConnection,
-		disconnectPeerConnection,
+		getTrack,
 		registerLocalSdp,
 		registerRemoteIce,
 		registerRemoteSdp,
+		registerTrack,
 	});
 
 	const handleSocketConnect = useCallback(
 		(socket: CreateSignalClientType) => {
 			useClientStore.getState().setIsClientReady(true);
-			socket.signalSub<JoinResponseType>(SIGNAL_PATH.JOIN, (response) => handleJoin(response, socket));
+			socket.signalSub<JoinResponseType>(SIGNAL_PATH.JOIN, handleJoin);
 			socket.signalSub<OfferResponseType>(SIGNAL_PATH.OFFER, (response) => handleOffer(response, socket));
-			socket.signalSub<AnswerResponseType>(SIGNAL_PATH.ANSWER, (response) => handleAnswer(response, socket));
 			socket.signalSub<IceResponseType>(SIGNAL_PATH.ICE, handleIce);
-			socket.signalSub<TrackResponseType>(SIGNAL_PATH.TRACK, handleTrack);
 			socket.signalSub<ErrorResponseType>(SIGNAL_PATH.ERROR, onError);
 		},
-		[handleAnswer, handleIce, onError, handleJoin, handleOffer, handleTrack],
+		[handleIce, onError, handleJoin, handleOffer],
 	);
 
 	const {
@@ -86,8 +80,9 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
 		sendHandUp,
 		sendJoin,
 		sendLeave,
-		sendTrack,
+		sendNegotiation,
 	} = useSignalSocket({
+		createPeerConnection,
 		onChat,
 		onConnect: handleSocketConnect,
 		onDevice: handleDeviceResponse,
@@ -131,23 +126,26 @@ const useWebRTC = ({ onChat, onEmoji, onError }: UseWebRTCProperties) => {
 	);
 
 	const shareScreen = useCallback(async () => {
+		const { id } = useUserInfoStore.getState();
+		const { client } = useClientStore.getState();
 		const { isScreenShare, setIsScreenShare } = useWebRTCStore.getState();
-		if (isScreenShare) {
+		if (isScreenShare || !client) {
 			return;
 		}
-		const { id } = useUserInfoStore.getState();
 		const screemStream = await updateScreenStream(true);
 		setIsScreenShare(true);
 
-		const trackInfo = new Map<string, TrackInfoType>();
+		const { addSenderTrack } = usePendingTrackStore.getState();
 
 		screemStream.getTracks().forEach((track) => {
-			registerTrack(track);
-			trackInfo.set(track.id, { streamType: 'SCREEN', userId: id });
+			addSenderTrack(track.id, {
+				trackType: getTrackType('SCREEN', track.kind),
+				userId: id,
+			});
 		});
 
-		sendTrack(Object.fromEntries(trackInfo));
-	}, [updateScreenStream, sendTrack, registerTrack]);
+		sendNegotiation();
+	}, [updateScreenStream, sendNegotiation]);
 
 	const clearPeerConnection = useCallback(() => {
 		disconnectPeerConnection();

@@ -17,7 +17,7 @@ import {
 
 import { Loading } from '@/component';
 import { ToggleContext } from '@/context/ToggleContext';
-import { useDevice, useWebRTC } from '@/hook';
+import { useWebRTC } from '@/hook';
 import { timeDifferenceInMinutes } from '@/lib/date';
 import { useClientStore } from '@/store/ClientStore';
 import { useDeviceStore } from '@/store/DeviceStore';
@@ -54,8 +54,6 @@ export default function Meetting() {
 			screenSharingMediaStream: state.screenSharingMediaStream,
 		})),
 	);
-
-	const { updateStream } = useDevice();
 
 	const handleChat = useCallback((data: ChatResponseType) => {
 		const { participantsUserData: userData } = useWebRTCStore.getState();
@@ -139,7 +137,7 @@ export default function Meetting() {
 			setIsPending(false);
 		};
 		init();
-	}, [stream, pathname, joinSession, joinRoom, updateStream]);
+	}, [stream, pathname, joinSession, joinRoom]);
 
 	useEffect(() => {
 		if (!screenStream && screenSharingMediaStream) {
